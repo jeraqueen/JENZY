@@ -1,0 +1,378 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="theme-color" content="#4f46e5">
+<title>JENZY — Learn. Play. Compete.</title>
+<style>
+:root{--bg:#f5f7ff;--card:#fff;--text:#19213b;--muted:#69738c;--primary:#4f46e5;--line:#e7e9f3}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--text);font-family:system-ui,-apple-system,sans-serif}
+header{background:linear-gradient(135deg,#4338ca,#7c3aed);color:white;padding:22px 18px 28px;border-radius:0 0 26px 26px}
+.top{display:flex;justify-content:space-between;align-items:center;max-width:900px;margin:auto;gap:12px}
+.logo{font-size:26px;font-weight:900;letter-spacing:1px}.tag{font-size:12px;opacity:.85}
+.pill{border:1px solid #ffffff80;background:#ffffff18;color:white;border-radius:20px;padding:9px 12px}
+main{max-width:900px;margin:auto;padding:18px 15px 100px}.welcome{margin:12px 0 18px}
+h1{font-size:25px;margin:0 0 6px}h2{font-size:19px;margin:25px 0 12px}
+p{line-height:1.5}.muted{color:var(--muted);font-size:14px}
+.hero{background:linear-gradient(120deg,#312e81,#6366f1);color:white;padding:22px;border-radius:20px;margin:16px 0}
+.hero h2{font-size:23px;margin:0 0 8px}
+button{font:inherit;cursor:pointer}button:disabled{opacity:.6;cursor:not-allowed}
+.primary{background:var(--primary);color:white;border:0;padding:12px 16px;border-radius:12px;font-weight:700}
+.hero .primary{background:white;color:#4338ca;margin-top:8px}
+.grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px}
+.card{background:var(--card);padding:16px;border:1px solid var(--line);border-radius:17px;min-width:0;margin-bottom:12px}
+.icon{font-size:28px}.card h3{font-size:16px;margin:8px 0 5px}.card p{font-size:13px;color:var(--muted);margin:0 0 12px}
+.row{display:flex;align-items:center;gap:12px}.grow{flex:1;min-width:0}
+.chip{display:inline-block;background:#eeedff;color:#4338ca;padding:5px 9px;border-radius:20px;font-size:12px}
+.tabs{position:fixed;bottom:0;left:0;right:0;background:white;border-top:1px solid var(--line);display:flex;justify-content:space-around;padding:9px 2px calc(9px + env(safe-area-inset-bottom));z-index:5}
+.tabs button{background:none;border:0;color:#747b91;font-size:11px;padding:3px;min-width:48px}.tabs button span{display:block;font-size:21px;margin-bottom:3px}
+.tabs button.active{color:var(--primary);font-weight:800}.page{display:none}.page.active{display:block}
+.option{display:block;width:100%;text-align:left;background:white;border:1px solid var(--line);border-radius:12px;padding:13px;margin:9px 0;color:var(--text)}
+.option.correct{background:#dcfce7;border-color:#16a34a}.option.wrong{background:#fee2e2;border-color:#dc2626}
+input,select{width:100%;padding:12px;border:1px solid var(--line);border-radius:10px;margin:6px 0 14px;font:inherit;background:white;color:var(--text)}
+label{font-size:13px;font-weight:650}.notice{padding:12px;background:#fff7d6;border-radius:12px;font-size:13px;color:#765500}
+.status{font-size:14px;line-height:1.5;overflow-wrap:anywhere}.status.error{color:#b91c1c}.status.success{color:#047857}
+footer{text-align:center;color:var(--muted);font-size:12px;padding:20px}
+#appShell{display:none}body.signed-in #appShell{display:block}body.signed-in #authGate{display:none}
+.auth-wrap{max-width:460px;margin:30px auto;padding:18px}.auth-card{background:white;border:1px solid var(--line);border-radius:20px;padding:22px;box-shadow:0 8px 28px #1725540c}
+.auth-logo{text-align:center;font-size:30px;font-weight:900;color:var(--primary)}.auth-sub{text-align:center;color:var(--muted);margin:4px 0 20px}
+.auth-toggle{display:grid;grid-template-columns:1fr 1fr;background:#f0efff;padding:4px;border-radius:12px;margin:18px 0}
+.auth-toggle button{border:0;border-radius:9px;padding:10px;background:transparent;color:var(--muted)}
+.auth-toggle button.active{background:white;color:var(--primary);font-weight:750;box-shadow:0 1px 4px #00000012}
+.auth-card .primary{width:100%}
+@media(min-width:650px){.grid{grid-template-columns:repeat(3,minmax(0,1fr))}.hero{padding:30px}}
+.badge-row{display:flex;gap:7px;flex-wrap:wrap;margin:10px 0}.subject-card{cursor:pointer;text-align:left;border:1px solid var(--line);background:var(--card);color:var(--text);border-radius:16px;padding:15px;min-height:112px}.subject-card:active{transform:scale(.98)}
+.stat-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px}.stat{background:var(--card);border:1px solid var(--line);padding:15px;border-radius:15px}.stat strong{display:block;font-size:23px;margin-top:5px}.section-head{display:flex;align-items:center;justify-content:space-between;gap:10px}.small-btn{border:1px solid var(--line);background:var(--card);color:var(--text);padding:8px 11px;border-radius:10px}.progress-track{height:8px;background:#e9eaf4;border-radius:10px;overflow:hidden}.progress-fill{height:100%;background:linear-gradient(90deg,#4f46e5,#8b5cf6);width:0}.feature-row{display:flex;gap:12px;align-items:center;padding:12px 0;border-bottom:1px solid var(--line)}
+.schedule-link{width:100%;text-align:left;border:1px solid var(--line);background:var(--card);color:var(--text);border-radius:14px;padding:3px 12px;margin:7px 0;display:flex;gap:12px;align-items:center}.schedule-link:active{transform:scale(.99)}.avatar{width:94px;height:94px;border-radius:24px;object-fit:cover;border:3px solid var(--line);background:#eeedff;display:grid;place-items:center;font-size:38px;color:var(--primary);margin-bottom:12px}.profile-summary{display:grid;grid-template-columns:100px 1fr;gap:12px;align-items:center}.profile-detail{margin:6px 0}.profile-edit[hidden]{display:none!important}.feature-row:last-child{border-bottom:0}.feature-icon{width:42px;height:42px;display:grid;place-items:center;background:#eeedff;border-radius:13px;font-size:22px;flex-shrink:0}.coming{font-size:11px;background:#fff2cc;color:#795400;border-radius:20px;padding:4px 8px;white-space:nowrap}.empty-state{text-align:center;padding:25px 12px}.tabs{overflow-x:auto}.tabs button{flex-shrink:0}
+@media(min-width:650px){.stat-grid{grid-template-columns:repeat(4,minmax(0,1fr))}}
+
+</style>
+</head>
+<body>
+<section id="authGate" class="auth-wrap">
+  <div class="auth-card">
+    <div class="auth-logo">JENZY ✦</div><p class="auth-sub">LEARN. PLAY. COMPETE.</p>
+    <h1 id="authHeading">Welcome back</h1><p class="muted">Sign in to access your learning space.</p>
+    <div class="auth-toggle"><button id="loginTab" class="active" type="button">Log in</button><button id="signupTab" type="button">Create account</button></div>
+    <form id="authForm">
+      <div id="signupFields" hidden>
+        <label for="fullName">Full name</label><input id="fullName" maxlength="80" autocomplete="name" placeholder="Your name">
+        <label for="username">Username</label><input id="username" maxlength="30" autocomplete="nickname" placeholder="Choose a username">
+        <label for="schoolName">School name</label><input id="schoolName" maxlength="120" placeholder="Your school">
+        <label for="educationLevel">Education level</label><select id="educationLevel"><option value="Primary">Primary school</option><option value="Secondary">Secondary school</option><option value="Other">Other</option></select>
+      </div>
+      <label for="email">Email address</label><input id="email" type="email" autocomplete="email" required placeholder="you@example.com">
+      <label for="password">Password</label><input id="password" type="password" minlength="8" autocomplete="current-password" required placeholder="At least 8 characters">
+      <button id="authSubmit" class="primary" type="submit">Log in</button><p id="authStatus" class="status" aria-live="polite"></p>
+    </form>
+    <p class="muted">Use an email address you can access. Never share your password with another student.</p>
+  </div>
+</section>
+<div id="appShell">
+<header><div class="top"><div><div class="logo">JENZY ✦</div><div class="tag">LEARN. PLAY. COMPETE.</div></div><button class="pill" onclick="showPage('profile')">👤 Profile</button></div></header>
+<main>
+<section class="page active" id="home">
+  <div class="welcome"><h1 id="welcomeHeading">Welcome to JENZY! 👋</h1><div class="muted">Learn. Play. Compete. — Kenya time (EAT).</div></div>
+  <div class="hero"><span class="chip">DAILY COMPETITIONS</span><h2 id="scheduleStatusTitle">Next competition</h2><p id="scheduleStatusText">Competition times are fixed for everyone. Choose the subject before each session.</p><div id="scheduleClock" style="font-size:28px;font-weight:850;margin:12px 0">Loading Kenya time…</div><button class="primary" onclick="showPage('competitions')">Open competitions →</button></div>
+  <div class="card"><h3>Today's schedule · Tap a session for details</h3><button class="schedule-link" onclick="openSchedule('math')"><div class="feature-icon">➗</div><div class="grow"><b>9:00–9:24 AM · Mathematics</b><div class="muted">12 questions · 24 minutes</div></div><span>›</span></button><button class="schedule-link" onclick="openSchedule('afternoon')"><div class="feature-icon">📚</div><div class="grow"><b>2:00–2:12 PM · English or Kiswahili</b><div class="muted">Choose one · 12 questions · 12 minutes</div></div><span>›</span></button><button class="schedule-link" onclick="openSchedule('evening')"><div class="feature-icon">🔬</div><div class="grow"><b>9:00–9:12 PM · Science or Social Studies</b><div class="muted">Choose one · 12 questions · 12 minutes</div></div><span>›</span></button><p class="notice">Reminder alarms appear only from 8:55–9:00 AM, 1:55–2:00 PM, and 8:55–9:00 PM. No other scheduled alarms.</p></div>
+  <div class="card"><h3>How JENZY competitions work</h3><p class="muted">Choose your class and the available subject. Questions should match your class and move through topics in order, combining about three subtopics before progressing. Official class-specific question sets and verified scoring still need to be published before live competition play can be enabled.</p></div>
+</section>
+<section class="page" id="quiz"><button type="button" onclick="showPage('home')">← Home</button><h1>🧠 Practice Quiz</h1><p class="muted">Questions load from the JENZY database for your selected class and subject. Practice scores are not official competition results.</p>
+  <div class="card"><div class="row"><span class="chip" id="qProgress">Question 1 of 12</span><span class="grow"></span><b id="qScore">Score: 0</b></div><h2 id="qText"></h2><div id="qOptions"></div><p id="qFeedback" aria-live="polite"></p><button class="primary" id="nextBtn" onclick="nextQuestion()" style="display:none">Next question →</button></div>
+</section>
+<section class="page" id="competitions"><h1>🏆 Competitions</h1><p class="muted">All times use Kenya time (East Africa Time).</p><div class="card notice" id="privateTesterNotice" hidden><b>🔒 Private tester mode is enabled for this account.</b><p>Your test timer starts when the questions load. Test results are stored separately and do not affect public competition results or rankings.</p></div>
+<div class="card"><span class="chip">9:00 AM</span><h2>Mathematics</h2><p>12 questions · 24 minutes · Ends at 9:24 AM.</p><p class="muted">The morning subject is fixed; no subject selection is needed.</p><button class="primary" id="mathJoinBtn" onclick="startScheduledCompetition('morning')">Enter Mathematics competition</button></div>
+<div class="card"><span class="chip">2:00 PM</span><h2>Choose English or Kiswahili</h2><label for="afternoonSubject">Your afternoon subject</label><select id="afternoonSubject"><option value="English">English</option><option value="Kiswahili">Kiswahili</option></select><p>12 questions · 12 minutes.</p><button class="primary" id="afternoonJoinBtn" onclick="startScheduledCompetition('afternoon')">Enter selected language competition</button></div>
+<div class="card"><span class="chip">9:00 PM</span><h2>Choose your evening subject</h2><label for="eveningSubject">Choose a subject</label><select id="eveningSubject"><option value="Science">Science</option><option value="Social Studies">Social Studies</option></select><div id="scienceOptionsWrap" hidden><label for="scienceLevelChoice">Science topics for your school level</label><select id="scienceLevelChoice"><option value="Integrated Science">Primary: Integrated Science</option><option value="Agriculture and Nutrition">Primary: Agriculture and Nutrition</option></select><p class="muted">Primary learners can choose Integrated Science or Agriculture and Nutrition. Secondary learners can choose Biology, Chemistry or Physics.</p></div><p>12 questions · 12 minutes.</p><button class="primary" id="eveningJoinBtn" onclick="startScheduledCompetition('evening')">Enter selected evening competition</button></div>
+<div class="card" id="competitionPlayArea" hidden><h2 id="competitionPlayTitle">Competition</h2><p id="competitionPlayStatus" class="notice" aria-live="polite"></p><div id="competitionQuestionBox"></div><button class="primary" id="competitionNextBtn" onclick="nextCompetitionQuestion()" hidden>Next question →</button><button class="small-btn" id="competitionSubmitBtn" onclick="submitCompetitionAnswers()" hidden>Submit answers</button><div id="competitionResult" aria-live="polite"></div></div><div class="card"><h2>Entry options</h2><p><b>Free entry</b> — intended to be available once class-specific competition questions and secure scoring are ready.</p><button class="primary" disabled>Free entry — setup in progress</button><p style="margin-top:16px"><b>Paid entry</b> — payment option will be displayed during the five-minute reminder window, but stays disabled until a real payment method and secure verification are configured.</p><button class="small-btn" disabled>Pay to enter — not active yet</button><p class="notice">No payment is being collected by this version. Do not send money to anyone claiming this disabled button is active.</p></div>
+<div class="card"><h3 id="scheduleStatusTitleCompetition">Schedule status</h3><p id="scheduleStatusTextCompetition" class="muted">Loading schedule…</p><div id="scheduleClockCompetition" style="font-size:25px;font-weight:850">—</div><p id="alarmMessage" class="notice" aria-live="polite">Reminder alerts are scheduled only for the three five-minute windows.</p><button class="small-btn" id="enableAlarmBtn" onclick="enableScheduleAlerts()">Enable sound reminders</button></div>
+</section><section class="page" id="leaderboard"><h1>📊 Leaderboard</h1><div class="card"><div class="icon">🌟</div><h3>Your progress starts with practice</h3><p>Official rankings will be shown only when verified scores are connected.</p><button class="primary" onclick="startQuiz()">Take a practice quiz</button></div><p class="notice">No official rankings or scores are being displayed yet.</p></section>
+<section class="page" id="chats"><h1>💬 Student Chats</h1><div class="card"><div class="icon">👋</div><h3>Welcome to JENZY Chats</h3><p>Live messages are not connected yet. We'll configure access controls, reporting and moderation before enabling student interaction.</p></div></section>
+<section class="page" id="subjects"><h1>📚 Subjects</h1><button class="primary" onclick="showPage('learning')">Study by grade and topic →</button><p class="muted">Choose a class and subject to practise a 12-question set from the JENZY question bank.</p><div class="grid"><button class="subject-card" onclick="openLearningSubject('Mathematics')"><div class="icon">➗</div><h3>Mathematics</h3><p>One subject for every available class; questions match your selected class</p></button><button class="subject-card" onclick="openLearningScience()"><div class="icon">🔬</div><h3>Science</h3><p>Open the science subjects available for your class</p></button><button class="subject-card" onclick="openLearningSubject('English')"><div class="icon">📖</div><h3>English</h3><p>Grammar and comprehension</p></button><button class="subject-card" onclick="openLearningSubject('Social Studies')"><div class="icon">🇰🇪</div><h3>Social Studies</h3><p>People, places and citizenship</p></button><button class="subject-card" onclick="openLearningSubject('Kiswahili')"><div class="icon">🗣️</div><h3>Kiswahili</h3><p>Lugha na ufahamu</p></button><button class="subject-card" onclick="openLearningSubject('Agriculture and Nutrition')"><div class="icon">🌱</div><h3>Agriculture and Nutrition</h3><p>Farming, food and healthy living</p></button></div><p class="notice">Subject-specific question banks must be added by the administrator before these become official quizzes.</p></section>
+
+<section class="page" id="learning">
+<h1>🗺️ Learning Path</h1><p class="muted">Choose your school level, grade and subject. Mathematics questions follow your class; Science opens the science subjects available at that level. Practise step by step and review explanations.</p>
+<div class="card"><label for="learnLevel">School level</label><select id="learnLevel" onchange="updateLearningChoices()"><option>Primary</option><option>Junior School</option><option>Senior School</option></select>
+<label for="learnGrade">Grade / class</label><select id="learnGrade" onchange="updateLearningChoices()"></select>
+<label for="learnSubject">Subject</label><select id="learnSubject" onchange="updateLearningChoices()"><option>Mathematics</option><option>English</option><option>Kiswahili</option><option>Integrated Science</option><option>Social Studies</option><option>Agriculture and Nutrition</option><option>Biology</option><option>Chemistry</option><option>Physics</option></select>
+<label for="learnTopic">Practice set</label><select id="learnTopic" disabled><option value="">12 mixed-topic questions</option></select><p class="notice" id="learningTopicInfo">Choose your class and subject to load 12 questions.</p><button class="primary" onclick="startLearningQuiz()">Start this topic →</button></div>
+<div class="card"><h2>How learning works</h2><div class="feature-row"><div class="feature-icon">📘</div><div class="grow"><b>Learn</b><div class="muted">Choose a topic at your level.</div></div></div><div class="feature-row"><div class="feature-icon">✍️</div><div class="grow"><b>Practise</b><div class="muted">Answer questions and get feedback.</div></div></div><div class="feature-row"><div class="feature-icon">🔁</div><div class="grow"><b>Review and repeat</b><div class="muted">Use results to identify what to practise next.</div></div></div></div>
+<p class="notice">KICD curriculum designs guide the learning areas and broad topics. The JENZY questions are original practice items, not copied from KICD; teacher review and detailed strand-by-strand mapping are still recommended before using them as official exam preparation.</p></section>
+
+<section class="page" id="progress"><h1>📈 My progress</h1><p class="muted">Your practice history on this device. These are not official competition scores.</p><div class="stat-grid"><div class="stat"><span class="muted">Quizzes completed</span><strong id="progressCount">0</strong></div><div class="stat"><span class="muted">Best score</span><strong id="progressBest">—</strong></div><div class="stat"><span class="muted">Correct answers</span><strong id="progressCorrect">0</strong></div><div class="stat"><span class="muted">Badges earned</span><strong id="progressBadges">0</strong></div></div><h2>Recent practice</h2><div class="card" id="practiceHistory"><div class="empty-state"><div class="icon">🌱</div><b>Your learning journey starts here</b><p class="muted">Complete a practice quiz to see your progress.</p><button class="primary" onclick="startQuiz()">Start practising</button></div></div><h2>Achievements</h2><div class="card"><div class="feature-row"><div class="feature-icon">🌟</div><div class="grow"><b>First Steps</b><div class="muted">Complete your first practice quiz.</div></div><span class="chip" id="firstStepsStatus">Locked</span></div><div class="feature-row"><div class="feature-icon">🎯</div><div class="grow"><b>Sharp Mind</b><div class="muted">Score at least 10 out of 12 in a practice quiz.</div></div><span class="chip" id="sharpMindStatus">Locked</span></div></div><button class="small-btn" onclick="clearPracticeHistory()">Clear practice history on this device</button></section>
+<section class="page" id="profile"><h1>👤 Student Profile</h1><p class="muted">Your profile details and competition record.</p>
+  <div class="card"><div class="profile-summary"><img id="profileAvatar" class="avatar" alt="Your profile picture" src=""/><div><h2 id="profileDisplayName" style="margin:0 0 5px">JENZY learner</h2><div id="profileDisplayUsername" class="muted">@username</div><div id="profileDisplaySchool" class="muted">School not added</div><button class="primary" style="margin-top:10px" onclick="toggleProfileEdit(true)">✏️ Edit Profile</button></div></div></div>
+  <div class="card"><h3>🏆 Competition record</h3><div class="stat-grid"><div class="stat"><span class="muted">Competitions entered</span><strong id="profileTotalCompetitions">0</strong></div><div class="stat"><span class="muted">Free competitions</span><strong id="profileFreeCompetitions">0</strong></div><div class="stat"><span class="muted">Paid competitions</span><strong id="profilePaidCompetitions">0</strong></div><div class="stat"><span class="muted">Wins</span><strong id="profileWins">0</strong></div></div><p class="muted">These counts will reflect verified competition results once the competition and payment systems are connected. No wins or paid entries are being invented.</p></div>
+  <div class="card profile-edit" id="profileEditPanel" hidden><h3>Edit your details</h3><label for="profilePhotoInput">Profile picture</label><input id="profilePhotoInput" type="file" accept="image/*"><p class="muted">Choose a photo from your phone. A permanent, cross-device photo needs secure image storage to be configured.</p>
+    <label for="studentName">Full name</label><input id="studentName" maxlength="80" autocomplete="name">
+    <label for="profileUsername">Username</label><input id="profileUsername" maxlength="30" autocomplete="nickname">
+    <label for="profileSchool">School name</label><input id="profileSchool" maxlength="120">
+    <label for="schoolLevel">Education level</label><select id="schoolLevel"><option value="Primary">Primary</option><option value="Secondary">Secondary</option><option value="Other">Other</option></select>
+    <label for="profileClass">Grade / class</label><select id="profileClass"><option value="Grade 4">Grade 4</option><option value="Grade 5">Grade 5</option><option value="Grade 6">Grade 6</option><option value="Grade 7">Grade 7</option><option value="Grade 8">Grade 8</option><option value="Grade 10">Grade 10</option><option value="Form 3">Form 3</option></select>
+    <label for="profileEmail">Account email</label><input id="profileEmail" type="email" disabled>
+    <button id="saveProfileBtn" class="primary" onclick="saveProfile()">Save profile</button><button class="small-btn" onclick="toggleProfileEdit(false)" style="margin-left:6px">Cancel</button><p id="profileStatus" class="status" aria-live="polite"></p>
+  </div><button class="primary" style="background:#b91c1c;margin-top:8px" onclick="logOut()">Log out</button>
+</section>
+<footer>JENZY · Learn. Play. Compete.<br>Scheduled student competitions for Kenyan learners.</footer>
+</main>
+<nav class="tabs" aria-label="Main navigation">
+<button class="active" data-page="home" onclick="showPage('home')"><span>🏠</span>Home</button>
+<button data-page="competitions" onclick="showPage('competitions')"><span>🏆</span>Compete</button>
+<button data-page="chats" onclick="showPage('chats')"><span>💬</span>Chat</button>
+<button data-page="profile" onclick="showPage('profile')"><span>👤</span>Profile</button>
+</nav>
+</div>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script>
+/* Fallback CDN: if the primary Supabase library failed to load, try the alternate CDN. */
+if (!window.supabase) {
+  document.write('<script src="https://unpkg.com/@supabase/supabase-js@2"><\/script>');
+}
+</script>
+<script>
+const SUPABASE_URL = "https://nbldckaeabtcftxsvodt.supabase.co";
+const SUPABASE_PUBLISHABLE_KEY = "sb_publishable_lEWWN4K_dt11NRzHSbtxaw_xs9zIb92";
+if (!window.supabase || typeof window.supabase.createClient !== "function") {
+  document.getElementById("authStatus").textContent =
+    "JENZY could not load its sign-in service. Check your internet connection, refresh the page, and try again.";
+  document.getElementById("authStatus").className = "status error";
+  throw new Error("Supabase client library failed to load from both CDNs.");
+}
+const supabaseClient = window.supabase.createClient(SUPABASE_URL, SUPABASE_PUBLISHABLE_KEY);
+let authMode="login", currentUser=null, qi=0, score=0, answered=false, level="Primary", resultSaved=false, isJenzyTester=false;
+const sampleQuestions=[
+{q:"What is 7 × 8?",o:["48","54","56","64"],a:2},
+{q:"Which planet do we live on?",o:["Mars","Earth","Venus","Jupiter"],a:1},
+{q:"What is the capital city of Kenya?",o:["Mombasa","Kisumu","Nakuru","Nairobi"],a:3},
+{q:"Which gas do plants mainly absorb for photosynthesis?",o:["Oxygen","Carbon dioxide","Hydrogen","Helium"],a:1},
+{q:"How many sides does a triangle have?",o:["Two","Three","Four","Five"],a:1},
+{q:"Which word is a verb?",o:["Quickly","Run","Blue","Desk"],a:1},
+{q:"What is 3/4 written as a percentage?",o:["25%","50%","75%","80%"],a:2},
+{q:"Which organ pumps blood around the body?",o:["Lungs","Heart","Stomach","Kidney"],a:1},
+{q:"Which ocean borders Kenya?",o:["Atlantic","Pacific","Indian","Arctic"],a:2},
+{q:"What is the Kiswahili plural of ‘mtoto’?",o:["watoto","mitoto","vitoto","matoto"],a:0},
+{q:"Which material is a good electrical conductor?",o:["Rubber","Plastic","Copper","Dry wood"],a:2},
+{q:"Which action helps conserve soil?",o:["Remove all plants","Plant ground cover","Burn every field","Leave slopes bare"],a:1}
+];
+let questions=sampleQuestions;
+const learningBank={
+"Mathematics|Whole numbers":[
+{q:"What is 245 + 178?",o:["413","423","433","403"],a:1,why:"245 + 178 = 423."},{q:"What is 9 × 7?",o:["56","63","72","49"],a:1,why:"Nine groups of seven make 63."},{q:"What is 144 ÷ 12?",o:["10","11","12","14"],a:2,why:"12 × 12 = 144."},{q:"Which number is greatest?",o:["3,908","3,890","3,809","3,098"],a:0,why:"Compare place values from left to right."},{q:"Round 6,748 to the nearest hundred.",o:["6,700","6,750","6,800","6,000"],a:0,why:"The tens digit is 4, so round down to 6,700."}],
+"Mathematics|Fractions":[
+{q:"What is 1/2 + 1/4?",o:["2/6","3/4","1/6","1/4"],a:1,why:"2/4 + 1/4 = 3/4."},{q:"Which fraction equals 2/3?",o:["3/5","4/6","2/5","5/6"],a:1,why:"Multiply numerator and denominator by 2."},{q:"What is 3/5 of 20?",o:["8","10","12","15"],a:2,why:"20 ÷ 5 = 4, and 4 × 3 = 12."},{q:"Which is the smallest fraction?",o:["1/2","1/3","1/4","1/5"],a:3,why:"For unit fractions, a larger denominator means a smaller fraction."},{q:"Simplify 6/8.",o:["3/4","2/3","4/6","1/2"],a:0,why:"Divide numerator and denominator by 2."}],
+"Mathematics|Algebra basics":[
+{q:"If x + 5 = 12, what is x?",o:["5","6","7","17"],a:2,why:"Subtract 5 from both sides."},{q:"Simplify 3a + 2a.",o:["5","5a","6a","a"],a:1,why:"Combine like terms to get 5a."},{q:"If y = 4, what is 2y + 3?",o:["8","9","11","14"],a:2,why:"2 × 4 + 3 = 11."},{q:"Solve 2x = 18.",o:["6","8","9","16"],a:2,why:"Divide both sides by 2."},{q:"Which means 'seven more than n'?",o:["7n","n − 7","n + 7","7 − n"],a:2,why:"More than means add."}],
+"English|Grammar":[
+{q:"Choose the correct sentence.",o:["She go to school.","She goes to school.","She going school.","She gone to school."],a:1,why:"With 'she' in the simple present, use 'goes'."},{q:"What is the plural of 'child'?",o:["Childs","Childes","Children","Childrens"],a:2,why:"The plural form is children."},{q:"Which word is an adjective in 'the bright sun'?",o:["the","bright","sun","is"],a:1,why:"Bright describes the noun sun."},{q:"Choose the past tense of 'write'.",o:["Writed","Wrote","Writtened","Writing"],a:1,why:"The simple past tense is wrote."},{q:"Which punctuation mark ends a question?",o:["Full stop","Comma","Question mark","Colon"],a:2,why:"A question mark ends a direct question."}],
+"Science|Living things":[
+{q:"Which plant part mainly absorbs water from soil?",o:["Flower","Roots","Leaves","Fruit"],a:1,why:"Roots absorb water and mineral salts."},{q:"What lets green plants make food using sunlight?",o:["Digestion","Respiration only","Photosynthesis","Evaporation"],a:2,why:"Photosynthesis uses light energy to make food."},{q:"Which is a mammal?",o:["Frog","Tilapia","Bat","Lizard"],a:2,why:"Bats are mammals."},{q:"Which organ pumps blood around the body?",o:["Lungs","Heart","Stomach","Kidney"],a:1,why:"The heart pumps blood through blood vessels."},{q:"Which is a producer in a food chain?",o:["Grass","Hawk","Lion","Mushroom"],a:0,why:"Grass makes its own food using photosynthesis."}],
+"Social Studies|Kenya and citizenship":[
+{q:"What is the capital city of Kenya?",o:["Mombasa","Nairobi","Kisumu","Eldoret"],a:1,why:"Nairobi is the capital city of Kenya."},{q:"How many colours are on Kenya's national flag?",o:["Three","Four","Five","Six"],a:1,why:"It has black, red and green, with white stripes."},{q:"Which is a responsibility of a good citizen?",o:["Destroy public property","Ignore all laws","Respect others' rights","Spread false information"],a:2,why:"Respecting rights supports peaceful communities."},{q:"Which ocean borders Kenya?",o:["Atlantic","Pacific","Indian","Arctic"],a:2,why:"Kenya has a coastline along the Indian Ocean."},{q:"What is the main purpose of voting?",o:["Choose representatives","Close schools","Select the weather","Change the flag"],a:0,why:"Voting lets citizens choose leaders or decide on issues."}]
+};
+async function openLearningScience(){
+ const schoolClass=document.getElementById('profileClass')?.value||localStorage.getItem(PROFILE_CLASS_KEY)||'Grade 6';
+ // Senior science subjects are selected from the class-aware subject list; primary/junior learners use Integrated Science.
+ const firstScienceSubject=(schoolClass.startsWith('Form ')||schoolClass==='Grade 10')?'Biology':'Integrated Science';
+ await openLearningSubject(firstScienceSubject);
+}
+async function openLearningSubject(subject){
+ const schoolClass=document.getElementById('profileClass')?.value||localStorage.getItem(PROFILE_CLASS_KEY)||'Grade 6';
+ document.getElementById('learnLevel').value=(schoolClass.startsWith('Form ')||schoolClass==='Grade 10')?'Senior School':(['Grade 7','Grade 8'].includes(schoolClass)?'Junior School':'Primary');
+ await updateLearningChoices();
+ const select=document.getElementById('learnSubject');
+ if([...select.options].some(o=>o.value===subject)){select.value=subject;await updateLearningChoices();}
+ showPage('learning');
+}
+async function updateLearningChoices(){
+ const level=document.getElementById("learnLevel").value,grade=document.getElementById("learnGrade"),old=grade.value;
+ const grades=level==="Primary"?["Grade 4","Grade 5","Grade 6"]:level==="Junior School"?["Grade 7","Grade 8"]:["Grade 10","Form 3"];
+ grade.innerHTML=grades.map(g=>"<option>"+g+"</option>").join("");if(grades.includes(old))grade.value=old;
+ const subjectSelect=document.getElementById("learnSubject"),topic=document.getElementById("learnTopic"),info=document.getElementById("learningTopicInfo");
+ const isLegacySecondary=grade.value.startsWith("Form "),isSeniorCBC=grade.value==="Grade 10";
+ const subjects=(isLegacySecondary||isSeniorCBC)?["Mathematics","English","Kiswahili","Social Studies","Biology","Chemistry","Physics","Agriculture and Nutrition"]:["Mathematics","English","Kiswahili","Integrated Science","Social Studies","Agriculture and Nutrition"];
+ const oldSubject=subjectSelect.value;subjectSelect.innerHTML=subjects.map(x=>'<option value="'+escapeCompetitionText(x)+'">'+escapeCompetitionText(x)+'</option>').join("");
+ subjectSelect.value=subjects.includes(oldSubject)?oldSubject:subjects[0];
+ topic.innerHTML='<option value="">12 mixed-topic questions</option>';info.textContent="Choose your class and subject to load a 12-question practice set. Science options depend on your class.";
+ if(!currentUser){info.textContent="Sign in to load published questions for your class.";return;}
+ try{const {data,error}=await supabaseClient.rpc("jenzy_get_practice_questions",{p_school_class:grade.value,p_subject:subjectSelect.value,p_topic:null});if(error)throw error;
+ const rows=data||[];info.textContent=rows.length===12?grade.value+" · "+subjectSelect.value+" · 12 published questions loaded. The set mixes topics for this class.":"This class and subject currently has "+rows.length+" published questions; a complete set needs 12.";
+ }catch(e){info.textContent="Could not load questions from the database: "+(e.message||"Please refresh and try again.");}
+}
+async function startLearningQuiz(){
+ if(!currentUser){setStatus("authStatus","Please sign in first.","error");return;}
+ const subject=document.getElementById("learnSubject").value,schoolClass=document.getElementById("learnGrade").value;
+ document.getElementById("learningTopicInfo").textContent="Loading 12 questions…";
+ try{const {data,error}=await supabaseClient.rpc("jenzy_get_practice_questions",{p_school_class:schoolClass,p_subject:subject,p_topic:null});if(error)throw error;
+ const rows=data||[];if(rows.length!==12)throw new Error("This class and subject needs exactly 12 published questions. Current count: "+rows.length+".");
+ questions=rows.map(q=>({q:q.question_text,o:[q.option_a,q.option_b,q.option_c,q.option_d],a:null,why:"",id:q.id,db:true,topic:q.topic,subtopic:q.subtopic}));
+ currentLearningLabel=schoolClass+" · "+subject+" · 12-question mixed-topic practice";qi=0;score=0;resultSaved=false;document.getElementById("nextBtn").onclick=nextQuestion;showPage("quiz");renderQuestion();
+ }catch(e){document.getElementById("learningTopicInfo").textContent=e.message||"Could not load questions.";}
+}
+let currentLearningLabel="General sample quiz";
+
+
+
+function setStatus(id,message,kind=""){const el=document.getElementById(id);el.textContent=message;el.className="status"+(kind?" "+kind:"")}
+function setAuthMode(mode){authMode=mode;const signup=mode==="signup";document.getElementById("signupFields").hidden=!signup;document.getElementById("loginTab").classList.toggle("active",!signup);document.getElementById("signupTab").classList.toggle("active",signup);document.getElementById("authHeading").textContent=signup?"Create your account":"Welcome back";document.getElementById("authSubmit").textContent=signup?"Create account":"Log in";document.getElementById("password").autocomplete=signup?"new-password":"current-password";["fullName","username","schoolName"].forEach(id=>document.getElementById(id).required=signup);setStatus("authStatus","")}
+document.getElementById("loginTab").addEventListener("click",()=>setAuthMode("login"));
+document.getElementById("signupTab").addEventListener("click",()=>setAuthMode("signup"));
+document.getElementById("authForm").addEventListener("submit",async event=>{
+event.preventDefault();const submit=document.getElementById("authSubmit");submit.disabled=true;setStatus("authStatus",authMode==="signup"?"Creating your account…":"Signing you in…");
+try{
+const email=document.getElementById("email").value.trim(),password=document.getElementById("password").value;
+if(authMode==="signup"){
+const fullName=document.getElementById("fullName").value.trim(),username=document.getElementById("username").value.trim(),schoolName=document.getElementById("schoolName").value.trim(),educationLevel=document.getElementById("educationLevel").value;
+if(!fullName||!username||!schoolName)throw new Error("Complete your name, username and school name.");
+const {data,error}=await supabaseClient.auth.signUp({email,password,options:{emailRedirectTo:window.location.origin+window.location.pathname,data:{full_name:fullName,username,school_name:schoolName,education_level:educationLevel}}});
+if(error)throw error;
+if(data.session&&data.user){await activateUser(data.user);setStatus("authStatus","Account created successfully.","success")}
+else setStatus("authStatus","Account created. Check your email and tap the confirmation link before logging in.","success");
+}else{const {data,error}=await supabaseClient.auth.signInWithPassword({email,password});if(error)throw error;if(data.user)await activateUser(data.user)}
+}catch(error){setStatus("authStatus",error.message||"Something went wrong. Please try again.","error")}
+finally{submit.disabled=false}
+});
+function openSchedule(which){showPage('competitions');const ids={math:'mathJoinBtn',afternoon:'afternoonSubject',evening:'eveningSubject'};const target=document.getElementById(ids[which]);if(target){target.scrollIntoView({behavior:'smooth',block:'center'});target.focus({preventScroll:true});}}
+function toggleProfileEdit(open){const panel=document.getElementById('profileEditPanel');if(panel)panel.hidden=!open; if(open)panel.scrollIntoView({behavior:'smooth',block:'start'});}
+const PROFILE_PHOTO_KEY='jenzy_profile_photo_v1';const PROFILE_CLASS_KEY='jenzy_profile_class_v1';
+function renderProfileSummary(){const name=document.getElementById('studentName')?.value.trim()||'JENZY learner',username=document.getElementById('profileUsername')?.value.trim()||'username',school=document.getElementById('profileSchool')?.value.trim()||'School not added';document.getElementById('profileDisplayName').textContent=name;document.getElementById('profileDisplayUsername').textContent='@'+username;document.getElementById('profileDisplaySchool').textContent=school;const img=document.getElementById('profileAvatar');if(img){const photo=localStorage.getItem(PROFILE_PHOTO_KEY);if(photo){img.src=photo;img.style.display='block'}else{img.removeAttribute('src');img.style.display='grid';img.alt='No profile photo selected';img.style.background='#eeedff';img.style.padding='20px';img.src='data:image/svg+xml,'+encodeURIComponent('<svg xmlns="http://www.w3.org/2000/svg" width="100" height="100"><rect width="100%" height="100%" rx="22" fill="#eeedff"/><text x="50%" y="58%" text-anchor="middle" font-size="45" fill="#4f46e5">'+(name.charAt(0).toUpperCase()||'J')+'</text></svg>')}}}
+function updateScienceOptions(){const wrap=document.getElementById('scienceOptionsWrap'),select=document.getElementById('scienceLevelChoice');if(!wrap||!select)return;const evening=document.getElementById('eveningSubject')?.value==='Science',schoolClass=document.getElementById('profileClass')?.value||localStorage.getItem(PROFILE_CLASS_KEY)||'Grade 6';wrap.hidden=!evening;if(schoolClass.startsWith('Form ')||schoolClass==='Grade 10'){select.innerHTML='<option value="Biology">Biology</option><option value="Chemistry">Chemistry</option><option value="Physics">Physics</option><option value="Agriculture and Nutrition">Agriculture and Nutrition</option>';}else{select.innerHTML='<option value="Integrated Science">Integrated Science</option><option value="Agriculture and Nutrition">Agriculture and Nutrition</option>';}}
+document.addEventListener('DOMContentLoaded',()=>{const photo=document.getElementById('profilePhotoInput');if(photo)photo.addEventListener('change',()=>{const f=photo.files&&photo.files[0];if(!f)return;if(!f.type.startsWith('image/')){setStatus('profileStatus','Please choose an image file.','error');return}if(f.size>1500000){setStatus('profileStatus','Please choose a photo smaller than 1.5 MB.','error');return}const reader=new FileReader();reader.onload=()=>{try{localStorage.setItem(PROFILE_PHOTO_KEY,String(reader.result));renderProfileSummary();setStatus('profileStatus','Photo preview saved on this device. Secure account photo storage still needs setup.','success')}catch(e){setStatus('profileStatus','This photo could not be saved on the device. Try a smaller image.','error')}};reader.readAsDataURL(f)});const lvl=document.getElementById('schoolLevel'),sub=document.getElementById('eveningSubject');if(lvl)lvl.addEventListener('change',updateScienceOptions);if(sub)sub.addEventListener('change',updateScienceOptions);});
+async function activateUser(user){currentUser=user;document.body.classList.add("signed-in");document.getElementById("profileEmail").value=user.email||"";await loadProfile(user);await refreshTesterAccess();showPage("home")}
+async function loadProfile(user){
+const {data,error}=await supabaseClient.from("profiles").select("id, username, full_name, school_name, education_level").eq("id",user.id).maybeSingle();
+if(error){setStatus("profileStatus","Signed in, but the profile could not be loaded. Check the profiles SELECT RLS policy for the user's own id. Details: "+error.message,"error");return}
+const meta=user.user_metadata||{},profile=data||{username:meta.username||"",full_name:meta.full_name||"",school_name:meta.school_name||"",education_level:meta.education_level||"Primary"};
+document.getElementById("studentName").value=profile.full_name||"";document.getElementById("profileUsername").value=profile.username||"";document.getElementById("profileSchool").value=profile.school_name||"";document.getElementById("schoolLevel").value=profile.education_level||"Primary";const savedClass=localStorage.getItem(PROFILE_CLASS_KEY)||"Grade 6",allowedClasses=["Grade 4","Grade 5","Grade 6","Grade 7","Grade 8","Grade 10","Form 3"];document.getElementById("profileClass").value=allowedClasses.includes(savedClass)?savedClass:"Grade 6";localStorage.setItem(PROFILE_CLASS_KEY,document.getElementById("profileClass").value);renderProfileSummary();updateScienceOptions();
+document.getElementById("welcomeHeading").textContent="Welcome to JENZY, "+(profile.username||profile.full_name||"learner")+"! 👋";
+if(!data){const {error:saveError}=await supabaseClient.from("profiles").upsert({id:user.id,username:profile.username,full_name:profile.full_name,school_name:profile.school_name,education_level:profile.education_level},{onConflict:"id"});if(saveError)setStatus("profileStatus","Your account works, but your profile could not be saved yet. Check the profiles INSERT/UPDATE RLS policies. Details: "+saveError.message,"error");else setStatus("profileStatus","Your student profile is ready.","success")}
+}
+async function saveProfile(){
+if(!currentUser)return;const btn=document.getElementById("saveProfileBtn");btn.disabled=true;setStatus("profileStatus","Saving profile…");
+try{const profile={id:currentUser.id,full_name:document.getElementById("studentName").value.trim(),username:document.getElementById("profileUsername").value.trim(),school_name:document.getElementById("profileSchool").value.trim(),education_level:document.getElementById("schoolLevel").value};
+if(!profile.full_name||!profile.username||!profile.school_name)throw new Error("Please complete your name, username and school name.");
+const {error}=await supabaseClient.from("profiles").upsert(profile,{onConflict:"id"});if(error)throw error;localStorage.setItem(PROFILE_CLASS_KEY,document.getElementById("profileClass").value);renderProfileSummary();updateScienceOptions();toggleProfileEdit(false);
+document.getElementById("welcomeHeading").textContent="Welcome to JENZY, "+profile.username+"! 👋";setStatus("profileStatus","Profile saved to Supabase successfully.","success")
+}catch(error){setStatus("profileStatus",error.message||"Could not save the profile.","error")}
+finally{btn.disabled=false}
+}
+async function logOut(){const {error}=await supabaseClient.auth.signOut();if(error){setStatus("profileStatus","Logout failed: "+error.message,"error");return}currentUser=null;document.body.classList.remove("signed-in");document.getElementById("authForm").reset();setAuthMode("login");setStatus("authStatus","You have logged out.","success")}
+supabaseClient.auth.onAuthStateChange((event,session)=>{if(session&&session.user){setTimeout(()=>{if(currentUser?.id!==session.user.id)activateUser(session.user).catch(error=>setStatus("profileStatus",error.message||"Could not load profile.","error"))},0)}else if(event==="SIGNED_OUT"){currentUser=null;document.body.classList.remove("signed-in")}});
+async function initializeApp(){const {data,error}=await supabaseClient.auth.getSession();if(error){setStatus("authStatus","Could not check your login session: "+error.message,"error");return}if(data.session?.user)await activateUser(data.session.user)}
+initializeApp();
+refreshProgress();
+updateLearningChoices();
+function showPage(id){if(!currentUser)return;if(id==="progress")refreshProgress();if(id==="learning")updateLearningChoices();document.querySelectorAll(".page").forEach(p=>p.classList.toggle("active",p.id===id));document.querySelectorAll(".tabs button").forEach(b=>b.classList.toggle("active",b.dataset.page===id));window.scrollTo({top:0,behavior:"smooth"})}
+function chooseLevel(selected){level=selected;document.getElementById("levelStatus").textContent="Selected level: "+selected+" school. Sample questions are general examples.";document.getElementById("schoolLevel").value=selected}
+function startQuiz(){if(!currentUser)return;questions=sampleQuestions;currentLearningLabel="General sample quiz";qi=0;score=0;resultSaved=false;document.getElementById("nextBtn").onclick=nextQuestion;showPage("quiz");renderQuestion()}
+const PRACTICE_KEY="jenzy_practice_v1";
+function getPractice(){try{return JSON.parse(localStorage.getItem(PRACTICE_KEY)||"[]")}catch{return []}}
+function savePracticeResult(finalScore,total){const history=getPractice();history.unshift({score:finalScore,total,at:new Date().toISOString()});localStorage.setItem(PRACTICE_KEY,JSON.stringify(history.slice(0,50)));refreshProgress()}
+function refreshProgress(){const history=getPractice(),count=history.length,best=count?Math.max(...history.map(x=>x.score)):null,correct=history.reduce((n,x)=>n+x.score,0);["statQuizzes","progressCount"].forEach(id=>{const el=document.getElementById(id);if(el)el.textContent=count});["statBest","progressBest"].forEach(id=>{const el=document.getElementById(id);if(el)el.textContent=best===null?"—":best+"/12"});["progressCorrect"].forEach(id=>{const el=document.getElementById(id);if(el)el.textContent=correct});const badges=count>0?1:0,sharp=history.some(x=>x.score>=10);const badgeEl=document.getElementById("statBadges");if(badgeEl)badgeEl.textContent=badges+(sharp?1:0);const pBadge=document.getElementById("progressBadges");if(pBadge)pBadge.textContent=badges+(sharp?1:0);const first=document.getElementById("firstStepsStatus");if(first)first.textContent=count?"Earned":"Locked";const sharpEl=document.getElementById("sharpMindStatus");if(sharpEl)sharpEl.textContent=sharp?"Earned":"Locked";const list=document.getElementById("practiceHistory");if(list){if(!count)list.innerHTML='<div class="empty-state"><div class="icon">🌱</div><b>Your learning journey starts here</b><p class="muted">Complete a practice quiz to see your progress.</p><button class="primary" onclick="startQuiz()">Start practising</button></div>';else list.innerHTML=history.slice(0,10).map((x,i)=>'<div class="feature-row"><div class="feature-icon">'+(x.score>=10?'🏅':'📝')+'</div><div class="grow"><b>Practice quiz '+(count-i)+'</b><div class="muted">'+new Date(x.at).toLocaleDateString()+'</div></div><b>'+x.score+'/'+x.total+'</b></div>').join('')}}
+function clearPracticeHistory(){if(!confirm("Clear practice history stored on this device? This will not delete your account."))return;localStorage.removeItem(PRACTICE_KEY);refreshProgress()}
+function renderQuestion(){answered=false;const q=questions[qi];document.getElementById("qProgress").textContent=`Question ${qi+1} of ${questions.length}`;document.getElementById("qScore").textContent="Score: "+score;document.getElementById("qText").textContent=q.q;document.getElementById("qFeedback").textContent="";document.getElementById("nextBtn").style.display="none";const box=document.getElementById("qOptions");box.innerHTML="";q.o.forEach((value,index)=>{const button=document.createElement("button");button.className="option";button.textContent=String.fromCharCode(65+index)+". "+value;button.onclick=()=>answerQuestion(index,button);box.appendChild(button)})}
+async function answerQuestion(index,button){if(answered)return;const q=questions[qi];document.querySelectorAll("#qOptions button").forEach(b=>b.disabled=true);document.getElementById("qFeedback").textContent=q.db?"Checking your answer…":"";
+ if(q.db){try{const {data,error}=await supabaseClient.rpc("jenzy_check_practice_answer",{p_question_id:q.id,p_selected_option:index});if(error)throw error;const result=data&&data[0];if(!result)throw new Error("Answer check returned no result.");q.a=result.is_correct?index:-1;q.why=result.explanation||q.why;}catch(e){document.querySelectorAll("#qOptions button").forEach(b=>b.disabled=false);document.getElementById("qFeedback").textContent="Could not check this answer: "+(e.message||"Please try again.");return;}}
+ answered=true;document.querySelectorAll("#qOptions button").forEach((b,j)=>{b.disabled=true;if(j===q.a)b.classList.add("correct")});if(index===q.a){score++;document.getElementById("qFeedback").textContent="Correct! Well done 🎉"+(q.why?" "+q.why:"")}else{button.classList.add("wrong");document.getElementById("qFeedback").textContent=(q.db?"Not quite. Review this explanation: ":"Not quite. The correct answer is "+q.o[q.a]+". ")+(q.why||"")}document.getElementById("qScore").textContent="Score: "+score;document.getElementById("nextBtn").textContent=qi===questions.length-1?"See result":"Next question →";document.getElementById("nextBtn").style.display="inline-block"}
+function nextQuestion(){if(qi<questions.length-1){qi++;renderQuestion();return}document.getElementById("qText").textContent=`Practice complete! You scored ${score} out of ${questions.length}.`;if(!resultSaved){savePracticeResult(score,questions.length);resultSaved=true}document.getElementById("qProgress").textContent="Finished";document.getElementById("qOptions").innerHTML="";document.getElementById("qFeedback").textContent="This is a practice score only; it has not been saved as an official result.";const btn=document.getElementById("nextBtn");btn.textContent="Try again";btn.onclick=startQuiz}
+
+// JENZY competition flow. Private tester permission is checked by Supabase, not just by hiding a button.
+let activeCompetition=null, competitionTimer=null;
+async function refreshTesterAccess(){
+ isJenzyTester=false;
+ const notice=document.getElementById('privateTesterNotice');
+ try{if(currentUser){const {data,error}=await supabaseClient.rpc('jenzy_is_test_user');if(!error)isJenzyTester=data===true;}}catch(_){isJenzyTester=false;}
+ if(notice)notice.hidden=!isJenzyTester;
+ const labels={morning:'Enter Mathematics competition',afternoon:'Enter selected language competition',evening:'Enter selected evening competition'};
+ const testLabels={morning:'Start private Mathematics test · 24 min',afternoon:'Start private language test · 12 min',evening:'Start private evening test · 12 min'};
+ [['morning','mathJoinBtn'],['afternoon','afternoonJoinBtn'],['evening','eveningJoinBtn']].forEach(([slot,id])=>{const b=document.getElementById(id);if(b)b.textContent=isJenzyTester?testLabels[slot]:labels[slot];});
+}
+function selectedCompetitionClass(){return document.getElementById('profileClass')?.value || localStorage.getItem(PROFILE_CLASS_KEY) || 'Grade 6';}
+function selectedCompetitionSubject(slot){
+ if(slot==='morning') return 'Mathematics';
+ if(slot==='afternoon') return document.getElementById('afternoonSubject').value;
+ const subject=document.getElementById('eveningSubject').value;
+ if(subject==='Social Studies') return 'Social Studies';
+ return document.getElementById('scienceLevelChoice').value;
+}
+function currentSlotIsActive(slot){const p=kenyaParts(new Date()),m=p.hour*60+p.minute;
+ return slot==='morning' ? m>=540&&m<564 : slot==='afternoon' ? m>=840&&m<852 : m>=1260&&m<1272;
+}
+async function startScheduledCompetition(slot){
+ if(!currentUser){setStatus('authStatus','Please sign in first.','error');return;}
+ // Re-check authorisation with the database each time. A normal student cannot use the tester bypass.
+ let tester=false;
+ try{const {data,error}=await supabaseClient.rpc('jenzy_is_test_user');if(!error&&data===true)tester=true;}catch(_){tester=false;}
+ isJenzyTester=tester;
+ if(!tester&&!currentSlotIsActive(slot)){alert('This competition opens only at its scheduled time in Kenya. Please return during the active competition window.');return;}
+ const schoolClass=selectedCompetitionClass(),subject=selectedCompetitionSubject(slot),expected=12;
+ const area=document.getElementById('competitionPlayArea');area.hidden=false;
+ document.getElementById('competitionPlayTitle').textContent=(tester?'PRIVATE TEST · ':'')+subject+' · '+schoolClass;
+ document.getElementById('competitionPlayStatus').textContent='Loading published questions…';
+ document.getElementById('competitionQuestionBox').innerHTML='';document.getElementById('competitionResult').textContent='';
+ document.getElementById('competitionNextBtn').hidden=true;document.getElementById('competitionSubmitBtn').hidden=true;
+ area.scrollIntoView({behavior:'smooth',block:'start'});
+ try{
+  // Secure server-side gate: students can fetch competition questions only during the active slot.
+  // Owner/tester accounts are allowlisted in Supabase and can privately test before start time.
+  const {data,error}=await supabaseClient.rpc('jenzy_get_competition_questions',{p_session_slot:slot,p_school_class:schoolClass,p_subject:subject});
+  if(error)throw error;
+  if(!data||data.length!==expected)throw new Error('This class and subject needs exactly '+expected+' published questions before it can be tested. Found '+(data?.length||0)+'. Grade 10 questions still need to be added if you selected Grade 10.');
+  const now=new Date(),durationMs=(slot==='morning'?24:12)*60*1000;
+  const kp=kenyaParts(now),endHM=slot==='morning'?[9,24]:slot==='afternoon'?[14,12]:[21,12];
+  activeCompetition={slot,schoolClass,subject,questions:data,answers:{},index:0,startedAt:now.getTime(),deadline:tester?now.getTime()+durationMs:kenyaDateAt(kp,endHM[0],endHM[1]).getTime(),submitting:false,isTester:tester};
+  renderCompetitionQuestion();
+  if(competitionTimer)clearInterval(competitionTimer);
+  competitionTimer=setInterval(()=>{if(!activeCompetition)return;const remain=activeCompetition.deadline-Date.now();document.getElementById('competitionPlayStatus').textContent=(activeCompetition.isTester?'PRIVATE TEST · ':'')+subject+' · '+schoolClass+' · Time left '+fmtCountdown(remain);if(remain<=2000){clearInterval(competitionTimer);submitCompetitionAnswers(true);}},500);
+ }catch(e){document.getElementById('competitionPlayStatus').textContent=e.message||'Could not load the published question set.';}
+}
+function renderCompetitionQuestion(){if(!activeCompetition)return;const c=activeCompetition,q=c.questions[c.index],opts=[q.option_a,q.option_b,q.option_c,q.option_d];
+ document.getElementById('competitionPlayStatus').textContent=c.subject+' · '+c.schoolClass+' · Question '+(c.index+1)+' of '+c.questions.length+' · Time left '+fmtCountdown(c.deadline-Date.now());
+ document.getElementById('competitionQuestionBox').innerHTML='<div class="card"><div class="muted">'+escapeCompetitionText(q.topic)+' · '+escapeCompetitionText(q.subtopic)+'</div><h3>'+escapeCompetitionText(q.question_text)+'</h3>'+opts.map((o,i)=>'<label style="display:flex;gap:10px;align-items:flex-start;padding:12px;border:1px solid var(--line);border-radius:12px;margin:8px 0"><input type="radio" name="competitionAnswer" value="'+i+'" '+(String(c.answers[q.id])===String(i)?'checked':'')+' onchange="recordCompetitionAnswer(this.value)"><span>'+String.fromCharCode(65+i)+'. '+escapeCompetitionText(o)+'</span></label>').join('')+'</div>';
+ document.getElementById('competitionNextBtn').hidden=c.index>=c.questions.length-1;document.getElementById('competitionSubmitBtn').hidden=c.index<c.questions.length-1;
+}
+function escapeCompetitionText(value){return String(value??'').replace(/[&<>"']/g,ch=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[ch]));}
+function recordCompetitionAnswer(value){if(!activeCompetition)return;activeCompetition.answers[activeCompetition.questions[activeCompetition.index].id]=Number(value);}
+function nextCompetitionQuestion(){if(!activeCompetition)return;if(activeCompetition.index<activeCompetition.questions.length-1){activeCompetition.index++;renderCompetitionQuestion();}}
+async function submitCompetitionAnswers(auto=false){const c=activeCompetition;if(!c||c.submitting)return;c.submitting=true;if(competitionTimer)clearInterval(competitionTimer);document.getElementById('competitionSubmitBtn').disabled=true;document.getElementById('competitionNextBtn').disabled=true;document.getElementById('competitionPlayStatus').textContent='Submitting answers for secure server-side scoring…';
+ try{const rpcName=c.isTester?'jenzy_submit_test_competition':'jenzy_submit_competition';const {data,error}=await supabaseClient.rpc(rpcName,{p_session_slot:c.slot,p_school_class:c.schoolClass,p_subject:c.subject,p_answers:c.answers});if(error)throw error;
+ document.getElementById('competitionQuestionBox').innerHTML='';document.getElementById('competitionNextBtn').hidden=true;document.getElementById('competitionSubmitBtn').hidden=true;document.getElementById('competitionPlayStatus').textContent='Competition submitted.';document.getElementById('competitionResult').innerHTML='<div class="card"><h3>'+(c.isTester?'Private tester result':'Verified competition result')+'</h3><p>Score: <b>'+data.correct_count+' / '+data.question_count+'</b> ('+data.score_percent+'%)</p><p class="muted">'+(c.isTester?'Private test · not included in public rankings':'Free entry · '+escapeCompetitionText(data.competition_date))+'</p></div>';activeCompetition=null;
+ }catch(e){c.submitting=false;document.getElementById('competitionSubmitBtn').disabled=false;document.getElementById('competitionNextBtn').disabled=false;document.getElementById('competitionPlayStatus').textContent=(auto?'Time ended. ':'')+(e.message||'The result could not be saved.');}
+}
+
+// JENZY fixed schedule: Africa/Nairobi time. These are the ONLY reminder windows.
+let jenzyAudioContext=null, jenzyAlertsEnabled=false, lastAlarmKey="";
+const JENZY_TZ="Africa/Nairobi";
+function kenyaParts(date=new Date()){
+ const parts=new Intl.DateTimeFormat('en-GB',{timeZone:JENZY_TZ,year:'numeric',month:'2-digit',day:'2-digit',hour:'2-digit',minute:'2-digit',second:'2-digit',hourCycle:'h23'}).formatToParts(date);
+ const out={}; for(const p of parts) if(p.type!=='literal') out[p.type]=Number(p.value); return out;
+}
+function kenyaDateAt(p,hh,mm,ss=0){return new Date(Date.UTC(p.year,p.month-1,p.day,hh-3,mm,ss));}
+function fmtCountdown(ms){let sec=Math.max(0,Math.floor(ms/1000));const h=Math.floor(sec/3600);sec%=3600;const m=Math.floor(sec/60),s=sec%60;return (h?String(h).padStart(2,'0')+':':'')+String(m).padStart(2,'0')+':'+String(s).padStart(2,'0');}
+function scheduleState(now=new Date()){
+ const p=kenyaParts(now), mins=p.hour*60+p.minute, sec=p.second;
+ const todayStart=kenyaDateAt(p,9,0), mathEnd=kenyaDateAt(p,9,24), aftStart=kenyaDateAt(p,14,0), aftEnd=kenyaDateAt(p,14,12), eveStart=kenyaDateAt(p,21,0), eveEnd=kenyaDateAt(p,21,12);
+ let title='No active countdown', text='There is no countdown at this time. Check back at the next scheduled reminder.', clock='';
+ let alarm=false, alarmLabel='', target=null;
+ if(mins>=8*60+55 && mins<9*60){alarm=true;alarmLabel='Morning reminder: Mathematics starts at 9:00 AM. Review the free/paid entry options before the game; paid entry remains disabled until secure payment verification is ready.';title='Mathematics starts soon';text='Reminder window: 8:55–9:00 AM. The competition starts automatically at 9:00 AM.';target=todayStart;}
+ else if(now>=todayStart && now<mathEnd){title='Mathematics competition is active';text='12 questions · The fixed competition ends at 9:24 AM.';target=mathEnd;}
+ else if(mins>=10*60 && mins<13*60+55){title='Waiting for afternoon preparation';text='The countdown begins at 10:00 AM and runs to 1:55 PM.';target=kenyaDateAt(p,13,55);}
+ else if(mins>=13*60+55 && mins<14*60){alarm=true;alarmLabel='Afternoon reminder: choose English or Kiswahili. Paid entry is not active until payment verification is configured.';title='Afternoon competition preparation';text='Reminder window: 1:55–2:00 PM. Choose English or Kiswahili and review the entry options.';target=aftStart;}
+ else if(now>=aftStart && now<aftEnd){title='Afternoon competition is active';text='Your selected language session ends at 2:12 PM.';target=aftEnd;}
+ else if(mins>=15*60 && mins<20*60+55){title='Waiting for evening preparation';text='The countdown begins at 3:00 PM and runs to 8:55 PM.';target=kenyaDateAt(p,20,55);}
+ else if(mins>=20*60+55 && mins<21*60){alarm=true;alarmLabel='Evening reminder: choose Science or Social Studies. Paid entry is not active until payment verification is configured.';title='Evening competition preparation';text='Reminder window: 8:55–9:00 PM. Choose Science or Social Studies and review the entry options.';target=eveStart;}
+ else if(now>=eveStart && now<eveEnd){title='Evening competition is active';text='Your selected subject session ends at 9:12 PM.';target=eveEnd;}
+ if(target)clock=fmtCountdown(target-now);
+ return {title,text,clock,alarm,alarmLabel,p,mins};
+}
+function scheduleBeep(){if(!jenzyAlertsEnabled)return;try{jenzyAudioContext=jenzyAudioContext||new (window.AudioContext||window.webkitAudioContext)();if(jenzyAudioContext.state==='suspended')jenzyAudioContext.resume();const osc=jenzyAudioContext.createOscillator(),gain=jenzyAudioContext.createGain();osc.type='sine';osc.frequency.value=880;gain.gain.value=0.0001;osc.connect(gain);gain.connect(jenzyAudioContext.destination);const t=jenzyAudioContext.currentTime;gain.gain.setValueAtTime(0.0001,t);gain.gain.exponentialRampToValueAtTime(0.18,t+0.03);gain.gain.exponentialRampToValueAtTime(0.0001,t+0.5);osc.start(t);osc.stop(t+0.52);}catch(e){}}
+function enableScheduleAlerts(){try{jenzyAudioContext=jenzyAudioContext||new (window.AudioContext||window.webkitAudioContext)();jenzyAudioContext.resume();jenzyAlertsEnabled=true;document.getElementById('enableAlarmBtn').textContent='Sound reminders enabled';document.getElementById('alarmMessage').textContent='Sound reminders enabled on this device. Keep JENZY open; browser and phone settings may still limit background alerts.';scheduleBeep();}catch(e){document.getElementById('alarmMessage').textContent='Sound is unavailable in this browser. Keep this page open to see visual reminders.';}}
+function updateJenzySchedule(){const s=scheduleState();const title=document.getElementById('scheduleStatusTitle'),txt=document.getElementById('scheduleStatusText'),clock=document.getElementById('scheduleClock');if(title)title.textContent=s.title;if(txt)txt.textContent=s.text;if(clock)clock.textContent=s.clock||'—';const t2=document.getElementById('scheduleStatusTitleCompetition'),x2=document.getElementById('scheduleStatusTextCompetition'),c2=document.getElementById('scheduleClockCompetition');if(t2)t2.textContent=s.title;if(x2)x2.textContent=s.text;if(c2)c2.textContent=s.clock||'—';const alarm=document.getElementById('alarmMessage');if(alarm&&s.alarm){alarm.textContent=s.alarmLabel;const key=s.p.year+'-'+s.p.month+'-'+s.p.day+'-'+s.p.hour+'-'+s.p.minute;if(key!==lastAlarmKey){lastAlarmKey=key;scheduleBeep();}}else if(alarm)alarm.textContent='No alarm right now. Alerts are shown only during 8:55–9:00 AM, 1:55–2:00 PM and 8:55–9:00 PM.';}
+// Keep each student's subject choice on this device between page visits.
+try{const a=document.getElementById('afternoonSubject'),e=document.getElementById('eveningSubject'),sc=document.getElementById('scienceLevelChoice');if(a){a.value=localStorage.getItem('jenzy_afternoon_subject')||'English';a.addEventListener('change',()=>localStorage.setItem('jenzy_afternoon_subject',a.value));}if(e){e.value=localStorage.getItem('jenzy_evening_subject')||'Science';e.addEventListener('change',()=>localStorage.setItem('jenzy_evening_subject',e.value));}if(sc){sc.value=localStorage.getItem('jenzy_science_choice')||'Integrated Science';sc.addEventListener('change',()=>localStorage.setItem('jenzy_science_choice',sc.value));}updateScienceOptions();}catch(e){}
+document.getElementById('profileClass')?.addEventListener('change',()=>{updateScienceOptions();});
+updateJenzySchedule();setInterval(updateJenzySchedule,1000);
+</script>
+</body>
+</html>
