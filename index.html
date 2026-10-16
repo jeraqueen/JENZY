@@ -1,0 +1,185 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="theme-color" content="#4f46e5">
+<title>JENZY — Learn. Play. Compete.</title>
+<style>
+:root{--bg:#f5f7ff;--card:#fff;--text:#19213b;--muted:#69738c;--primary:#4f46e5;--line:#e7e9f3}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--text);font-family:system-ui,-apple-system,sans-serif}
+header{background:linear-gradient(135deg,#4338ca,#7c3aed);color:white;padding:22px 18px 28px;border-radius:0 0 26px 26px}
+.top{display:flex;justify-content:space-between;align-items:center;max-width:900px;margin:auto;gap:12px}
+.logo{font-size:26px;font-weight:900;letter-spacing:1px}.tag{font-size:12px;opacity:.85}
+.pill{border:1px solid #ffffff80;background:#ffffff18;color:white;border-radius:20px;padding:9px 12px}
+main{max-width:900px;margin:auto;padding:18px 15px 100px}.welcome{margin:12px 0 18px}
+h1{font-size:25px;margin:0 0 6px}h2{font-size:19px;margin:25px 0 12px}
+p{line-height:1.5}.muted{color:var(--muted);font-size:14px}
+.hero{background:linear-gradient(120deg,#312e81,#6366f1);color:white;padding:22px;border-radius:20px;margin:16px 0}
+.hero h2{font-size:23px;margin:0 0 8px}
+button{font:inherit;cursor:pointer}button:disabled{opacity:.6;cursor:not-allowed}
+.primary{background:var(--primary);color:white;border:0;padding:12px 16px;border-radius:12px;font-weight:700}
+.hero .primary{background:white;color:#4338ca;margin-top:8px}
+.grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px}
+.card{background:var(--card);padding:16px;border:1px solid var(--line);border-radius:17px;min-width:0;margin-bottom:12px}
+.icon{font-size:28px}.card h3{font-size:16px;margin:8px 0 5px}.card p{font-size:13px;color:var(--muted);margin:0 0 12px}
+.row{display:flex;align-items:center;gap:12px}.grow{flex:1;min-width:0}
+.chip{display:inline-block;background:#eeedff;color:#4338ca;padding:5px 9px;border-radius:20px;font-size:12px}
+.tabs{position:fixed;bottom:0;left:0;right:0;background:white;border-top:1px solid var(--line);display:flex;justify-content:space-around;padding:9px 2px calc(9px + env(safe-area-inset-bottom));z-index:5}
+.tabs button{background:none;border:0;color:#747b91;font-size:11px;padding:3px;min-width:48px}.tabs button span{display:block;font-size:21px;margin-bottom:3px}
+.tabs button.active{color:var(--primary);font-weight:800}.page{display:none}.page.active{display:block}
+.option{display:block;width:100%;text-align:left;background:white;border:1px solid var(--line);border-radius:12px;padding:13px;margin:9px 0;color:var(--text)}
+.option.correct{background:#dcfce7;border-color:#16a34a}.option.wrong{background:#fee2e2;border-color:#dc2626}
+input,select{width:100%;padding:12px;border:1px solid var(--line);border-radius:10px;margin:6px 0 14px;font:inherit;background:white;color:var(--text)}
+label{font-size:13px;font-weight:650}.notice{padding:12px;background:#fff7d6;border-radius:12px;font-size:13px;color:#765500}
+.status{font-size:14px;line-height:1.5;overflow-wrap:anywhere}.status.error{color:#b91c1c}.status.success{color:#047857}
+footer{text-align:center;color:var(--muted);font-size:12px;padding:20px}
+#appShell{display:none}body.signed-in #appShell{display:block}body.signed-in #authGate{display:none}
+.auth-wrap{max-width:460px;margin:30px auto;padding:18px}.auth-card{background:white;border:1px solid var(--line);border-radius:20px;padding:22px;box-shadow:0 8px 28px #1725540c}
+.auth-logo{text-align:center;font-size:30px;font-weight:900;color:var(--primary)}.auth-sub{text-align:center;color:var(--muted);margin:4px 0 20px}
+.auth-toggle{display:grid;grid-template-columns:1fr 1fr;background:#f0efff;padding:4px;border-radius:12px;margin:18px 0}
+.auth-toggle button{border:0;border-radius:9px;padding:10px;background:transparent;color:var(--muted)}
+.auth-toggle button.active{background:white;color:var(--primary);font-weight:750;box-shadow:0 1px 4px #00000012}
+.auth-card .primary{width:100%}
+@media(min-width:650px){.grid{grid-template-columns:repeat(3,minmax(0,1fr))}.hero{padding:30px}}
+</style>
+</head>
+<body>
+<section id="authGate" class="auth-wrap">
+  <div class="auth-card">
+    <div class="auth-logo">JENZY ✦</div><p class="auth-sub">LEARN. PLAY. COMPETE.</p>
+    <h1 id="authHeading">Welcome back</h1><p class="muted">Sign in to access your learning space.</p>
+    <div class="auth-toggle"><button id="loginTab" class="active" type="button">Log in</button><button id="signupTab" type="button">Create account</button></div>
+    <form id="authForm">
+      <div id="signupFields" hidden>
+        <label for="fullName">Full name</label><input id="fullName" maxlength="80" autocomplete="name" placeholder="Your name">
+        <label for="username">Username</label><input id="username" maxlength="30" autocomplete="nickname" placeholder="Choose a username">
+        <label for="schoolName">School name</label><input id="schoolName" maxlength="120" placeholder="Your school">
+        <label for="educationLevel">Education level</label><select id="educationLevel"><option value="Primary">Primary school</option><option value="Secondary">Secondary school</option><option value="Other">Other</option></select>
+      </div>
+      <label for="email">Email address</label><input id="email" type="email" autocomplete="email" required placeholder="you@example.com">
+      <label for="password">Password</label><input id="password" type="password" minlength="8" autocomplete="current-password" required placeholder="At least 8 characters">
+      <button id="authSubmit" class="primary" type="submit">Log in</button><p id="authStatus" class="status" aria-live="polite"></p>
+    </form>
+    <p class="muted">Use an email address you can access. Never share your password with another student.</p>
+  </div>
+</section>
+<div id="appShell">
+<header><div class="top"><div><div class="logo">JENZY ✦</div><div class="tag">LEARN. PLAY. COMPETE.</div></div><button class="pill" onclick="showPage('profile')">👤 Profile</button></div></header>
+<main>
+<section class="page active" id="home">
+  <div class="welcome"><h1 id="welcomeHeading">Welcome to JENZY! 👋</h1><div class="muted">Your learning adventure starts here.</div></div>
+  <div class="hero"><span class="chip">YOUR NEXT CHALLENGE</span><h2>Ready to test your knowledge?</h2><p>Learn new things, answer questions and build your skills.</p><button class="primary" onclick="startQuiz()">Start a practice quiz →</button></div>
+  <h2>Explore JENZY</h2><div class="grid">
+    <div class="card"><div class="icon">🧠</div><h3>Practice Quiz</h3><p>Practise with sample educational questions.</p><button class="primary" onclick="startQuiz()">Play now</button></div>
+    <div class="card"><div class="icon">🏆</div><h3>Competitions</h3><p>Explore learning challenges.</p><button class="primary" onclick="showPage('competitions')">Explore</button></div>
+    <div class="card"><div class="icon">📊</div><h3>Leaderboard</h3><p>Official rankings will appear after secure scoring is connected.</p><button class="primary" onclick="showPage('leaderboard')">View</button></div>
+    <div class="card"><div class="icon">💬</div><h3>Student Chats</h3><p>Chat features are not live yet.</p><button class="primary" onclick="showPage('chats')">Open chats</button></div>
+  </div>
+  <h2>Choose your school level</h2><div class="grid">
+    <button class="card" onclick="chooseLevel('Primary')"><div class="icon">📚</div><h3>Primary School</h3><p>Learning and revision</p></button>
+    <button class="card" onclick="chooseLevel('Secondary')"><div class="icon">🎓</div><h3>Secondary School</h3><p>Subjects and challenges</p></button>
+  </div><p class="muted" id="levelStatus">Choose a level to personalise your practice.</p>
+</section>
+<section class="page" id="quiz"><button type="button" onclick="showPage('home')">← Home</button><h1>🧠 Practice Quiz</h1><p class="muted">These are sample questions; scores are not official competition results.</p>
+  <div class="card"><div class="row"><span class="chip" id="qProgress">Question 1 of 5</span><span class="grow"></span><b id="qScore">Score: 0</b></div><h2 id="qText"></h2><div id="qOptions"></div><p id="qFeedback" aria-live="polite"></p><button class="primary" id="nextBtn" onclick="nextQuestion()" style="display:none">Next question →</button></div>
+</section>
+<section class="page" id="competitions"><h1>🏆 Competitions</h1><p class="muted">Challenges for learners.</p><div class="card"><span class="chip">PRACTICE</span><h3>Daily Knowledge Challenge</h3><p>Practise your knowledge and build confidence.</p><button class="primary" onclick="startQuiz()">Try sample quiz</button></div><div class="card"><h3>Weekly Student Challenge</h3><p>Official competition registration and rankings will be added after secure scoring is ready.</p></div></section>
+<section class="page" id="leaderboard"><h1>📊 Leaderboard</h1><div class="card"><div class="icon">🌟</div><h3>Your progress starts with practice</h3><p>Official rankings will be shown only when verified scores are connected.</p><button class="primary" onclick="startQuiz()">Take a practice quiz</button></div><p class="notice">No official rankings or scores are being displayed yet.</p></section>
+<section class="page" id="chats"><h1>💬 Student Chats</h1><div class="card"><div class="icon">👋</div><h3>Welcome to JENZY Chats</h3><p>Live messages are not connected yet. We'll configure access controls, reporting and moderation before enabling student interaction.</p></div></section>
+<section class="page" id="profile"><h1>👤 Student Profile</h1><p class="muted">Your saved details are linked to your JENZY account.</p>
+  <div class="card"><label for="studentName">Full name</label><input id="studentName" maxlength="80" autocomplete="name">
+    <label for="profileUsername">Username</label><input id="profileUsername" maxlength="30" autocomplete="nickname">
+    <label for="profileSchool">School name</label><input id="profileSchool" maxlength="120">
+    <label for="schoolLevel">Education level</label><select id="schoolLevel"><option value="Primary">Primary</option><option value="Secondary">Secondary</option><option value="Other">Other</option></select>
+    <label for="profileEmail">Account email</label><input id="profileEmail" type="email" disabled>
+    <button id="saveProfileBtn" class="primary" onclick="saveProfile()">Save profile</button><p id="profileStatus" class="status" aria-live="polite"></p>
+    <button class="primary" style="background:#b91c1c;margin-top:8px" onclick="logOut()">Log out</button>
+  </div>
+</section>
+<footer>JENZY · Learn. Play. Compete.<br>Educational practice for Kenyan students.</footer>
+</main>
+<nav class="tabs" aria-label="Main navigation">
+<button class="active" data-page="home" onclick="showPage('home')"><span>🏠</span>Home</button>
+<button data-page="quiz" onclick="startQuiz()"><span>🧠</span>Quizzes</button>
+<button data-page="competitions" onclick="showPage('competitions')"><span>🏆</span>Compete</button>
+<button data-page="chats" onclick="showPage('chats')"><span>💬</span>Chats</button>
+<button data-page="profile" onclick="showPage('profile')"><span>👤</span>Profile</button>
+</nav>
+</div>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script>
+/* Fallback CDN: if the primary Supabase library failed to load, try the alternate CDN. */
+if (!window.supabase) {
+  document.write('<script src="https://unpkg.com/@supabase/supabase-js@2"><\/script>');
+}
+</script>
+<script>
+const SUPABASE_URL = "https://nbldckaeabtcftxsvodt.supabase.co";
+const SUPABASE_PUBLISHABLE_KEY = "sb_publishable_lEWWN4K_dt11NRzHSbtxaw_xs9zIb92";
+if (!window.supabase || typeof window.supabase.createClient !== "function") {
+  document.getElementById("authStatus").textContent =
+    "JENZY could not load its sign-in service. Check your internet connection, refresh the page, and try again.";
+  document.getElementById("authStatus").className = "status error";
+  throw new Error("Supabase client library failed to load from both CDNs.");
+}
+const supabaseClient = window.supabase.createClient(SUPABASE_URL, SUPABASE_PUBLISHABLE_KEY);
+let authMode="login", currentUser=null, qi=0, score=0, answered=false, level="Primary";
+const questions=[
+{q:"What is 7 × 8?",o:["48","54","56","64"],a:2},
+{q:"Which planet do we live on?",o:["Mars","Earth","Venus","Jupiter"],a:1},
+{q:"What is the capital city of Kenya?",o:["Mombasa","Kisumu","Nakuru","Nairobi"],a:3},
+{q:"Which gas do plants mainly absorb for photosynthesis?",o:["Oxygen","Carbon dioxide","Hydrogen","Helium"],a:1},
+{q:"How many sides does a triangle have?",o:["Two","Three","Four","Five"],a:1}
+];
+function setStatus(id,message,kind=""){const el=document.getElementById(id);el.textContent=message;el.className="status"+(kind?" "+kind:"")}
+function setAuthMode(mode){authMode=mode;const signup=mode==="signup";document.getElementById("signupFields").hidden=!signup;document.getElementById("loginTab").classList.toggle("active",!signup);document.getElementById("signupTab").classList.toggle("active",signup);document.getElementById("authHeading").textContent=signup?"Create your account":"Welcome back";document.getElementById("authSubmit").textContent=signup?"Create account":"Log in";document.getElementById("password").autocomplete=signup?"new-password":"current-password";["fullName","username","schoolName"].forEach(id=>document.getElementById(id).required=signup);setStatus("authStatus","")}
+document.getElementById("loginTab").addEventListener("click",()=>setAuthMode("login"));
+document.getElementById("signupTab").addEventListener("click",()=>setAuthMode("signup"));
+document.getElementById("authForm").addEventListener("submit",async event=>{
+event.preventDefault();const submit=document.getElementById("authSubmit");submit.disabled=true;setStatus("authStatus",authMode==="signup"?"Creating your account…":"Signing you in…");
+try{
+const email=document.getElementById("email").value.trim(),password=document.getElementById("password").value;
+if(authMode==="signup"){
+const fullName=document.getElementById("fullName").value.trim(),username=document.getElementById("username").value.trim(),schoolName=document.getElementById("schoolName").value.trim(),educationLevel=document.getElementById("educationLevel").value;
+if(!fullName||!username||!schoolName)throw new Error("Complete your name, username and school name.");
+const {data,error}=await supabaseClient.auth.signUp({email,password,options:{emailRedirectTo:window.location.origin+window.location.pathname,data:{full_name:fullName,username,school_name:schoolName,education_level:educationLevel}}});
+if(error)throw error;
+if(data.session&&data.user){await activateUser(data.user);setStatus("authStatus","Account created successfully.","success")}
+else setStatus("authStatus","Account created. Check your email and tap the confirmation link before logging in.","success");
+}else{const {data,error}=await supabaseClient.auth.signInWithPassword({email,password});if(error)throw error;if(data.user)await activateUser(data.user)}
+}catch(error){setStatus("authStatus",error.message||"Something went wrong. Please try again.","error")}
+finally{submit.disabled=false}
+});
+async function activateUser(user){currentUser=user;document.body.classList.add("signed-in");document.getElementById("profileEmail").value=user.email||"";await loadProfile(user);showPage("home")}
+async function loadProfile(user){
+const {data,error}=await supabaseClient.from("profiles").select("id, username, full_name, school_name, education_level").eq("id",user.id).maybeSingle();
+if(error){setStatus("profileStatus","Signed in, but the profile could not be loaded. Check the profiles SELECT RLS policy for the user's own id. Details: "+error.message,"error");return}
+const meta=user.user_metadata||{},profile=data||{username:meta.username||"",full_name:meta.full_name||"",school_name:meta.school_name||"",education_level:meta.education_level||"Primary"};
+document.getElementById("studentName").value=profile.full_name||"";document.getElementById("profileUsername").value=profile.username||"";document.getElementById("profileSchool").value=profile.school_name||"";document.getElementById("schoolLevel").value=profile.education_level||"Primary";
+document.getElementById("welcomeHeading").textContent="Welcome to JENZY, "+(profile.username||profile.full_name||"learner")+"! 👋";
+if(!data){const {error:saveError}=await supabaseClient.from("profiles").upsert({id:user.id,username:profile.username,full_name:profile.full_name,school_name:profile.school_name,education_level:profile.education_level},{onConflict:"id"});if(saveError)setStatus("profileStatus","Your account works, but your profile could not be saved yet. Check the profiles INSERT/UPDATE RLS policies. Details: "+saveError.message,"error");else setStatus("profileStatus","Your student profile is ready.","success")}
+}
+async function saveProfile(){
+if(!currentUser)return;const btn=document.getElementById("saveProfileBtn");btn.disabled=true;setStatus("profileStatus","Saving profile…");
+try{const profile={id:currentUser.id,full_name:document.getElementById("studentName").value.trim(),username:document.getElementById("profileUsername").value.trim(),school_name:document.getElementById("profileSchool").value.trim(),education_level:document.getElementById("schoolLevel").value};
+if(!profile.full_name||!profile.username||!profile.school_name)throw new Error("Please complete your name, username and school name.");
+const {error}=await supabaseClient.from("profiles").upsert(profile,{onConflict:"id"});if(error)throw error;
+document.getElementById("welcomeHeading").textContent="Welcome to JENZY, "+profile.username+"! 👋";setStatus("profileStatus","Profile saved to Supabase successfully.","success")
+}catch(error){setStatus("profileStatus",error.message||"Could not save the profile.","error")}
+finally{btn.disabled=false}
+}
+async function logOut(){const {error}=await supabaseClient.auth.signOut();if(error){setStatus("profileStatus","Logout failed: "+error.message,"error");return}currentUser=null;document.body.classList.remove("signed-in");document.getElementById("authForm").reset();setAuthMode("login");setStatus("authStatus","You have logged out.","success")}
+supabaseClient.auth.onAuthStateChange((event,session)=>{if(session&&session.user){setTimeout(()=>{if(currentUser?.id!==session.user.id)activateUser(session.user).catch(error=>setStatus("profileStatus",error.message||"Could not load profile.","error"))},0)}else if(event==="SIGNED_OUT"){currentUser=null;document.body.classList.remove("signed-in")}});
+async function initializeApp(){const {data,error}=await supabaseClient.auth.getSession();if(error){setStatus("authStatus","Could not check your login session: "+error.message,"error");return}if(data.session?.user)await activateUser(data.session.user)}
+initializeApp();
+function showPage(id){if(!currentUser)return;document.querySelectorAll(".page").forEach(p=>p.classList.toggle("active",p.id===id));document.querySelectorAll(".tabs button").forEach(b=>b.classList.toggle("active",b.dataset.page===id));window.scrollTo({top:0,behavior:"smooth"})}
+function chooseLevel(selected){level=selected;document.getElementById("levelStatus").textContent="Selected level: "+selected+" school. Sample questions are general examples.";document.getElementById("schoolLevel").value=selected}
+function startQuiz(){if(!currentUser)return;qi=0;score=0;document.getElementById("nextBtn").onclick=nextQuestion;showPage("quiz");renderQuestion()}
+function renderQuestion(){answered=false;const q=questions[qi];document.getElementById("qProgress").textContent=`Question ${qi+1} of ${questions.length}`;document.getElementById("qScore").textContent="Score: "+score;document.getElementById("qText").textContent=q.q;document.getElementById("qFeedback").textContent="";document.getElementById("nextBtn").style.display="none";const box=document.getElementById("qOptions");box.innerHTML="";q.o.forEach((value,index)=>{const button=document.createElement("button");button.className="option";button.textContent=String.fromCharCode(65+index)+". "+value;button.onclick=()=>answerQuestion(index,button);box.appendChild(button)})}
+function answerQuestion(index,button){if(answered)return;answered=true;const q=questions[qi];document.querySelectorAll("#qOptions button").forEach((b,j)=>{b.disabled=true;if(j===q.a)b.classList.add("correct")});if(index===q.a){score++;document.getElementById("qFeedback").textContent="Correct! Well done 🎉"}else{button.classList.add("wrong");document.getElementById("qFeedback").textContent="Not quite. The correct answer is "+q.o[q.a]+"."}document.getElementById("qScore").textContent="Score: "+score;document.getElementById("nextBtn").textContent=qi===questions.length-1?"See result":"Next question →";document.getElementById("nextBtn").style.display="inline-block"}
+function nextQuestion(){if(qi<questions.length-1){qi++;renderQuestion();return}document.getElementById("qText").textContent=`Practice complete! You scored ${score} out of ${questions.length}.`;document.getElementById("qProgress").textContent="Finished";document.getElementById("qOptions").innerHTML="";document.getElementById("qFeedback").textContent="This is a practice score only; it has not been saved as an official result.";const btn=document.getElementById("nextBtn");btn.textContent="Try again";btn.onclick=startQuiz}
+</script>
+</body>
+</html>
