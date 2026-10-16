@@ -1,0 +1,189 @@
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="theme-color" content="#4f46e5">
+<title>JENZY — Learn. Play. Compete.</title>
+<style>
+:root{--bg:#f5f7ff;--card:#fff;--text:#19213b;--muted:#69738c;--primary:#4f46e5;--line:#e7e9f3;--green:#0e9f6e}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--text);font-family:system-ui,-apple-system,sans-serif}
+header{background:linear-gradient(135deg,#4338ca,#7c3aed);color:white;padding:22px 18px 28px;border-radius:0 0 26px 26px}
+.top{display:flex;justify-content:space-between;align-items:center;max-width:900px;margin:auto}
+.logo{font-size:26px;font-weight:900;letter-spacing:1px}
+.tag{font-size:12px;opacity:.85}
+.pill{border:1px solid #ffffff80;background:#ffffff18;color:white;border-radius:20px;padding:9px 12px}
+main{max-width:900px;margin:auto;padding:18px 15px 100px}
+.welcome{margin:12px 0 18px}
+h1{font-size:25px;margin:0 0 6px}
+h2{font-size:19px;margin:25px 0 12px}
+p{line-height:1.5}
+.muted{color:var(--muted);font-size:14px}
+.hero{background:linear-gradient(120deg,#312e81,#6366f1);color:white;padding:22px;border-radius:20px;margin:16px 0}
+.hero h2{font-size:23px;margin:0 0 8px}
+button{font:inherit;cursor:pointer}
+.primary{background:var(--primary);color:white;border:0;padding:12px 16px;border-radius:12px;font-weight:700}
+.hero .primary{background:white;color:#4338ca;margin-top:8px}
+.grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px}
+.card{background:var(--card);padding:16px;border:1px solid var(--line);border-radius:17px;min-width:0}
+.icon{font-size:28px}
+.card h3{font-size:16px;margin:8px 0 5px}
+.card p{font-size:13px;color:var(--muted);margin:0 0 12px}
+.full{grid-column:1/-1}
+.row{display:flex;align-items:center;gap:12px}
+.row .grow{flex:1}
+.chip{display:inline-block;background:#eeedff;color:#4338ca;padding:5px 9px;border-radius:20px;font-size:12px}
+.tabs{position:fixed;bottom:0;left:0;right:0;background:white;border-top:1px solid var(--line);display:flex;justify-content:space-around;padding:9px 2px calc(9px + env(safe-area-inset-bottom));z-index:5}
+.tabs button{background:none;border:0;color:#747b91;font-size:11px;padding:3px;min-width:50px}
+.tabs button span{display:block;font-size:21px;margin-bottom:3px}
+.tabs button.active{color:var(--primary);font-weight:800}
+.page{display:none}.page.active{display:block}
+.option{display:block;width:100%;text-align:left;background:white;border:1px solid var(--line);border-radius:12px;padding:13px;margin:9px 0;color:var(--text)}
+.option:focus,.option:hover{border-color:var(--primary)}
+.option.correct{background:#dcfce7;border-color:#16a34a}
+.option.wrong{background:#fee2e2;border-color:#dc2626}
+input,select,textarea{width:100%;padding:12px;border:1px solid var(--line);border-radius:10px;margin:6px 0 14px;font:inherit;background:white;color:#19213b}
+label{font-size:13px;font-weight:650}
+.notice{padding:12px;background:#fff7d6;border-radius:12px;font-size:13px;color:#765500}
+footer{text-align:center;color:var(--muted);font-size:12px;padding:20px}
+@media(min-width:650px){.grid{grid-template-columns:repeat(3,minmax(0,1fr))}.hero{padding:30px}}
+</style>
+</head>
+<body>
+<header>
+ <div class="top">
+  <div><div class="logo">JENZY ✦</div><div class="tag">LEARN. PLAY. COMPETE.</div></div>
+  <button class="pill" onclick="showPage('profile')">👤 Profile</button>
+ </div>
+</header>
+<main>
+<section class="page active" id="home">
+ <div class="welcome"><h1>Welcome to JENZY! 👋</h1><div class="muted">Your learning adventure starts here.</div></div>
+ <div class="hero">
+  <span class="chip">YOUR NEXT CHALLENGE</span>
+  <h2>Ready to test your knowledge?</h2>
+  <p>Learn new things, answer questions and climb the leaderboard.</p>
+  <button class="primary" onclick="startQuiz()">Start a free quiz →</button>
+ </div>
+ <h2>Explore JENZY</h2>
+ <div class="grid">
+  <div class="card"><div class="icon">🧠</div><h3>Daily Quiz</h3><p>Practise with educational questions.</p><button class="primary" onclick="startQuiz()">Play now</button></div>
+  <div class="card"><div class="icon">🏆</div><h3>Competitions</h3><p>Join free challenges and test yourself.</p><button class="primary" onclick="showPage('competitions')">Explore</button></div>
+  <div class="card"><div class="icon">📊</div><h3>Leaderboard</h3><p>See how rankings will work.</p><button class="primary" onclick="showPage('leaderboard')">View</button></div>
+  <div class="card"><div class="icon">💬</div><h3>Student Chats</h3><p>Connect safely with fellow learners.</p><button class="primary" onclick="showPage('chats')">Open chats</button></div>
+ </div>
+ <h2>Choose your school level</h2>
+ <div class="grid">
+  <button class="card" onclick="chooseLevel('Primary')"><div class="icon">📚</div><h3>Primary School</h3><p>Learning and revision</p></button>
+  <button class="card" onclick="chooseLevel('Secondary')"><div class="icon">🎓</div><h3>Secondary School</h3><p>Subjects and challenges</p></button>
+ </div>
+ <p class="muted" id="levelStatus">Choose a level to personalise your quiz experience.</p>
+</section>
+
+<section class="page" id="quiz">
+ <button onclick="showPage('home')">← Home</button>
+ <h1>🧠 Practice Quiz</h1><p class="muted">A sample quiz to demonstrate JENZY.</p>
+ <div class="card">
+  <div class="row"><span class="chip" id="qProgress">Question 1 of 5</span><span class="grow"></span><b id="qScore">Score: 0</b></div>
+  <h2 id="qText"></h2><div id="qOptions"></div>
+  <p id="qFeedback" aria-live="polite"></p>
+  <button class="primary" id="nextBtn" onclick="nextQuestion()" style="display:none">Next question →</button>
+ </div>
+ <p class="notice">Sample questions only. Official competition questions and saved results will be managed securely through the backend we set up next.</p>
+</section>
+
+<section class="page" id="competitions">
+ <h1>🏆 Competitions</h1><p class="muted">Challenges for Kenyan learners.</p>
+ <div class="card"><span class="chip">FREE TO JOIN</span><h3>Daily Knowledge Challenge</h3><p>Practise your knowledge and build confidence.</p><button class="primary" onclick="startQuiz()">Try sample quiz</button></div>
+ <div class="card" style="margin-top:12px"><h3>Weekly Student Challenge</h3><p>Scheduled competitions and official rankings will appear here when enabled by the administrator.</p><span class="muted">Coming after backend setup</span></div>
+</section>
+
+<section class="page" id="leaderboard">
+ <h1>📊 Leaderboard</h1><p class="muted">Rankings will appear here once official results are stored.</p>
+ <div class="card"><div class="icon">🌟</div><h3>Your progress starts with practice</h3><p>Complete sample quizzes now. Official student rankings will use server-verified scores.</p><button class="primary" onclick="startQuiz()">Take a quiz</button></div>
+ <p class="notice">No real student rankings are displayed yet. We won't invent scores or rankings.</p>
+</section>
+
+<section class="page" id="chats">
+ <h1>💬 Student Chats</h1><p class="muted">A place for learners to discuss school subjects and learn together.</p>
+ <div class="card"><div class="icon">👋</div><h3>Welcome to JENZY Chats</h3><p>Live messages and group discussions will be activated after student accounts, database permissions and safety controls are configured.</p></div>
+ <h2>Planned chat spaces</h2>
+ <div class="card"><div class="row"><span class="icon">📘</span><div class="grow"><b>Subject discussions</b><p class="muted">Discuss learning topics with peers.</p></div><span class="chip">Planned</span></div></div>
+ <div class="card" style="margin-top:10px"><div class="row"><span class="icon">🛡️</span><div class="grow"><b>Safer student community</b><p class="muted">Reporting, blocking and moderation.</p></div></div></div>
+ <p class="notice">Chat is a preview, not a live messaging service yet. We'll add appropriate child-safety measures before enabling student interaction.</p>
+</section>
+
+<section class="page" id="profile">
+ <h1>👤 Student Profile</h1><p class="muted">Your JENZY learning space.</p>
+ <div class="card">
+  <label for="studentName">Display name or nickname</label><input id="studentName" maxlength="30" placeholder="Choose a nickname">
+  <label for="schoolLevel">School level</label><select id="schoolLevel"><option>Primary</option><option>Secondary</option></select>
+  <label for="studentClass">Class / Grade (optional)</label><select id="studentClass"><option value="">Choose class</option><option>Grade 1</option><option>Grade 2</option><option>Grade 3</option><option>Grade 4</option><option>Grade 5</option><option>Grade 6</option><option>Grade 7</option><option>Grade 8</option><option>Grade 9</option><option>Form 1</option><option>Form 2</option><option>Form 3</option><option>Form 4</option></select>
+  <button class="primary" onclick="saveProfile()">Save on this device</button>
+  <p id="profileStatus" class="muted"></p>
+ </div>
+ <p class="notice">This temporary profile is stored only in this page session and is not a registered account. We'll add secure registration and guardian-consent arrangements before launch.</p>
+</section>
+<footer>JENZY · Learn. Play. Compete.<br>Free educational practice for Kenyan students.</footer>
+</main>
+<nav class="tabs" aria-label="Main navigation">
+ <button class="active" data-page="home" onclick="showPage('home')"><span>🏠</span>Home</button>
+ <button data-page="quiz" onclick="startQuiz()"><span>🧠</span>Quizzes</button>
+ <button data-page="competitions" onclick="showPage('competitions')"><span>🏆</span>Compete</button>
+ <button data-page="chats" onclick="showPage('chats')"><span>💬</span>Chats</button>
+ <button data-page="profile" onclick="showPage('profile')"><span>👤</span>Profile</button>
+</nav>
+<script>
+const questions=[
+ {q:"What is 7 × 8?",o:["48","54","56","64"],a:2},
+ {q:"Which planet do we live on?",o:["Mars","Earth","Venus","Jupiter"],a:1},
+ {q:"What is the capital city of Kenya?",o:["Mombasa","Kisumu","Nakuru","Nairobi"],a:3},
+ {q:"Which gas do plants mainly absorb from the air for photosynthesis?",o:["Oxygen","Carbon dioxide","Hydrogen","Helium"],a:1},
+ {q:"How many sides does a triangle have?",o:["Two","Three","Four","Five"],a:1}
+];
+let qi=0,score=0,answered=false,level="Primary";
+function showPage(id){
+ document.querySelectorAll('.page').forEach(p=>p.classList.toggle('active',p.id===id));
+ document.querySelectorAll('.tabs button').forEach(b=>b.classList.toggle('active',b.dataset.page===id));
+ window.scrollTo({top:0,behavior:'smooth'});
+}
+function chooseLevel(l){level=l;document.getElementById('levelStatus').textContent="Selected level: "+l+" School. Sample quiz questions are general examples.";document.getElementById('schoolLevel').value=l;}
+function startQuiz(){qi=0;score=0;showPage('quiz');renderQuestion();}
+function renderQuestion(){
+ answered=false;let q=questions[qi];
+ document.getElementById('qProgress').textContent=`Question ${qi+1} of ${questions.length}`;
+ document.getElementById('qScore').textContent="Score: "+score;
+ document.getElementById('qText').textContent=q.q;
+ document.getElementById('qFeedback').textContent="";
+ document.getElementById('nextBtn').style.display="none";
+ let box=document.getElementById('qOptions');box.innerHTML="";
+ q.o.forEach((v,i)=>{let b=document.createElement('button');b.className='option';b.textContent=String.fromCharCode(65+i)+". "+v;b.onclick=()=>answer(i,b);box.appendChild(b);});
+}
+function answer(i,button){
+ if(answered)return;answered=true;let q=questions[qi];
+ [...document.querySelectorAll('#qOptions button')].forEach((b,j)=>{b.disabled=true;if(j===q.a)b.classList.add('correct');});
+ if(i===q.a){score++;document.getElementById('qFeedback').textContent="Correct! Well done 🎉";}
+ else{button.classList.add('wrong');document.getElementById('qFeedback').textContent="Not quite. The correct answer is "+q.o[q.a]+".";}
+ document.getElementById('qScore').textContent="Score: "+score;
+ document.getElementById('nextBtn').textContent=qi===questions.length-1?"See result":"Next question →";
+ document.getElementById('nextBtn').style.display="inline-block";
+}
+function nextQuestion(){
+ if(qi<questions.length-1){qi++;renderQuestion();return;}
+ document.getElementById('qText').textContent=`Quiz complete! You scored ${score} out of ${questions.length}.`;
+ document.getElementById('qProgress').textContent="Finished";
+ document.getElementById('qOptions').innerHTML="";
+ document.getElementById('qFeedback').textContent="Keep practising to improve your knowledge.";
+ document.getElementById('nextBtn').textContent="Try again";
+ document.getElementById('nextBtn').onclick=startQuiz;
+}
+function saveProfile(){
+ const n=document.getElementById('studentName').value.trim();
+ document.getElementById('profileStatus').textContent=n?"Nickname set for this page: "+n+". Secure registration will be added later.":"Please enter a nickname first.";
+}
+</script>
+</body>
+  </html>
+   
