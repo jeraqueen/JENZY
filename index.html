@@ -140,7 +140,7 @@ body.theme-dark{--bg:#0b141a;--card:#202c33;--text:#e9edef;--muted:#aab7bf;--lin
     <h3>Choose your competition</h3>
     <div class="competition-fields">
       <div><label for="competitionRegistrationSlot">Session</label><select id="competitionRegistrationSlot" onchange="updateCompetitionRegistrationSubjects();refreshCompetitionCounts()"><option value="morning">Morning · 9:00 AM</option><option value="afternoon">Afternoon · 2:00 PM</option><option value="evening">Evening · 9:00 PM</option></select></div>
-      <div><label for="competitionRegistrationSubject">Subject</label><select id="competitionRegistrationSubject" onchange="refreshCompetitionCounts()"><option value="Mathematics">Mathematics</option></select></div>
+      <div><label for="competitionRegistrationSubject">Subject</label><select id="competitionRegistrationSubject" onchange="updateCompetitionRegistrationSubjects();refreshCompetitionCounts()"><option value="Mathematics">Mathematics</option></select></div>
     </div>
     <p id="competitionRegistrationWindow" class="notice" aria-live="polite">Choose a session to see its registration status.</p>
   </div>
