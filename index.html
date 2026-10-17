@@ -146,7 +146,7 @@ body.theme-dark{--bg:#0b141a;--card:#202c33;--text:#e9edef;--muted:#aab7bf;--lin
     <p id="competitionRegistrationDescription" class="muted">Enter your details to reserve your place.</p>
     <div class="competition-fields">
       <div><label for="competitionRegistrantName">Full name</label><input id="competitionRegistrantName" maxlength="80" autocomplete="name" placeholder="Your full name"></div>
-      <div><label for="competitionRegistrantPhone">M-Pesa phone number</label><input id="competitionRegistrantPhone" type="tel" inputmode="tel" maxlength="16" autocomplete="tel" placeholder="07XXXXXXXX or +2547XXXXXXXX"></div>
+      <div id="competitionRegistrantPhoneField"><label for="competitionRegistrantPhone">M-Pesa phone number (paid entries only)</label><input id="competitionRegistrantPhone" type="tel" inputmode="tel" maxlength="16" autocomplete="tel" placeholder="07XXXXXXXX or +2547XXXXXXXX"><p class="muted small-note">Only used for paid-entry payment instructions; it is not shown publicly.</p></div>
     </div>
     <div class="entry-number-panel"><span>Competition entry number</span><strong id="competitionEntryNumber">Assigned after confirmed registration</strong></div>
     <p id="competitionRegistrationStatus" class="status" aria-live="polite"></p>
@@ -154,7 +154,7 @@ body.theme-dark{--bg:#0b141a;--card:#202c33;--text:#e9edef;--muted:#aab7bf;--lin
     <button id="competitionPaidPendingButton" class="small-btn" type="button" disabled hidden>Payment setup pending</button>
     <p id="competitionPaidPendingNote" class="notice" hidden>We have not connected a payment provider yet. No money will be requested or collected. Your paid entry number will be assigned only after a verified payment.</p>
   </div>
-  <div class="prize-split-panel"><h3>Paid competition prize distribution</h3><p class="muted">The proposed KSh 20 entry allocation is shown before students pay.</p><div class="prize-line"><span>🥇 1st place · 35%</span><strong>KSh 7</strong></div><div class="prize-line"><span>🥈 2nd place · 25%</span><strong>KSh 5</strong></div><div class="prize-line"><span>🥉 3rd place · 15%</span><strong>KSh 3</strong></div><div class="prize-line owner-share"><span>JENZY owner · 25%</span><strong>KSh 5</strong></div><p class="muted small-note">Per KSh 20 paid entry, before payment fees, refunds, taxes or other costs. Prize rules and applicable Kenyan requirements must be confirmed before paid competitions launch.</p></div>
+  <div class="prize-split-panel"><h3>Prizes</h3><div class="prize-line"><span>🥇 1st place</span><strong>Will receive a prize</strong></div><div class="prize-line"><span>🥈 2nd place</span><strong>Will receive a prize</strong></div><div class="prize-line"><span>🥉 3rd place</span><strong>Will receive a prize</strong></div><p class="muted small-note">Final prize details will be announced by JENZY.</p></div>
 </div>
 
 <div class="card"><span class="chip">9:00 AM</span><h2>Mathematics</h2><p>12 questions · 24 minutes · Ends at 9:24 AM.</p><p class="muted">The morning subject is fixed; no subject selection is needed.</p><button class="primary" id="mathJoinBtn" onclick="startScheduledCompetition('morning')">Enter Mathematics competition</button></div>
@@ -412,7 +412,7 @@ async function loadMyCompetitionRegistration(clearFields=false){
   const {data,error}=await supabaseClient.from('jenzy_competition_registrations').select('entry_number,full_name,phone,status').eq('student_id',currentUser.id).eq('competition_date',date).eq('session_slot',slot).eq('school_class',schoolClass).eq('subject',subject).eq('entry_type','free').maybeSingle();
   if(error)throw error;
   if(data&&data.status==='confirmed'){
-   nameEl.value=data.full_name||profileName;phoneEl.value=data.phone||'';entryEl.textContent='#'+data.entry_number;
+   nameEl.value=data.full_name||profileName;phoneEl.value='';entryEl.textContent='#'+data.entry_number;
    statusEl.textContent='You are already registered for this competition. Your entry number is saved to this account; duplicate registration is blocked.';
    btn.disabled=true;return true;
   }
@@ -426,10 +426,10 @@ async function openCompetitionRegistration(type){
  if(!currentUser){setStatus('authStatus','Please sign in before registering.','error');return;}
  competitionRegistrationType=type;updateCompetitionRegistrationSubjects();const form=document.getElementById('competitionRegistrationForm');form.hidden=false;
  document.getElementById('competitionRegistrationTitle').textContent=type==='free'?'Free competition registration':'Paid competition registration';
- document.getElementById('competitionRegistrationDescription').textContent=type==='free'?'Confirm your name and phone number to register for free. Your entry number will be assigned by JENZY.':'Enter the details you will use for the KSh 20 paid competition. Payment is not active yet, so this preview will not submit or charge you.';
+ document.getElementById('competitionRegistrationDescription').textContent=type==='free'?'Enter your name to register for free. No M-Pesa phone number is needed. Your entry number will be assigned by JENZY.':'Enter the details you will use for the KSh 20 paid competition. Payment is not active yet, so this preview will not submit or charge you.';
  const profileName=document.getElementById('studentName')?.value.trim()||currentUser.user_metadata?.full_name||'';
  document.getElementById('competitionRegistrantName').value=profileName;
- document.getElementById('competitionRegistrantPhone').value='';
+ document.getElementById('competitionRegistrantPhone').value='';document.getElementById('competitionRegistrantPhoneField').hidden=type!=='paid';
  document.getElementById('competitionEntryNumber').textContent=type==='free'?'Checking your saved registration…':'Paid registration is not active';
  document.getElementById('competitionRegistrationStatus').textContent='';
  document.getElementById('competitionRegisterSubmit').hidden=type!=='free';
@@ -445,12 +445,11 @@ async function registerFreeCompetition(){
  const name=document.getElementById('competitionRegistrantName').value.trim(),phone=document.getElementById('competitionRegistrantPhone').value.trim().replace(/[\s()-]/g,''),slot=document.getElementById('competitionRegistrationSlot').value,subject=document.getElementById('competitionRegistrationSubject').value,schoolClass=selectedCompetitionClass(),date=competitionDateNairobi(),btn=document.getElementById('competitionRegisterSubmit'),status=document.getElementById('competitionRegistrationStatus');
  const already=await loadMyCompetitionRegistration(false);if(already!==false)return;
  if(name.length<2){status.textContent='Please enter your full name.';return;}
- if(!/^(\+254|254|0)?[17][0-9]{8}$/.test(phone)){status.textContent='Enter a valid Kenyan mobile number, for example 0712345678 or +254712345678.';return;}
  const p=kenyaParts(new Date()),minutes=p.hour*60+p.minute,start=slot==='morning'?540:slot==='afternoon'?840:1260;
  if(minutes>=start){status.textContent='Registration has closed for this session. Choose a session that has not started.';return;}
  btn.disabled=true;status.textContent='Confirming your free registration…';
  try{
-  const {data,error}=await supabaseClient.from('jenzy_competition_registrations').insert({student_id:currentUser.id,competition_date:date,session_slot:slot,school_class:schoolClass,subject,entry_type:'free',full_name:name,phone,status:'confirmed'}).select('entry_number').single();
+  const {data,error}=await supabaseClient.from('jenzy_competition_registrations').insert({student_id:currentUser.id,competition_date:date,session_slot:slot,school_class:schoolClass,subject,entry_type:'free',full_name:name,phone:null,status:'confirmed'}).select('entry_number').single();
   if(error){
    if(error.code==='23505'){const existing=await supabaseClient.from('jenzy_competition_registrations').select('entry_number').eq('student_id',currentUser.id).eq('competition_date',date).eq('session_slot',slot).eq('school_class',schoolClass).eq('subject',subject).eq('entry_type','free').maybeSingle();if(existing.data){document.getElementById('competitionEntryNumber').textContent='#'+existing.data.entry_number;status.textContent='You are already registered for this competition. Keep this entry number.';await refreshCompetitionCounts();return;}}
    throw error;
