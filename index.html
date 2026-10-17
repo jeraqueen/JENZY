@@ -446,7 +446,10 @@ function currentSlotIsActive(slot){const p=kenyaParts(new Date()),m=p.hour*60+p.
 async function startScheduledCompetition(slot){
  if(!currentUser){setStatus('authStatus','Please sign in first.','error');return;}
  if(!currentSlotIsActive(slot)){alert('This competition opens only at its scheduled time in Kenya. Please return during the active competition window.');return;}
- const schoolClass=selectedCompetitionClass(),subject=selectedCompetitionSubject(slot),expected=slot==='morning'?12:24;
+ const schoolClass=selectedCompetitionClass(),subject=selectedCompetitionSubject(slot),expected=slot==='morning'?12:24,date=competitionDateNairobi();
+ const {data:registration,error:registrationError}=await supabaseClient.from('jenzy_competition_registrations').select('entry_number').eq('student_id',currentUser.id).eq('competition_date',date).eq('session_slot',slot).eq('school_class',schoolClass).eq('subject',subject).eq('entry_type','free').eq('status','confirmed').maybeSingle();
+ if(registrationError){alert('JENZY could not verify your competition registration. Please try again.');return;}
+ if(!registration){alert('Please register using the Join Free button before the competition starts. Registration closes when the session begins.');return;}
  const area=document.getElementById('competitionPlayArea');area.hidden=false;
  document.getElementById('competitionPlayTitle').textContent=subject+' · '+schoolClass;
  document.getElementById('competitionPlayStatus').textContent='Loading published questions…';
