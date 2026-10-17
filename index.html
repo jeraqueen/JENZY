@@ -538,7 +538,7 @@ async function loadMyCompetitionRegistration(clearFields=false){
  if(!nameEl||!phoneEl||!entryEl||!statusEl||!btn)return null;
  const profileName=document.getElementById('studentName')?.value.trim()||currentUser?.user_metadata?.full_name||'';
  nameEl.readOnly=true;nameEl.setAttribute('aria-readonly','true');nameEl.title='Your name comes from your saved JENZY profile. Edit it in Profile if it is incorrect.';
- if(clearFields){nameEl.value=profileName;phoneEl.value='';entryEl.textContent='Checking your registration…';statusEl.textContent='';}
+ nameEl.readOnly=true;nameEl.setAttribute('aria-readonly','true');nameEl.title='Your name comes from your saved JENZY profile. Edit it in Profile if incorrect.';if(clearFields){nameEl.value=profileName;phoneEl.value='';entryEl.textContent='Checking your registration…';statusEl.textContent='';}
  const slot=document.getElementById('competitionRegistrationSlot').value,subject=document.getElementById('competitionRegistrationSubject').value,schoolClass=selectedCompetitionClass(),date=competitionDateForSlot(slot);
  btn.disabled=true;
  try{
@@ -556,7 +556,9 @@ async function loadMyCompetitionRegistration(clearFields=false){
  }
 }
 async function openCompetitionRegistration(type){
- competitionRegistrationType=type;updateCompetitionRegistrationSubjects();const form=document.getElementById('competitionRegistrationForm');if(form.parentElement&&form.parentElement.id==='competitionEntryHub'){document.body.appendChild(form);}form.hidden=false;form.classList.add('full-page-registration');if(!form.querySelector('.registration-back')){const back=document.createElement('button');back.type='button';back.className='small-btn registration-back';back.textContent='← Back to Compete';back.onclick=()=>{form.classList.remove('full-page-registration');form.hidden=true;};form.prepend(back);}
+ competitionRegistrationType=type;const savedProfile=await getJenzySavedProfile();
+ if(savedProfile){const nameFromProfile=String(savedProfile.full_name||'').trim(),nameInput=document.getElementById('studentName');if(nameFromProfile&&nameInput)nameInput.value=nameFromProfile;const classInput=document.getElementById('profileClass');if(savedProfile.school_class&&classInput){classInput.value=savedProfile.school_class;try{localStorage.setItem(PROFILE_CLASS_KEY,savedProfile.school_class)}catch(e){}}const schoolInput=document.getElementById('profileSchool');if(savedProfile.school_name&&schoolInput)schoolInput.value=savedProfile.school_name;}
+ updateCompetitionRegistrationSubjects();const form=document.getElementById('competitionRegistrationForm');if(form.parentElement&&form.parentElement.id==='competitionEntryHub'){document.body.appendChild(form);}form.hidden=false;form.classList.add('full-page-registration');if(!form.querySelector('.registration-back')){const back=document.createElement('button');back.type='button';back.className='small-btn registration-back';back.textContent='← Back to Compete';back.onclick=()=>{form.classList.remove('full-page-registration');form.hidden=true;};form.prepend(back);}
  document.getElementById('competitionRegistrationTitle').textContent=type==='free'?'Free competition registration':'Paid competition registration';
  document.getElementById('competitionRegistrationDescription').textContent=type==='free'?'Enter your name to register for free. No M-Pesa phone number is needed. Your entry number will be assigned by JENZY. You must sign in to confirm registration.':'Paid registration costs KSh 20. Online payment is not connected yet, so this page will not request or collect money.';
  const profileName=document.getElementById('studentName')?.value.trim()||currentUser.user_metadata?.full_name||'';
@@ -566,8 +568,7 @@ async function openCompetitionRegistration(type){
  document.getElementById('competitionRegistrationStatus').textContent='';
  document.getElementById('competitionRegisterSubmit').hidden=type!=='free';
  document.getElementById('competitionRegisterSubmit').disabled=type==='free';
- document.getElementById('competitionPaidPendingButton').hidden=type!=='paid';
- document.getElementById('competitionPaidPendingNote').hidden=type!=='paid';
+ const paidPendingButton=document.getElementById('competitionPaidPendingButton');paidPendingButton.hidden=type!=='paid';paidPendingButton.disabled=true;paidPendingButton.textContent='Payments disabled for now';document.getElementById('competitionPaidPendingNote').hidden=type!=='paid';if(type==='paid')document.getElementById('competitionRegistrationStatus').textContent='Paid registration is disabled. No payment can be made or recorded at this time.';
  form.scrollIntoView({behavior:'smooth',block:'start'});
  if(type==='free'){updateCompetitionRegistrationWindow();await loadMyCompetitionRegistration(true);}
 }
@@ -576,9 +577,10 @@ async function registerFreeCompetition(){
  if(competitionRegistrationType!=='free')return;
  const name=document.getElementById('competitionRegistrantName').value.trim(),phone=document.getElementById('competitionRegistrantPhone').value.trim().replace(/[\s()-]/g,''),slot=document.getElementById('competitionRegistrationSlot').value,subject=document.getElementById('competitionRegistrationSubject').value,schoolClass=selectedCompetitionClass(),date=competitionDateForSlot(slot),btn=document.getElementById('competitionRegisterSubmit'),status=document.getElementById('competitionRegistrationStatus');
  const already=await loadMyCompetitionRegistration(false);if(already!==false)return;
- const savedName=document.getElementById('studentName')?.value.trim()||currentUser.user_metadata?.full_name||'';
- if(savedName.length<2||name!==savedName){status.textContent='Your registration name must match your saved profile. Update it from Profile if it is incorrect.';return;}
- const sessionCheck=await supabaseClient.from('jenzy_competition_registrations').select('entry_number,subject').eq('student_id',currentUser.id).eq('competition_date',date).eq('session_slot',slot).eq('school_class',schoolClass).eq('entry_type','free').neq('status','cancelled').limit(1).maybeSingle();
+ const savedProfile=await getJenzySavedProfile(),savedName=String(savedProfile?.full_name||document.getElementById('studentName')?.value.trim()||currentUser.user_metadata?.full_name||'').trim(),savedClass=String(savedProfile?.school_class||selectedCompetitionClass()).trim();
+ if(savedProfile?.school_class&&savedClass!==schoolClass){status.textContent='Your class must match the class saved in your JENZY profile. Please refresh your profile and try again.';return;}
+ if(savedName.length<2||name!==savedName){status.textContent='Your registration name must match your saved profile. Update it from Profile if incorrect.';return;}
+ const sessionCheck=await supabaseClient.from('jenzy_competition_registrations').select('entry_number,subject').eq('student_id',currentUser.id).eq('competition_date',date).eq('session_slot',slot).eq('entry_type','free').neq('status','cancelled').limit(1).maybeSingle();
  if(sessionCheck.error){status.textContent='Could not verify whether you already registered for this session. Please try again.';return;}
  if(sessionCheck.data){document.getElementById('competitionEntryNumber').textContent='#'+sessionCheck.data.entry_number;status.textContent='You already have an entry for this session ('+sessionCheck.data.subject+'). One entry per session is allowed.';return;}
  const p=kenyaParts(new Date()),minutes=p.hour*60+p.minute,start=slot==='morning'?540:slot==='afternoon'?840:1260;
@@ -623,9 +625,11 @@ function selectedCompetitionSubject(slot){
 function currentSlotIsActive(slot){const p=kenyaParts(new Date()),m=p.hour*60+p.minute;
  return slot==='morning' ? m>=540&&m<560 : slot==='afternoon' ? m>=840&&m<850 : m>=1260&&m<1275;
 }
+async function jenzyIsActiveTester(){if(!currentUser?.email)return false;try{const {data,error}=await supabaseClient.from('jenzy_testers').select('email').eq('email',currentUser.email.toLowerCase()).eq('is_active',true).maybeSingle();return !error&&!!data;}catch(e){return false;}}
+async function getJenzySavedProfile(){if(!currentUser)return null;try{const {data,error}=await supabaseClient.from('profiles').select('full_name,school_class,school_name').eq('id',currentUser.id).maybeSingle();if(error)throw error;return data||null;}catch(e){console.warn('Could not load saved JENZY profile:',e.message);return null;}}
 async function startScheduledCompetition(slot,registeredSubject=null,registeredClass=null){
  if(!currentUser){setStatus('authStatus','Please sign in first.','error');return;}
- if(!currentSlotIsActive(slot)){alert('This competition opens only at its scheduled time in Kenya. Please return during the active competition window.');return;}
+ const testerOverride=!!window.jenzyTesterOverrideActive&&await jenzyIsActiveTester();if(!currentSlotIsActive(slot)&&!testerOverride){alert('This competition opens only at its scheduled time in Kenya. Please return during the active competition window.');return;}
  const schoolClass=registeredClass||selectedCompetitionClass(),subject=registeredSubject||selectedCompetitionSubject(slot),expected=slot==='morning'?12:24,date=competitionDateNairobi();
  const {data:registration,error:registrationError}=await supabaseClient.from('jenzy_competition_registrations').select('entry_number').eq('student_id',currentUser.id).eq('competition_date',date).eq('session_slot',slot).eq('school_class',schoolClass).eq('subject',subject).eq('entry_type','free').eq('status','confirmed').maybeSingle();
  if(registrationError){alert('JENZY could not verify your competition registration. Please try again.');return;}
@@ -640,7 +644,7 @@ async function startScheduledCompetition(slot,registeredSubject=null,registeredC
   const {data,error}=await supabaseClient.from('jenzy_question_bank').select('id,school_class,subject,session_slot,topic_order,topic,subtopic,set_order,question_order,question_text,option_a,option_b,option_c,option_d,curriculum_reference,status').eq('school_class',schoolClass).eq('subject',subject).eq('session_slot',slot).eq('status','published').order('topic_order').order('set_order').order('question_order').limit(expected);
   if(error)throw error;
   if(!data||data.length!==expected)throw new Error('The reviewed question set is not ready. This class and subject need exactly '+expected+' published questions. No competition entry or score has been recorded.');
-  const now=new Date(),kp=kenyaParts(now),endHM=slot==='morning'?[9,20]:slot==='afternoon'?[14,10]:[21,15];activeCompetition={slot,schoolClass,subject,questions:data,answers:{},index:0,startedAt:now.getTime(),deadline:kenyaDateAt(kp,endHM[0],endHM[1]).getTime(),submitting:false};
+  const now=new Date(),kp=kenyaParts(now),endHM=slot==='morning'?[9,20]:slot==='afternoon'?[14,10]:[21,15];activeCompetition={slot,schoolClass,subject,questions:data,answers:{},index:0,startedAt:now.getTime(),deadline:testerOverride?now.getTime()+15*60*1000:kenyaDateAt(kp,endHM[0],endHM[1]).getTime(),submitting:false};window.jenzyTesterOverrideActive=false;
   renderCompetitionQuestion();
   if(competitionTimer)clearInterval(competitionTimer);
   competitionTimer=setInterval(()=>{if(!activeCompetition)return;const remain=activeCompetition.deadline-Date.now();document.getElementById('competitionPlayStatus').textContent=subject+' · '+schoolClass+' · Time left '+fmtCountdown(remain);if(remain<=2000){clearInterval(competitionTimer);submitCompetitionAnswers(true);}},500);
@@ -732,7 +736,9 @@ function showJenzyReadiness(slot,subject,schoolClass,seconds=60){
 
 async function checkJenzyAutomaticCompetition(){
  if(!currentUser||jenzyAutoLaunchBusy||activeCompetition||jenzyReadinessOverlay)return;
- const p=kenyaParts(new Date()),m=p.hour*60+p.minute,slot=m>=540&&m<560?'morning':m>=840&&m<850?'afternoon':m>=1260&&m<1275?'evening':null;if(!slot)return;
+ const p=kenyaParts(new Date()),m=p.hour*60+p.minute;
+ if(p.hour===0&&m>=34&&m<36&&await jenzyIsActiveTester()){const testSlot=document.getElementById('competitionRegistrationSlot')?.value||'morning',testSubject=document.getElementById('competitionRegistrationSubject')?.value||selectedCompetitionSubject(testSlot),testClass=selectedCompetitionClass(),testKey=[currentUser.id,'tester-test',competitionDateNairobi(),testSlot,testSubject].join('|');if(!jenzyAutoLaunchedKeys.has(testKey)){jenzyAutoLaunchedKeys.add(testKey);window.jenzyTesterOverrideActive=true;showJenzyReadiness(testSlot,testSubject,testClass,60);}return;}
+ const slot=m>=540&&m<560?'morning':m>=840&&m<850?'afternoon':m>=1260&&m<1275?'evening':null;if(!slot)return;
  const date=competitionDateNairobi(),schoolClass=selectedCompetitionClass();
  jenzyAutoLaunchBusy=true;
  try{
