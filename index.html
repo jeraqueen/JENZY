@@ -101,6 +101,7 @@ body.theme-dark{--bg:#0b141a;--card:#202c33;--text:#e9edef;--muted:#aab7bf;--lin
 .password-field{display:flex;align-items:stretch;gap:8px}.password-field input{flex:1;min-width:0}.password-toggle{border:1px solid var(--border,#cbd5e1);border-radius:10px;padding:0 14px;background:var(--card,#fff);color:var(--text,#111827);font-weight:700;cursor:pointer}.password-toggle:focus-visible{outline:2px solid #2563eb;outline-offset:2px}
 @media(max-width:520px){.competition-registration-grid,.competition-fields{grid-template-columns:1fr}.competition-choice{padding:13px}.competition-picker,.prize-split-panel{padding:12px}}
 
+ .jenzy-readiness-overlay{position:fixed;inset:0;z-index:99999;background:#07111f;color:#fff;display:flex;align-items:center;justify-content:center;text-align:center;padding:24px;box-sizing:border-box}.jenzy-readiness-inner{width:min(100%,620px)}.jenzy-readiness-kicker{font-size:14px;letter-spacing:.18em;font-weight:800;color:#9bd5ff}.jenzy-readiness-number{font-size:clamp(84px,25vw,180px);line-height:1;font-weight:950;margin:24px 0;font-variant-numeric:tabular-nums}.jenzy-readiness-caption{font-size:clamp(18px,5vw,28px);font-weight:750}.jenzy-readiness-sub{color:#cbd5e1;font-size:15px;margin-top:14px}
 </style>
 </head>
 <body>
@@ -498,7 +499,9 @@ let activeCompetition=null, competitionTimer=null;
 
 // Competition registration: free entries are stored securely; paid entries remain disabled until a verified gateway is connected.
 let competitionRegistrationType='free';
-function competitionDateNairobi(){const p=kenyaParts(new Date());return p.year+'-'+String(p.month).padStart(2,'0')+'-'+String(p.day).padStart(2,'0')}
+function competitionDateNairobi(date=new Date()){const p=kenyaParts(date);return p.year+'-'+String(p.month).padStart(2,'0')+'-'+String(p.day).padStart(2,'0')}
+function competitionDateForSlot(slot,now=new Date()){const p=kenyaParts(now),m=p.hour*60+p.minute,start=slot==='morning'?540:slot==='afternoon'?840:1260;const target=new Date(Date.UTC(p.year,p.month-1,p.day+(m>=start?1:0)));return competitionDateNairobi(target)}
+function competitionStartAt(slot,dateString){const [y,mo,d]=dateString.split('-').map(Number),hm=slot==='morning'?[9,0]:slot==='afternoon'?[14,0]:[21,0];return new Date(Date.UTC(y,mo-1,d,hm[0]-3,hm[1]))}
 function updateCompetitionRegistrationSubjects(){
  const slot=document.getElementById('competitionRegistrationSlot'),subject=document.getElementById('competitionRegistrationSubject');if(!slot||!subject)return;
  const schoolClass=selectedCompetitionClass();let options=[];
@@ -518,11 +521,9 @@ function updateCompetitionRegistrationSubjects(){
 }
 function updateCompetitionRegistrationWindow(){
  const slot=document.getElementById('competitionRegistrationSlot')?.value,el=document.getElementById('competitionRegistrationWindow');if(!el||!slot)return;
- const p=kenyaParts(new Date()),minutes=p.hour*60+p.minute,start=slot==='morning'?540:slot==='afternoon'?840:1260,end=slot==='morning'?564:slot==='afternoon'?852:1272,labels={morning:'9:00 AM',afternoon:'2:00 PM',evening:'9:00 PM'};
- if(minutes<start){el.textContent='Registration is open for the '+slot+' session. It closes when the competition starts at '+labels[slot]+'.';el.style.color='';}
- else if(minutes<end){el.textContent='This competition is in progress. Registration for this session is closed.';el.style.color='#b45309';}
- else {el.textContent='This session has ended for today. Choose a later session or return tomorrow.';el.style.color='#b45309';}
- const freeBtn=document.querySelector('.free-choice button');if(freeBtn){freeBtn.disabled=minutes>=start&&minutes<end||minutes>=end;freeBtn.textContent=minutes>=start?'Registration closed for this session':'Join Free';}
+ const now=new Date(),labels={morning:'9:00 AM',afternoon:'2:00 PM',evening:'9:00 PM'},date=competitionDateForSlot(slot,now),target=competitionStartAt(slot,date),remaining=target-now;
+ el.style.color='';el.textContent='Registration is open for the '+slot+' session ('+labels[slot]+' Kenya time). Countdown to start: '+fmtCountdown(remaining)+'. At the scheduled start, a full-screen 60-second readiness timer appears, then questions open automatically.';
+ const freeBtn=document.querySelector('.free-choice button');if(freeBtn){freeBtn.disabled=false;freeBtn.textContent='Join Free';}
 }
 function resetCompetitionRegistrationForm(){
  const form=document.getElementById('competitionRegistrationForm');if(form)form.hidden=true;
@@ -536,7 +537,7 @@ async function loadMyCompetitionRegistration(clearFields=false){
  if(!nameEl||!phoneEl||!entryEl||!statusEl||!btn)return null;
  const profileName=document.getElementById('studentName')?.value.trim()||currentUser?.user_metadata?.full_name||'';
  if(clearFields){nameEl.value=profileName;phoneEl.value='';entryEl.textContent='Checking your registration…';statusEl.textContent='';}
- const slot=document.getElementById('competitionRegistrationSlot').value,subject=document.getElementById('competitionRegistrationSubject').value,schoolClass=selectedCompetitionClass(),date=competitionDateNairobi();
+ const slot=document.getElementById('competitionRegistrationSlot').value,subject=document.getElementById('competitionRegistrationSubject').value,schoolClass=selectedCompetitionClass(),date=competitionDateForSlot(slot);
  btn.disabled=true;
  try{
   const {data,error}=await supabaseClient.from('jenzy_competition_registrations').select('entry_number,full_name,phone,status').eq('student_id',currentUser.id).eq('competition_date',date).eq('session_slot',slot).eq('school_class',schoolClass).eq('subject',subject).eq('entry_type','free').maybeSingle();
@@ -571,11 +572,10 @@ async function openCompetitionRegistration(type){
 async function registerFreeCompetition(){
  if(!currentUser){setStatus('authStatus','Please sign in before registering.','error');return;}
  if(competitionRegistrationType!=='free')return;
- const name=document.getElementById('competitionRegistrantName').value.trim(),phone=document.getElementById('competitionRegistrantPhone').value.trim().replace(/[\s()-]/g,''),slot=document.getElementById('competitionRegistrationSlot').value,subject=document.getElementById('competitionRegistrationSubject').value,schoolClass=selectedCompetitionClass(),date=competitionDateNairobi(),btn=document.getElementById('competitionRegisterSubmit'),status=document.getElementById('competitionRegistrationStatus');
+ const name=document.getElementById('competitionRegistrantName').value.trim(),phone=document.getElementById('competitionRegistrantPhone').value.trim().replace(/[\s()-]/g,''),slot=document.getElementById('competitionRegistrationSlot').value,subject=document.getElementById('competitionRegistrationSubject').value,schoolClass=selectedCompetitionClass(),date=competitionDateForSlot(slot),btn=document.getElementById('competitionRegisterSubmit'),status=document.getElementById('competitionRegistrationStatus');
  const already=await loadMyCompetitionRegistration(false);if(already!==false)return;
  if(name.length<2){status.textContent='Please enter your full name.';return;}
  const p=kenyaParts(new Date()),minutes=p.hour*60+p.minute,start=slot==='morning'?540:slot==='afternoon'?840:1260;
- if(minutes>=start){status.textContent='Registration has closed for this session. Choose a session that has not started.';return;}
  btn.disabled=true;status.textContent='Confirming your free registration…';
  try{
   const {data,error}=await supabaseClient.from('jenzy_competition_registrations').insert({student_id:currentUser.id,competition_date:date,session_slot:slot,school_class:schoolClass,subject,entry_type:'free',full_name:name,phone:null,status:'confirmed'}).select('entry_number').single();
@@ -592,7 +592,7 @@ async function registerFreeCompetition(){
 async function refreshCompetitionCounts(){
  if(!currentUser)return;updateCompetitionRegistrationWindow();
  const slot=document.getElementById('competitionRegistrationSlot')?.value,subject=document.getElementById('competitionRegistrationSubject')?.value,schoolClass=selectedCompetitionClass();if(!slot||!subject)return;
- const date=competitionDateNairobi();
+ const date=competitionDateForSlot(slot);
  try{
   const {data,error}=await supabaseClient.from('jenzy_competition_public_counts').select('entry_type,participant_count').eq('competition_date',date).eq('session_slot',slot).eq('school_class',schoolClass).eq('subject',subject);
   if(error)throw error;const counts={free:0,paid:0};(data||[]).forEach(row=>{counts[row.entry_type]=Number(row.participant_count)||0});
@@ -686,6 +686,24 @@ function enableScheduleAlerts(){try{jenzyAudioContext=jenzyAudioContext||new (wi
 function updateJenzySchedule(){const s=scheduleState();const title=document.getElementById('scheduleStatusTitle'),txt=document.getElementById('scheduleStatusText'),clock=document.getElementById('scheduleClock');if(title)title.textContent=s.title;if(txt)txt.textContent=s.text;if(clock)clock.textContent=s.clock||'—';const t2=document.getElementById('scheduleStatusTitleCompetition'),x2=document.getElementById('scheduleStatusTextCompetition'),c2=document.getElementById('scheduleClockCompetition');if(t2)t2.textContent=s.title;if(x2)x2.textContent=s.text;if(c2)c2.textContent=s.clock||'—';const alarm=document.getElementById('alarmMessage');if(alarm&&s.alarm){alarm.textContent=s.alarmLabel;const key=s.p.year+'-'+s.p.month+'-'+s.p.day+'-'+s.p.hour+'-'+s.p.minute;if(key!==lastAlarmKey){lastAlarmKey=key;scheduleBeep();}}else if(alarm)alarm.textContent='No alarm right now. Alerts are shown only during 8:55–9:00 AM, 1:55–2:00 PM and 8:55–9:00 PM.';}
 // Keep each student's subject choice on this device between page visits.
 try{const a=document.getElementById('afternoonSubject'),e=document.getElementById('eveningSubject'),sc=document.getElementById('scienceLevelChoice');if(a){a.value=localStorage.getItem('jenzy_afternoon_subject')||'English';a.addEventListener('change',()=>localStorage.setItem('jenzy_afternoon_subject',a.value));}if(e){e.value=localStorage.getItem('jenzy_evening_subject')||'Science';e.addEventListener('change',()=>localStorage.setItem('jenzy_evening_subject',e.value));}if(sc){sc.value=localStorage.getItem('jenzy_science_choice')||'Integrated Science';sc.addEventListener('change',()=>localStorage.setItem('jenzy_science_choice',sc.value));}updateScienceOptions();}catch(e){}
+// Auto-launch for confirmed free entrants at each scheduled Kenya-time session.
+let jenzyReadinessOverlay=null,jenzyReadinessTimer=null,jenzyAutoLaunchBusy=false,jenzyAutoLaunchedKeys=new Set();
+function showJenzyReadiness(slot,subject,schoolClass,seconds=60){
+ if(jenzyReadinessOverlay)jenzyReadinessOverlay.remove();if(jenzyReadinessTimer)clearInterval(jenzyReadinessTimer);
+ const overlay=document.createElement('div');overlay.className='jenzy-readiness-overlay';overlay.innerHTML='<div class="jenzy-readiness-inner"><div class="jenzy-readiness-kicker">JENZY · GET READY</div><h1>'+escapeCompetitionText(subject)+'</h1><div class="jenzy-readiness-caption">Your competition begins in</div><div class="jenzy-readiness-number" id="jenzyReadinessNumber">'+seconds+'</div><div class="jenzy-readiness-caption">SECONDS</div><div class="jenzy-readiness-sub">Get comfortable, read carefully, and prepare to answer. Your questions will open automatically.</div></div>';
+ document.body.appendChild(overlay);jenzyReadinessOverlay=overlay;let left=seconds;
+ jenzyReadinessTimer=setInterval(async()=>{left--;const n=document.getElementById('jenzyReadinessNumber');if(n)n.textContent=String(Math.max(0,left));if(left<=0){clearInterval(jenzyReadinessTimer);jenzyReadinessTimer=null;if(jenzyReadinessOverlay){jenzyReadinessOverlay.remove();jenzyReadinessOverlay=null;}await startScheduledCompetition(slot);}},1000);
+}
+async function checkJenzyAutomaticCompetition(){
+ if(!currentUser||jenzyAutoLaunchBusy||activeCompetition||jenzyReadinessOverlay)return;
+ const p=kenyaParts(new Date()),m=p.hour*60+p.minute,slot=m>=540&&m<564?'morning':m>=840&&m<852?'afternoon':m>=1260&&m<1272?'evening':null;if(!slot)return;
+ const date=competitionDateNairobi(),schoolClass=selectedCompetitionClass(),subject=selectedCompetitionSubject(slot),key=[currentUser.id,date,slot,schoolClass,subject].join('|');if(jenzyAutoLaunchedKeys.has(key))return;
+ jenzyAutoLaunchBusy=true;
+ try{const {data,error}=await supabaseClient.from('jenzy_competition_registrations').select('entry_number').eq('student_id',currentUser.id).eq('competition_date',date).eq('session_slot',slot).eq('school_class',schoolClass).eq('subject',subject).eq('entry_type','free').eq('status','confirmed').maybeSingle();if(error)throw error;if(data){jenzyAutoLaunchedKeys.add(key);showJenzyReadiness(slot,subject,schoolClass,60);}}
+ catch(e){console.warn('Could not check automatic competition entry:',e.message)}finally{jenzyAutoLaunchBusy=false}
+}
+setInterval(checkJenzyAutomaticCompetition,5000);
+
 updateJenzySchedule();setInterval(updateJenzySchedule,1000);
 </script>
 </body>
