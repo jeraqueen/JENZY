@@ -374,6 +374,13 @@ function updateCompetitionRegistrationSubjects(){
  else if(slot.value==='afternoon')options=[['English','English'],['Kiswahili','Kiswahili']];
  else {options=[['Social Studies','Social Studies']];if(schoolClass==='Grade 10'||schoolClass==='Form 3')options.push(['Biology','Biology'],['Chemistry','Chemistry'],['Physics','Physics']);else if(schoolClass==='Grade 7'||schoolClass==='Grade 8')options.push(['Integrated Science','Integrated Science']);else options.push(['Integrated Science','Integrated Science'],['Agriculture and Nutrition','Agriculture and Nutrition']);}
  const old=subject.value;subject.innerHTML=options.map(([v,label])=>'<option value="'+v+'">'+label+'</option>').join('');if(options.some(([v])=>v===old))subject.value=old;
+ // Keep the existing competition play selectors aligned with the subject the student registers for.
+ if(slot.value==='afternoon'){const afternoon=document.getElementById('afternoonSubject');if(afternoon)afternoon.value=subject.value;}
+ if(slot.value==='evening'){
+  const evening=document.getElementById('eveningSubject');
+  if(evening){evening.value=subject.value==='Social Studies'?'Social Studies':'Science';updateScienceOptions();}
+  if(subject.value!=='Social Studies'){const science=document.getElementById('scienceLevelChoice');if(science&&Array.from(science.options).some(o=>o.value===subject.value))science.value=subject.value;}
+ }
  updateCompetitionRegistrationWindow();
 }
 function updateCompetitionRegistrationWindow(){
