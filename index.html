@@ -537,6 +537,7 @@ async function loadMyCompetitionRegistration(clearFields=false){
  const nameEl=document.getElementById('competitionRegistrantName'),phoneEl=document.getElementById('competitionRegistrantPhone'),entryEl=document.getElementById('competitionEntryNumber'),statusEl=document.getElementById('competitionRegistrationStatus'),btn=document.getElementById('competitionRegisterSubmit');
  if(!nameEl||!phoneEl||!entryEl||!statusEl||!btn)return null;
  const profileName=document.getElementById('studentName')?.value.trim()||currentUser?.user_metadata?.full_name||'';
+ nameEl.readOnly=true;nameEl.setAttribute('aria-readonly','true');nameEl.title='Your name comes from your saved JENZY profile. Edit it in Profile if it is incorrect.';
  if(clearFields){nameEl.value=profileName;phoneEl.value='';entryEl.textContent='Checking your registration…';statusEl.textContent='';}
  const slot=document.getElementById('competitionRegistrationSlot').value,subject=document.getElementById('competitionRegistrationSubject').value,schoolClass=selectedCompetitionClass(),date=competitionDateForSlot(slot);
  btn.disabled=true;
@@ -559,7 +560,7 @@ async function openCompetitionRegistration(type){
  document.getElementById('competitionRegistrationTitle').textContent=type==='free'?'Free competition registration':'Paid competition registration';
  document.getElementById('competitionRegistrationDescription').textContent=type==='free'?'Enter your name to register for free. No M-Pesa phone number is needed. Your entry number will be assigned by JENZY. You must sign in to confirm registration.':'Paid registration costs KSh 20. Online payment is not connected yet, so this page will not request or collect money.';
  const profileName=document.getElementById('studentName')?.value.trim()||currentUser.user_metadata?.full_name||'';
- document.getElementById('competitionRegistrantName').value=profileName;
+ const nameField=document.getElementById('competitionRegistrantName');nameField.value=profileName;nameField.readOnly=true;nameField.setAttribute('aria-readonly','true');nameField.title='Your name comes from your saved JENZY profile. Edit it in Profile if it is incorrect.';
  document.getElementById('competitionRegistrantPhone').value='';document.getElementById('competitionRegistrantPhoneField').hidden=type!=='paid';
  document.getElementById('competitionEntryNumber').textContent=type==='free'?'Checking your saved registration…':'Paid registration is not active';
  document.getElementById('competitionRegistrationStatus').textContent='';
@@ -575,7 +576,11 @@ async function registerFreeCompetition(){
  if(competitionRegistrationType!=='free')return;
  const name=document.getElementById('competitionRegistrantName').value.trim(),phone=document.getElementById('competitionRegistrantPhone').value.trim().replace(/[\s()-]/g,''),slot=document.getElementById('competitionRegistrationSlot').value,subject=document.getElementById('competitionRegistrationSubject').value,schoolClass=selectedCompetitionClass(),date=competitionDateForSlot(slot),btn=document.getElementById('competitionRegisterSubmit'),status=document.getElementById('competitionRegistrationStatus');
  const already=await loadMyCompetitionRegistration(false);if(already!==false)return;
- if(name.length<2){status.textContent='Please enter your full name.';return;}
+ const savedName=document.getElementById('studentName')?.value.trim()||currentUser.user_metadata?.full_name||'';
+ if(savedName.length<2||name!==savedName){status.textContent='Your registration name must match your saved profile. Update it from Profile if it is incorrect.';return;}
+ const sessionCheck=await supabaseClient.from('jenzy_competition_registrations').select('entry_number,subject').eq('student_id',currentUser.id).eq('competition_date',date).eq('session_slot',slot).eq('school_class',schoolClass).eq('entry_type','free').neq('status','cancelled').limit(1).maybeSingle();
+ if(sessionCheck.error){status.textContent='Could not verify whether you already registered for this session. Please try again.';return;}
+ if(sessionCheck.data){document.getElementById('competitionEntryNumber').textContent='#'+sessionCheck.data.entry_number;status.textContent='You already have an entry for this session ('+sessionCheck.data.subject+'). One entry per session is allowed.';return;}
  const p=kenyaParts(new Date()),minutes=p.hour*60+p.minute,start=slot==='morning'?540:slot==='afternoon'?840:1260;
  btn.disabled=true;status.textContent='Confirming your free registration…';
  try{
