@@ -69,6 +69,7 @@ body.theme-dark{--bg:#0b141a;--card:#202c33;--text:#e9edef;--muted:#aab7bf;--lin
         <label for="username">Username</label><input id="username" maxlength="30" autocomplete="nickname" placeholder="Choose a username">
         <label for="schoolName">School name</label><input id="schoolName" maxlength="120" placeholder="Your school">
         <label for="educationLevel">Education level</label><select id="educationLevel"><option value="Primary">Primary school</option><option value="Secondary">Secondary school</option><option value="Other">Other</option></select>
+        <label for="signupClass">Class / grade</label><select id="signupClass" required><option value="">Choose your class</option><option value="Grade 1">Grade 1</option><option value="Grade 2">Grade 2</option><option value="Grade 3">Grade 3</option><option value="Grade 4">Grade 4</option><option value="Grade 5">Grade 5</option><option value="Grade 6">Grade 6</option><option value="Grade 7">Grade 7</option><option value="Grade 8">Grade 8</option><option value="Grade 9">Grade 9</option><option value="Grade 10">Grade 10</option><option value="Grade 11">Grade 11</option><option value="Grade 12">Grade 12</option><option value="Form 1">Form 1</option><option value="Form 2">Form 2</option><option value="Form 3">Form 3</option><option value="Form 4">Form 4</option></select>
       </div>
       <label for="email">Email address</label><input id="email" type="email" autocomplete="email" required placeholder="you@example.com">
       <label for="password">Password</label><input id="password" type="password" minlength="8" autocomplete="current-password" required placeholder="At least 8 characters">
@@ -189,7 +190,7 @@ let currentLearningLabel="General sample quiz";
 
 
 function setStatus(id,message,kind=""){const el=document.getElementById(id);el.textContent=message;el.className="status"+(kind?" "+kind:"")}
-function setAuthMode(mode){authMode=mode;const signup=mode==="signup";document.getElementById("signupFields").hidden=!signup;document.getElementById("loginTab").classList.toggle("active",!signup);document.getElementById("signupTab").classList.toggle("active",signup);document.getElementById("authHeading").textContent=signup?"Create your account":"Welcome back";document.getElementById("authSubmit").textContent=signup?"Create account":"Log in";document.getElementById("password").autocomplete=signup?"new-password":"current-password";["fullName","username","schoolName"].forEach(id=>document.getElementById(id).required=signup);setStatus("authStatus","")}
+function setAuthMode(mode){authMode=mode;const signup=mode==="signup";document.getElementById("signupFields").hidden=!signup;document.getElementById("loginTab").classList.toggle("active",!signup);document.getElementById("signupTab").classList.toggle("active",signup);document.getElementById("authHeading").textContent=signup?"Create your account":"Welcome back";document.getElementById("authSubmit").textContent=signup?"Create account":"Log in";document.getElementById("password").autocomplete=signup?"new-password":"current-password";["fullName","username","schoolName","signupClass"].forEach(id=>document.getElementById(id).required=signup);setStatus("authStatus","")}
 document.getElementById("loginTab").addEventListener("click",()=>setAuthMode("login"));
 document.getElementById("signupTab").addEventListener("click",()=>setAuthMode("signup"));
 document.getElementById("authForm").addEventListener("submit",async event=>{
@@ -197,9 +198,9 @@ event.preventDefault();const submit=document.getElementById("authSubmit");submit
 try{
 const email=document.getElementById("email").value.trim(),password=document.getElementById("password").value;
 if(authMode==="signup"){
-const fullName=document.getElementById("fullName").value.trim(),username=document.getElementById("username").value.trim(),schoolName=document.getElementById("schoolName").value.trim(),educationLevel=document.getElementById("educationLevel").value;
-if(!fullName||!username||!schoolName)throw new Error("Complete your name, username and school name.");
-const {data,error}=await supabaseClient.auth.signUp({email,password,options:{emailRedirectTo:window.location.origin+window.location.pathname,data:{full_name:fullName,username,school_name:schoolName,education_level:educationLevel}}});
+const fullName=document.getElementById("fullName").value.trim(),username=document.getElementById("username").value.trim(),schoolName=document.getElementById("schoolName").value.trim(),educationLevel=document.getElementById("educationLevel").value,schoolClass=document.getElementById("signupClass").value;
+if(!fullName||!username||!schoolName||!schoolClass)throw new Error("Complete your name, username, school name and class.");
+const {data,error}=await supabaseClient.auth.signUp({email,password,options:{emailRedirectTo:window.location.origin+window.location.pathname,data:{full_name:fullName,username,school_name:schoolName,education_level:educationLevel,school_class:schoolClass}}});
 if(error)throw error;
 if(data.session&&data.user){await activateUser(data.user);setStatus("authStatus","Account created successfully.","success")}
 else setStatus("authStatus","Account created. Check your email and tap the confirmation link before logging in.","success");
@@ -217,8 +218,8 @@ async function activateUser(user){currentUser=user;document.body.classList.add("
 async function loadProfile(user){
 const {data,error}=await supabaseClient.from("profiles").select("id, username, full_name, school_name, education_level, school_class").eq("id",user.id).maybeSingle();
 if(error){setStatus("profileStatus","Signed in, but the profile could not be loaded. Check the profiles SELECT RLS policy for the user's own id. Details: "+error.message,"error");return}
-const meta=user.user_metadata||{},profile=data||{username:meta.username||"",full_name:meta.full_name||"",school_name:meta.school_name||"",education_level:meta.education_level||"Primary"};
-const localClass=localStorage.getItem(PROFILE_CLASS_KEY);const savedClass=profile.school_class||localClass||"Grade 6";document.getElementById("studentName").value=profile.full_name||"";document.getElementById("profileUsername").value=profile.username||"";document.getElementById("profileSchool").value=profile.school_name||"";document.getElementById("schoolLevel").value=profile.education_level||"Primary";document.getElementById("profileClass").value=savedClass;renderProfileSummary();updateScienceOptions();
+const meta=user.user_metadata||{},profile=data||{username:meta.username||"",full_name:meta.full_name||"",school_name:meta.school_name||"",education_level:meta.education_level||"Primary",school_class:meta.school_class||""};
+const localClass=localStorage.getItem(PROFILE_CLASS_KEY);const savedClass=profile.school_class||localClass||"";document.getElementById("studentName").value=profile.full_name||"";document.getElementById("profileUsername").value=profile.username||"";document.getElementById("profileSchool").value=profile.school_name||"";document.getElementById("schoolLevel").value=profile.education_level||"Primary";document.getElementById("profileClass").value=savedClass;renderProfileSummary();updateScienceOptions();
 document.getElementById("welcomeHeading").textContent="Welcome to JENZY, "+(profile.username||profile.full_name||"learner")+"! 👋";
 if(!data||(!profile.school_class&&localClass)){const {error:saveError}=await supabaseClient.from("profiles").upsert({id:user.id,username:profile.username,full_name:profile.full_name,school_name:profile.school_name,education_level:profile.education_level,school_class:savedClass},{onConflict:"id"});if(saveError)setStatus("profileStatus","Your account works, but your profile could not be saved yet. Check the profiles INSERT/UPDATE RLS policies. Details: "+saveError.message,"error");else if(!data)setStatus("profileStatus","Your student profile is ready.","success")}
 }
