@@ -82,6 +82,8 @@ body.theme-dark{--bg:#0b141a;--card:#202c33;--text:#e9edef;--muted:#aab7bf;--lin
 @media(max-width:380px){.profile-avatar-wrap{width:108px;height:108px;flex-basis:108px}.profile-avatar-frame{width:108px;height:108px}.profile-identity{max-width:calc(100% - 120px)}.profile-summary{gap:10px}.profile-hero-card{padding:10px 12px 15px!important}.profile-camera-button{width:36px;height:36px}}
 
 
+/* Compete registration view */
+.compete-top-actions{display:flex;justify-content:space-between;align-items:center;gap:12px;width:100%;margin:0 0 16px}.compete-top-actions button{min-width:112px;min-height:44px;border:0;border-radius:12px;padding:10px 18px;font-weight:850;font-size:14px;cursor:pointer}.free-top-button{background:#16803d;color:#fff}.pay-top-button{background:#b77912;color:#fff}#competitionRegistrationForm.full-page-registration{position:fixed;inset:0;z-index:1000;overflow:auto;background:var(--bg);border:0;border-radius:0;margin:0;padding:calc(22px + env(safe-area-inset-top)) 18px calc(24px + env(safe-area-inset-bottom));box-sizing:border-box}#competitionRegistrationForm.full-page-registration h3{font-size:24px;margin-top:22px}#competitionRegistrationForm.full-page-registration .competition-fields{grid-template-columns:1fr}#competitionRegistrationForm.full-page-registration .registration-back{display:inline-flex}.registration-back{display:none;margin-bottom:14px}@media(max-width:520px){.compete-top-actions button{min-width:104px;padding:10px 14px}}
 /* Competition registration and transparent prize allocation */
 .competition-registration-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:14px;margin:16px 0}
 .competition-choice{border:1px solid var(--line);border-radius:16px;padding:16px;min-width:0;background:var(--card)}
@@ -123,24 +125,24 @@ body.theme-dark{--bg:#0b141a;--card:#202c33;--text:#e9edef;--muted:#aab7bf;--lin
 <main>
 <section class="page active" id="home">
   <div class="welcome"><h1 id="welcomeHeading">Welcome to JENZY! 👋</h1><div class="muted">Learn. Play. Compete. — Kenya time (EAT).</div></div>
-  <div class="hero"><span class="chip">DAILY COMPETITIONS</span><h2 id="scheduleStatusTitle">Next competition</h2><p id="scheduleStatusText">Competition times are fixed for everyone. Choose the subject before each session.</p><div id="scheduleClock" style="font-size:28px;font-weight:850;margin:12px 0">Loading Kenya time…</div><button class="primary" onclick="showPage('competitions')">Open competitions →</button></div>
+  <div class="hero"><span class="chip">DAILY CHALLENGES</span><h2 id="scheduleStatusTitle">Next session</h2><p id="scheduleStatusText">Session times are fixed for everyone. Choose the subject before each session.</p><div id="scheduleClock" style="font-size:28px;font-weight:850;margin:12px 0">Loading Kenya time…</div><button class="primary" onclick="showPage('competitions')">Register →</button></div>
   <div class="card"><h3>Today's schedule · Tap a session for details</h3><button class="schedule-link" onclick="openSchedule('math')"><div class="feature-icon">➗</div><div class="grow"><b>9:00–9:24 AM · Mathematics</b><div class="muted">12 questions · 24 minutes</div></div><span>›</span></button><button class="schedule-link" onclick="openSchedule('afternoon')"><div class="feature-icon">📚</div><div class="grow"><b>2:00–2:12 PM · English or Kiswahili</b><div class="muted">Choose one · 24 questions · 12 minutes</div></div><span>›</span></button><button class="schedule-link" onclick="openSchedule('evening')"><div class="feature-icon">🔬</div><div class="grow"><b>9:00–9:12 PM · Science or Social Studies</b><div class="muted">Choose one · 24 questions · 12 minutes</div></div><span>›</span></button><p class="notice">Reminder alarms appear only from 8:55–9:00 AM, 1:55–2:00 PM, and 8:55–9:00 PM. No other scheduled alarms.</p></div>
   <div class="card"><h3>How JENZY competitions work</h3><p class="muted">Choose your class and the available subject. Questions should match your class and move through topics in order, combining about three subtopics before progressing. Official class-specific question sets and verified scoring still need to be published before live competition play can be enabled.</p></div>
 </section>
 <section class="page" id="quiz"><button type="button" onclick="showPage('home')">← Home</button><h1>🧠 Practice Quiz</h1><p class="muted">These are sample questions; scores are not official competition results.</p>
   <div class="card"><div class="row"><span class="chip" id="qProgress">Question 1 of 5</span><span class="grow"></span><b id="qScore">Score: 0</b></div><h2 id="qText"></h2><div id="qOptions"></div><p id="qFeedback" aria-live="polite"></p><button class="primary" id="nextBtn" onclick="nextQuestion()" style="display:none">Next question →</button></div>
 </section>
-<section class="page" id="competitions"><h1>🏆 Competitions</h1><p class="muted">All times use Kenya time (East Africa Time).</p>
+<section class="page" id="competitions"><div class="compete-top-actions"><button type="button" class="free-top-button" onclick="openCompetitionRegistration('free')">FREE</button><button type="button" class="pay-top-button" onclick="openCompetitionRegistration('paid')">PAY · KSh 20</button></div><h1>🏆 Compete</h1><p class="muted">All times use Kenya time (EAT).</p>
 <div class="card competition-entry-hub" id="competitionEntryHub">
-  <span class="chip">REGISTER</span><h2>Register for a JENZY competition</h2>
-  <p class="muted">Register before the selected session starts. Your entry number is assigned by JENZY after registration.</p>
+  <span class="chip">REGISTRATION</span><h2>Choose how you want to register</h2>
+  <p class="muted">Choose a session and subject, then select FREE or PAY above. Times are shown in Kenya time.</p>
   <div class="competition-registration-grid">
-    <div class="competition-choice free-choice"><div class="competition-choice-icon">🎓</div><h3>Free competition</h3><p>Practise, learn and compete without paying an entry fee.</p><div class="competition-count"><strong id="competitionFreeCount">0</strong><span>students registered for this free competition</span></div><button class="primary" type="button" onclick="openCompetitionRegistration('free')">Join Free</button></div>
-    <div class="competition-choice paid-choice"><div class="competition-choice-icon">🏆</div><h3>Paid competition</h3><p><strong>KSh 20</strong> entry fee. Prizes for the top three after verified entry payments.</p><div class="competition-count"><strong id="competitionPaidCount">0</strong><span>students registered for this paid competition</span></div><button class="primary" type="button" onclick="openCompetitionRegistration('paid')">Pay KSh 20 and Join</button><p class="muted small-note">Payment is not active until a provider is connected and payment verification is tested. This button will not charge you.</p></div>
+    <div class="competition-choice free-choice"><div class="competition-choice-icon">🎓</div><h3>Free entry</h3><p>Register and take part without paying an entry fee.</p><div class="competition-count"><strong id="competitionFreeCount">0</strong><span>students registered for free entry</span></div><button class="primary" type="button" onclick="openCompetitionRegistration('free')">Register Free</button></div>
+    <div class="competition-choice paid-choice"><div class="competition-choice-icon">🏆</div><h3>Paid entry</h3><p><strong>KSh 20</strong> entry fee. Payment must be verified before your place is confirmed.</p><div class="competition-count"><strong id="competitionPaidCount">0</strong><span>students registered for paid entry</span></div><button class="primary" type="button" onclick="openCompetitionRegistration('paid')">Continue to Pay</button><p class="muted small-note">Payment is not active until a provider is connected and payment verification is tested. This button will not charge you.</p></div>
   </div>
   <p class="muted competition-count-note">These counts are for the selected date, session, class and subject. They update automatically so you can see how many students are registered in each entry type.</p>
   <div class="competition-picker">
-    <h3>Choose your competition</h3>
+    <h3>Choose a session</h3>
     <div class="competition-fields">
       <div><label for="competitionRegistrationSlot">Session</label><select id="competitionRegistrationSlot" onchange="updateCompetitionRegistrationSubjects();refreshCompetitionCounts()"><option value="morning">Morning · 9:00 AM</option><option value="afternoon">Afternoon · 2:00 PM</option><option value="evening">Evening · 9:00 PM</option></select></div>
       <div><label for="competitionRegistrationSubject">Subject</label><select id="competitionRegistrationSubject" onchange="updateCompetitionRegistrationSubjects();refreshCompetitionCounts()"><option value="Mathematics">Mathematics</option></select></div>
@@ -154,7 +156,7 @@ body.theme-dark{--bg:#0b141a;--card:#202c33;--text:#e9edef;--muted:#aab7bf;--lin
       <div><label for="competitionRegistrantName">Full name</label><input id="competitionRegistrantName" maxlength="80" autocomplete="name" placeholder="Your full name"></div>
       <div id="competitionRegistrantPhoneField"><label for="competitionRegistrantPhone">M-Pesa phone number (paid entries only)</label><input id="competitionRegistrantPhone" type="tel" inputmode="tel" maxlength="16" autocomplete="tel" placeholder="07XXXXXXXX or +2547XXXXXXXX"><p class="muted small-note">Only used for paid-entry payment instructions; it is not shown publicly.</p></div>
     </div>
-    <div class="entry-number-panel"><span>Competition entry number</span><strong id="competitionEntryNumber">Assigned after confirmed registration</strong></div>
+    <div class="entry-number-panel"><span>Entry number</span><strong id="competitionEntryNumber">Assigned after confirmed registration</strong></div>
     <p id="competitionRegistrationStatus" class="status" aria-live="polite"></p>
     <button id="competitionRegisterSubmit" class="primary" type="button" onclick="registerFreeCompetition()">Confirm Free Registration</button>
     <button id="competitionPaidPendingButton" class="small-btn" type="button" disabled hidden>Payment setup pending</button>
@@ -543,9 +545,9 @@ async function loadMyCompetitionRegistration(clearFields=false){
 }
 async function openCompetitionRegistration(type){
  if(!currentUser){setStatus('authStatus','Please sign in before registering.','error');return;}
- competitionRegistrationType=type;updateCompetitionRegistrationSubjects();const form=document.getElementById('competitionRegistrationForm');form.hidden=false;
+ competitionRegistrationType=type;updateCompetitionRegistrationSubjects();const form=document.getElementById('competitionRegistrationForm');form.hidden=false;form.classList.add('full-page-registration');if(!form.querySelector('.registration-back')){const back=document.createElement('button');back.type='button';back.className='small-btn registration-back';back.textContent='← Back to Compete';back.onclick=()=>{form.classList.remove('full-page-registration');form.hidden=true;};form.prepend(back);}
  document.getElementById('competitionRegistrationTitle').textContent=type==='free'?'Free competition registration':'Paid competition registration';
- document.getElementById('competitionRegistrationDescription').textContent=type==='free'?'Enter your name to register for free. No M-Pesa phone number is needed. Your entry number will be assigned by JENZY.':'Enter the details you will use for the KSh 20 paid competition. Payment is not active yet, so this preview will not submit or charge you.';
+ document.getElementById('competitionRegistrationDescription').textContent=type==='free'?'Enter your name to register for free. No M-Pesa phone number is needed. Your entry number will be assigned by JENZY.':'Paid registration costs KSh 20. Online payment is not connected yet, so this page will not request or collect money.';
  const profileName=document.getElementById('studentName')?.value.trim()||currentUser.user_metadata?.full_name||'';
  document.getElementById('competitionRegistrantName').value=profileName;
  document.getElementById('competitionRegistrantPhone').value='';document.getElementById('competitionRegistrantPhoneField').hidden=type!=='paid';
