@@ -92,7 +92,7 @@ body.theme-dark{--bg:#0b141a;--card:#202c33;--text:#e9edef;--muted:#aab7bf;--lin
 .registration-options-lower{display:none!important}
 @media(min-width:700px){.compete-top-actions button{min-height:126px;font-size:26px}.compete-top-actions button::after{font-size:15px}}
 /* Compete registration view */
-.compete-top-actions{display:flex;justify-content:space-between;align-items:center;gap:12px;width:100%;margin:0 0 16px}.compete-top-actions button{min-width:112px;min-height:44px;border:0;border-radius:12px;padding:10px 18px;font-weight:850;font-size:14px;cursor:pointer}.free-top-button{background:#16803d;color:#fff}.pay-top-button{background:#b77912;color:#fff}#competitionRegistrationForm.full-page-registration{position:fixed;inset:0;z-index:1000;overflow:auto;background:var(--bg);border:0;border-radius:0;margin:0;padding:calc(22px + env(safe-area-inset-top)) 18px calc(24px + env(safe-area-inset-bottom));box-sizing:border-box}#competitionRegistrationForm.full-page-registration h3{font-size:24px;margin-top:22px}#competitionRegistrationForm.full-page-registration .competition-fields{grid-template-columns:1fr}#competitionRegistrationForm.full-page-registration .registration-back{display:inline-flex}.registration-back{display:none;margin-bottom:14px}@media(max-width:520px){.compete-top-actions button{min-width:104px;padding:10px 14px}}
+.compete-top-actions{display:grid;grid-template-columns:1fr 1fr;justify-content:stretch;align-items:stretch;gap:16px;width:100%;margin:0 0 22px}.compete-top-actions button{display:flex;flex-direction:column;justify-content:center;align-items:center;gap:6px;width:100%;min-width:0;min-height:104px;padding:18px 12px;border:0;border-radius:18px;font-weight:900;font-size:clamp(18px,4.5vw,24px);cursor:pointer;box-shadow:0 6px 16px #00000014}.compete-top-actions button::after{font-size:13px;font-weight:600;letter-spacing:0;opacity:.95}.free-top-button::after{content:'Register without a fee'}.pay-top-button::after{content:'KSh 20 entry'}.free-top-button{background:#16803d;color:#fff}.pay-top-button{background:#b77912;color:#fff}#competitionRegistrationForm.full-page-registration{position:fixed;inset:0;z-index:1000;overflow:auto;background:var(--bg);border:0;border-radius:0;margin:0;padding:calc(22px + env(safe-area-inset-top)) 18px calc(24px + env(safe-area-inset-bottom));box-sizing:border-box}#competitionRegistrationForm.full-page-registration h3{font-size:24px;margin-top:22px}#competitionRegistrationForm.full-page-registration .competition-fields{grid-template-columns:1fr}#competitionRegistrationForm.full-page-registration .registration-back{display:inline-flex}.registration-back{display:none;margin-bottom:14px}@media(max-width:520px){.compete-top-actions button{min-width:104px;padding:10px 14px}}
 /* Competition registration and transparent prize allocation */
 .competition-registration-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:14px;margin:16px 0}
 .competition-choice{border:1px solid var(--line);border-radius:16px;padding:16px;min-width:0;background:var(--card)}
@@ -534,7 +534,7 @@ async function loadMyCompetitionRegistration(clearFields=false){
  if(!currentUser)return null;
  const nameEl=document.getElementById('competitionRegistrantName'),phoneEl=document.getElementById('competitionRegistrantPhone'),entryEl=document.getElementById('competitionEntryNumber'),statusEl=document.getElementById('competitionRegistrationStatus'),btn=document.getElementById('competitionRegisterSubmit');
  if(!nameEl||!phoneEl||!entryEl||!statusEl||!btn)return null;
- const profileName=document.getElementById('studentName')?.value.trim()||currentUser.user_metadata?.full_name||'';
+ const profileName=document.getElementById('studentName')?.value.trim()||currentUser?.user_metadata?.full_name||'';
  if(clearFields){nameEl.value=profileName;phoneEl.value='';entryEl.textContent='Checking your registration…';statusEl.textContent='';}
  const slot=document.getElementById('competitionRegistrationSlot').value,subject=document.getElementById('competitionRegistrationSubject').value,schoolClass=selectedCompetitionClass(),date=competitionDateNairobi();
  btn.disabled=true;
@@ -553,10 +553,9 @@ async function loadMyCompetitionRegistration(clearFields=false){
  }
 }
 async function openCompetitionRegistration(type){
- if(!currentUser){setStatus('authStatus','Please sign in before registering.','error');return;}
  competitionRegistrationType=type;updateCompetitionRegistrationSubjects();const form=document.getElementById('competitionRegistrationForm');form.hidden=false;form.classList.add('full-page-registration');if(!form.querySelector('.registration-back')){const back=document.createElement('button');back.type='button';back.className='small-btn registration-back';back.textContent='← Back to Compete';back.onclick=()=>{form.classList.remove('full-page-registration');form.hidden=true;};form.prepend(back);}
  document.getElementById('competitionRegistrationTitle').textContent=type==='free'?'Free competition registration':'Paid competition registration';
- document.getElementById('competitionRegistrationDescription').textContent=type==='free'?'Enter your name to register for free. No M-Pesa phone number is needed. Your entry number will be assigned by JENZY.':'Paid registration costs KSh 20. Online payment is not connected yet, so this page will not request or collect money.';
+ document.getElementById('competitionRegistrationDescription').textContent=type==='free'?'Enter your name to register for free. No M-Pesa phone number is needed. Your entry number will be assigned by JENZY. You must sign in to confirm registration.':'Paid registration costs KSh 20. Online payment is not connected yet, so this page will not request or collect money.';
  const profileName=document.getElementById('studentName')?.value.trim()||currentUser.user_metadata?.full_name||'';
  document.getElementById('competitionRegistrantName').value=profileName;
  document.getElementById('competitionRegistrantPhone').value='';document.getElementById('competitionRegistrantPhoneField').hidden=type!=='paid';
@@ -678,7 +677,7 @@ function scheduleState(now=new Date()){
  else if(mins>=20*60+55 && mins<21*60){alarm=true;alarmLabel='Evening reminder: choose Science or Social Studies. Paid entry is not active until payment verification is configured.';title='Evening competition preparation';text='Reminder window: 8:55–9:00 PM. Choose Science or Social Studies and review the entry options.';target=eveStart;}
  else if(now>=eveStart && now<eveEnd){title='Evening competition is active';text='Your selected subject session ends at 9:12 PM.';target=eveEnd;}
  else if(mins>=21*60+12 && mins<22*60){title='Evening session finished';text='The next session countdown begins at 10:00 PM Kenya time.';target=kenyaDateAt(p,22,0);}
- else if(mins>=22*60){title='Countdown to tomorrow’s morning session';text='The next scheduled session is Mathematics at 9:00 AM Kenya time.';target=kenyaDateAt(p.year,p.month,p.day+1,9,0);}
+ else if(mins>=22*60){title='Countdown to tomorrow’s morning session';text='The next scheduled session is Mathematics at 9:00 AM Kenya time.';target=kenyaDateAt({year:p.year,month:p.month,day:p.day+1},9,0);}
  if(target)clock=fmtCountdown(target-now);
  return {title,text,clock,alarm,alarmLabel,p,mins};
 }
