@@ -264,7 +264,7 @@ function educationLevelForClass(schoolClass,currentValue){if(schoolClass==="Grad
 function setStatus(id,message,kind=""){const el=document.getElementById(id);el.textContent=message;el.className="status"+(kind?" "+kind:"")}
 let authOtpPending=false,authOtpDestination="";
 function normalizeJenzyPhone(value){let p=String(value||"").trim().replace(/[\\s().-]/g,"");if(/^0[17]\\d{8}$/.test(p))return "+254"+p.slice(1);if(/^254[17]\\d{8}$/.test(p))return "+"+p;if(/^[17]\\d{8}$/.test(p))return "+254"+p;if(/^\\+254[17]\\d{8}$/.test(p))return p;throw new Error("Enter a valid Kenyan phone number, for example 0712345678 or +254712345678.");}
-function updateAuthContactFields(){const method=document.getElementById("authContactMethod").value,isPhone=method==="phone";document.getElementById("authEmailField").hidden=isPhone;document.getElementById("authPhoneField").hidden=!isPhone;document.getElementById("email").required=!isPhone;document.getElementById("phone").required=isPhone;}
+function updateAuthContactFields(){const method=document.getElementById("authContactMethod").value,isPhone=method==="phone";document.getElementById("authEmailField").hidden=isPhone;document.getElementById("authPhoneField").hidden=!isPhone;document.getElementById("email").required=!isPhone;document.getElementById("phone").required=isPhone;document.getElementById("authContactMethod").disabled=authOtpPending;document.getElementById("email").disabled=authOtpPending||isPhone;document.getElementById("phone").disabled=authOtpPending||!isPhone;}
 document.getElementById("authContactMethod").addEventListener("change",updateAuthContactFields);
 function setAuthMode(mode){authMode=mode;authOtpPending=false;document.getElementById("authOtpField").hidden=true;document.getElementById("authOtpCode").required=false;const signup=mode==="signup";document.getElementById("signupFields").hidden=!signup;document.getElementById("loginTab").classList.toggle("active",!signup);document.getElementById("signupTab").classList.toggle("active",signup);document.getElementById("authHeading").textContent=signup?"Create your account":"Welcome back";document.getElementById("authSubmit").textContent=signup?"Send verification code":"Log in";document.getElementById("password").autocomplete=signup?"new-password":"current-password";["fullName","username","schoolName","signupClass"].forEach(id=>document.getElementById(id).required=signup);updateAuthContactFields();setStatus("authStatus","")}
 document.getElementById("loginTab").addEventListener("click",()=>setAuthMode("login"));
@@ -287,7 +287,7 @@ const educationLevel=educationLevelForClass(schoolClass,"");document.getElementB
 const options={data:{full_name:fullName,username,school_name:schoolName,education_level:educationLevel,school_class:schoolClass}};
 const credentials=method==="email"?{email,password,options:{...options,emailRedirectTo:window.location.origin+window.location.pathname}}:{phone,password,options};
 const {error}=await supabaseClient.auth.signUp(credentials);if(error)throw error;
-authOtpPending=true;authOtpDestination=method==="email"?email:phone;
+authOtpPending=true;authOtpDestination=method==="email"?email:phone;updateAuthContactFields();
 document.getElementById("authOtpField").hidden=false;document.getElementById("authOtpCode").required=true;document.getElementById("authSubmit").textContent="Verify code";
 setStatus("authStatus","A verification code has been requested. Check your "+(method==="email"?"email inbox and spam folder.":"phone messages."),"success");
 }else if(authMode==="signup"&&authOtpPending){
