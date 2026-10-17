@@ -284,7 +284,7 @@ if(authMode==="signup"&&!authOtpPending&&method==="username"){
 setStatus("authStatus","Creating your JENZY account…");
 const fullName=document.getElementById("fullName").value.trim(),username=document.getElementById("username").value.trim(),schoolName=document.getElementById("schoolName").value.trim(),schoolClass=document.getElementById("signupClass").value;
 if(!fullName||!username||!schoolName||!schoolClass)throw new Error("Complete your name, username, school name and class.");
-if(fullName.split(/\\s+/).filter(Boolean).length<2)throw new Error("Please enter both your first name and surname.");
+if(fullName.split(/\s+/).filter(Boolean).length<2)throw new Error("Please enter both your first name and surname.");
 if(password.length<8||!/[A-Za-z]/.test(password)||!/[0-9]/.test(password))throw new Error("Use a password with at least 8 characters, including letters and numbers.");
 const {data,error}=await supabaseClient.functions.invoke("jenzy-username-auth",{body:{action:"signup",full_name:fullName,username,school_name:schoolName,school_class:schoolClass,phone:document.getElementById("signupPhone").value.trim(),password}});
 if(error)throw new Error(data?.error||error.message||"Account creation failed.");if(data?.error)throw new Error(data.error);
