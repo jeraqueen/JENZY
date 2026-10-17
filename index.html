@@ -521,8 +521,9 @@ function updateCompetitionRegistrationSubjects(){
 }
 function updateCompetitionRegistrationWindow(){
  const slot=document.getElementById('competitionRegistrationSlot')?.value,el=document.getElementById('competitionRegistrationWindow');if(!el||!slot)return;
- const now=new Date(),labels={morning:'9:00 AM',afternoon:'2:00 PM',evening:'9:00 PM'},date=competitionDateForSlot(slot,now),target=competitionStartAt(slot,date),remaining=target-now;
- el.style.color='';el.textContent='Registration is open for the '+slot+' session ('+labels[slot]+' Kenya time). Countdown to start: '+fmtCountdown(remaining)+'. At the scheduled start, a full-screen 60-second readiness timer appears, then questions open automatically.';
+ const now=new Date(),labels={morning:'9:00 AM',afternoon:'2:00 PM',evening:'9:00 PM'};
+ if(currentSlotIsActive(slot)){el.style.color='#b45309';el.textContent='This session is in progress. Registration now reserves your place for the next occurrence at '+labels[slot]+' Kenya time.';}
+ else{const date=competitionDateForSlot(slot,now),target=competitionStartAt(slot,date),remaining=target-now;el.style.color='';el.textContent='Registration is open for the '+slot+' session ('+labels[slot]+' Kenya time). Countdown to start: '+fmtCountdown(remaining)+'. At the scheduled start, a full-screen 60-second readiness timer appears, then questions open automatically.';}
  const freeBtn=document.querySelector('.free-choice button');if(freeBtn){freeBtn.disabled=false;freeBtn.textContent='Join Free';}
 }
 function resetCompetitionRegistrationForm(){
@@ -703,6 +704,7 @@ async function checkJenzyAutomaticCompetition(){
  catch(e){console.warn('Could not check automatic competition entry:',e.message)}finally{jenzyAutoLaunchBusy=false}
 }
 setInterval(checkJenzyAutomaticCompetition,5000);
+setInterval(updateCompetitionRegistrationWindow,1000);
 
 updateJenzySchedule();setInterval(updateJenzySchedule,1000);
 </script>
