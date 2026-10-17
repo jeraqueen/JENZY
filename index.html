@@ -113,7 +113,7 @@ body.theme-dark{--bg:#0b141a;--card:#202c33;--text:#e9edef;--muted:#aab7bf;--lin
       <div id="authOtpField" hidden><label for="authOtpCode">Verification code</label><input id="authOtpCode" type="text" inputmode="numeric" autocomplete="one-time-code" maxlength="8" placeholder="Enter the code sent to you"><p class="muted">Enter the code sent to your selected email address or phone number.</p></div>
       <button id="authSubmit" class="primary" type="submit">Log in</button><p id="authStatus" class="status" aria-live="polite"></p>
     </form>
-    <p class="muted">Choose email or phone number. Verify the code sent to you before using your account. Never share your password or verification code.</p>
+    <p id="authHint" class="muted">Choose email or phone number. Email accounts use a verification code; phone accounts use a password without SMS verification. Never share your password.</p>
   </div>
 </section>
 <div id="appShell">
@@ -264,9 +264,9 @@ function educationLevelForClass(schoolClass,currentValue){if(schoolClass==="Grad
 function setStatus(id,message,kind=""){const el=document.getElementById(id);el.textContent=message;el.className="status"+(kind?" "+kind:"")}
 let authOtpPending=false,authOtpDestination="";
 function normalizeJenzyPhone(value){let p=String(value||"").trim().replace(/[\s().-]/g,"");if(/^0[17]\d{8}$/.test(p))return "+254"+p.slice(1);if(/^254[17]\d{8}$/.test(p))return "+"+p;if(/^[17]\d{8}$/.test(p))return "+254"+p;if(/^\+254[17]\d{8}$/.test(p))return p;throw new Error("Enter a valid Kenyan mobile number, for example 0712345678, 0112345678, +254712345678 or +254112345678.");}
-function updateAuthContactFields(){const method=document.getElementById("authContactMethod").value,isPhone=method==="phone";document.getElementById("authEmailField").hidden=isPhone;document.getElementById("authPhoneField").hidden=!isPhone;document.getElementById("email").required=!isPhone;document.getElementById("phone").required=isPhone;document.getElementById("authContactMethod").disabled=authOtpPending;document.getElementById("email").disabled=authOtpPending||isPhone;document.getElementById("phone").disabled=authOtpPending||!isPhone;}
+function updateAuthContactFields(){const method=document.getElementById("authContactMethod").value,isPhone=method==="phone",signup=authMode==="signup";document.getElementById("authEmailField").hidden=isPhone;document.getElementById("authPhoneField").hidden=!isPhone;document.getElementById("email").required=!isPhone;document.getElementById("phone").required=isPhone;document.getElementById("authContactMethod").disabled=authOtpPending;document.getElementById("email").disabled=authOtpPending||isPhone;document.getElementById("phone").disabled=authOtpPending||!isPhone;document.getElementById("authSubmit").textContent=!signup?"Log in":authOtpPending?"Verify code":isPhone?"Create account":"Send verification code";document.getElementById("authHint").textContent=isPhone?"Phone accounts use your phone number and password. JENZY will not send an SMS code, so this does not prove you own the number. Never share your password.":"Email accounts must enter the verification code sent to their email. Never share your password or verification code.";}
 document.getElementById("authContactMethod").addEventListener("change",updateAuthContactFields);
-function setAuthMode(mode){authMode=mode;authOtpPending=false;document.getElementById("authOtpField").hidden=true;document.getElementById("authOtpCode").required=false;const signup=mode==="signup";document.getElementById("signupFields").hidden=!signup;document.getElementById("loginTab").classList.toggle("active",!signup);document.getElementById("signupTab").classList.toggle("active",signup);document.getElementById("authHeading").textContent=signup?"Create your account":"Welcome back";document.getElementById("authSubmit").textContent=signup?"Send verification code":"Log in";document.getElementById("password").autocomplete=signup?"new-password":"current-password";["fullName","username","schoolName","signupClass"].forEach(id=>document.getElementById(id).required=signup);updateAuthContactFields();setStatus("authStatus","")}
+function setAuthMode(mode){authMode=mode;authOtpPending=false;document.getElementById("authOtpField").hidden=true;document.getElementById("authOtpCode").required=false;const signup=mode==="signup";document.getElementById("signupFields").hidden=!signup;document.getElementById("loginTab").classList.toggle("active",!signup);document.getElementById("signupTab").classList.toggle("active",signup);document.getElementById("authHeading").textContent=signup?"Create your account":"Welcome back";document.getElementById("password").autocomplete=signup?"new-password":"current-password";["fullName","username","schoolName","signupClass"].forEach(id=>document.getElementById(id).required=signup);updateAuthContactFields();setStatus("authStatus","")}
 document.getElementById("loginTab").addEventListener("click",()=>setAuthMode("login"));
 document.getElementById("signupTab").addEventListener("click",()=>setAuthMode("signup"));
 const passwordVisibilityButton=document.getElementById("togglePasswordVisibility");if(passwordVisibilityButton)passwordVisibilityButton.addEventListener("click",()=>{const field=document.getElementById("password"),show=field.type==="password";field.type=show?"text":"password";passwordVisibilityButton.textContent=show?"Hide":"Show";passwordVisibilityButton.setAttribute("aria-label",show?"Hide password":"Show password");passwordVisibilityButton.setAttribute("aria-pressed",String(show))});
@@ -278,18 +278,25 @@ const method=document.getElementById("authContactMethod").value,password=documen
 let email=method==="email"?document.getElementById("email").value.trim().toLowerCase():"";
 let phone=method==="phone"?normalizeJenzyPhone(document.getElementById("phone").value):"";
 if(authMode==="signup"&&!authOtpPending){
-setStatus("authStatus","Sending your verification code…");
+setStatus("authStatus",method==="email"?"Sending your email verification code…":"Creating your phone account…");
 const fullName=document.getElementById("fullName").value.trim(),username=document.getElementById("username").value.trim(),schoolName=document.getElementById("schoolName").value.trim(),schoolClass=document.getElementById("signupClass").value;
 if(!fullName||!username||!schoolName||!schoolClass)throw new Error("Complete your name, username, school name and class.");
 if(fullName.split(/\s+/).filter(Boolean).length<2)throw new Error("Please enter both your first name and surname.");
 if(password.length<8)throw new Error("Your password must be at least 8 characters.");
+if(!/[A-Za-z]/.test(password)||!/[0-9]/.test(password))throw new Error("Use a password with at least 8 characters, including letters and numbers.");
 const educationLevel=educationLevelForClass(schoolClass,"");document.getElementById("educationLevel").value=educationLevel;
 const options={data:{full_name:fullName,username,school_name:schoolName,education_level:educationLevel,school_class:schoolClass}};
 const credentials=method==="email"?{email,password,options:{...options,emailRedirectTo:window.location.origin+window.location.pathname}}:{phone,password,options};
-const {error}=await supabaseClient.auth.signUp(credentials);if(error)throw error;
-authOtpPending=true;authOtpDestination=method==="email"?email:phone;updateAuthContactFields();
-document.getElementById("authOtpField").hidden=false;document.getElementById("authOtpCode").required=true;document.getElementById("authSubmit").textContent="Verify code";
-setStatus("authStatus","A verification code has been requested. Check your "+(method==="email"?"email inbox and spam folder.":"phone messages."),"success");
+const {data,error}=await supabaseClient.auth.signUp(credentials);if(error)throw error;
+if(method==="email"){
+authOtpPending=true;authOtpDestination=email;updateAuthContactFields();
+document.getElementById("authOtpField").hidden=false;document.getElementById("authOtpCode").required=true;updateAuthContactFields();
+setStatus("authStatus","A verification code has been requested. Check your email inbox and spam folder.","success");
+}else{
+if(!data.session||!data.user){setStatus("authStatus","Supabase has not enabled password-only phone registration yet. Before students register, open Supabase Dashboard → Authentication → Sign In / Providers → Phone and turn OFF phone confirmation. This attempt may have created an incomplete account; remove it from Authentication → Users before retrying.","error");return;}
+await activateUser(data.user);
+setStatus("authStatus","Your phone account is ready. Your number was not verified by SMS, so use a number you control and keep your password private.","success");
+}
 }else if(authMode==="signup"&&authOtpPending){
 const token=document.getElementById("authOtpCode").value.trim();if(!token)throw new Error("Enter the verification code you received.");
 setStatus("authStatus","Verifying your code…");
