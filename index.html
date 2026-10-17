@@ -269,8 +269,9 @@ event.preventDefault();const submit=document.getElementById("authSubmit");submit
 try{
 const email=document.getElementById("email").value.trim(),password=document.getElementById("password").value;
 if(authMode==="signup"){
-const fullName=document.getElementById("fullName").value.trim(),username=document.getElementById("username").value.trim(),schoolName=document.getElementById("schoolName").value.trim(),educationLevel=document.getElementById("educationLevel").value,schoolClass=document.getElementById("signupClass").value;
+const fullName=document.getElementById("fullName").value.trim(),username=document.getElementById("username").value.trim(),schoolName=document.getElementById("schoolName").value.trim(),schoolClass=document.getElementById("signupClass").value;
 if(!fullName||!username||!schoolName||!schoolClass)throw new Error("Complete your name, username, school name and class.");if(fullName.trim().split(/\s+/).filter(Boolean).length<2)throw new Error("Please enter both your first name and surname.");
+const educationLevel=educationLevelForClass(schoolClass,"");document.getElementById("educationLevel").value=educationLevel;
 const {data,error}=await supabaseClient.auth.signUp({email,password,options:{emailRedirectTo:window.location.origin+window.location.pathname,data:{full_name:fullName,username,school_name:schoolName,education_level:educationLevel,school_class:schoolClass}}});
 if(error)throw error;
 if(data.session&&data.user){await activateUser(data.user);setStatus("authStatus","Account created successfully.","success")}
