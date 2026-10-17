@@ -618,10 +618,10 @@ function selectedCompetitionSubject(slot){
 function currentSlotIsActive(slot){const p=kenyaParts(new Date()),m=p.hour*60+p.minute;
  return slot==='morning' ? m>=540&&m<560 : slot==='afternoon' ? m>=840&&m<850 : m>=1260&&m<1275;
 }
-async function startScheduledCompetition(slot){
+async function startScheduledCompetition(slot,registeredSubject=null,registeredClass=null){
  if(!currentUser){setStatus('authStatus','Please sign in first.','error');return;}
  if(!currentSlotIsActive(slot)){alert('This competition opens only at its scheduled time in Kenya. Please return during the active competition window.');return;}
- const schoolClass=selectedCompetitionClass(),subject=selectedCompetitionSubject(slot),expected=slot==='morning'?12:24,date=competitionDateNairobi();
+ const schoolClass=registeredClass||selectedCompetitionClass(),subject=registeredSubject||selectedCompetitionSubject(slot),expected=slot==='morning'?12:24,date=competitionDateNairobi();
  const {data:registration,error:registrationError}=await supabaseClient.from('jenzy_competition_registrations').select('entry_number').eq('student_id',currentUser.id).eq('competition_date',date).eq('session_slot',slot).eq('school_class',schoolClass).eq('subject',subject).eq('entry_type','free').eq('status','confirmed').maybeSingle();
  if(registrationError){alert('JENZY could not verify your competition registration. Please try again.');return;}
  if(!registration){alert('Please register using the Join Free button before the competition starts. Registration closes when the session begins.');return;}
@@ -671,12 +671,12 @@ function scheduleState(now=new Date()){
  if(mins>=8*60+55&&mins<9*60){alarm=true;alarmLabel='Morning competition starts at 9:00 AM. Mathematics questions are selected for your class.';title='Morning competition starts soon';text='The shared 60-second red circular readiness timer appears at 9:00 AM.';target=todayStart;}
  else if(now>=todayStart&&now<mathEnd){title='Morning Mathematics competition is active';text='Your class-specific Mathematics competition ends at 9:20 AM.';target=mathEnd;}
  else if(mins>=9*60+20&&mins<9*60+30){title='Morning competition completed';text='The shared countdown to the afternoon competition begins at 9:30 AM.';target=kenyaDateAt(p,9,30);}
- else if(mins>=9*60+30&&mins<14*60){title='Countdown to afternoon competition';text='The shared countdown ends at 2:00 PM. Choose English or Kiswahili and register.';target=aftStart;}
  else if(mins>=13*60+55&&mins<14*60){alarm=true;alarmLabel='Afternoon competition starts at 2:00 PM.';title='Afternoon competition starts soon';text='The shared 60-second red circular readiness timer appears at 2:00 PM.';target=aftStart;}
+ else if(mins>=9*60+30&&mins<14*60){title='Countdown to afternoon competition';text='The shared countdown ends at 2:00 PM. Choose English or Kiswahili and register.';target=aftStart;}
  else if(now>=aftStart&&now<aftEnd){title='Afternoon competition is active';text='Your selected subject questions end at 2:10 PM.';target=aftEnd;}
  else if(mins>=14*60+10&&mins<14*60+30){title='Afternoon competition completed';text='The shared countdown to the evening competition begins at 2:30 PM.';target=kenyaDateAt(p,14,30);}
- else if(mins>=14*60+30&&mins<21*60){title='Countdown to evening competition';text='The shared countdown ends at 9:00 PM. Your selected evening subject and class determine the questions.';target=eveStart;}
  else if(mins>=20*60+55&&mins<21*60){alarm=true;alarmLabel='Evening competition starts at 9:00 PM.';title='Evening competition starts soon';text='The shared 60-second red circular readiness timer appears at 9:00 PM.';target=eveStart;}
+ else if(mins>=14*60+30&&mins<21*60){title='Countdown to evening competition';text='The shared countdown ends at 9:00 PM. Your selected evening subject and class determine the questions.';target=eveStart;}
  else if(now>=eveStart&&now<eveEnd){title='Evening competition is active';text='Your selected evening subject questions end at 9:15 PM.';target=eveEnd;}
  else if(mins>=21*60+15&&mins<21*60+30){title='Evening competition completed';text='The shared countdown to tomorrow morning begins at 9:30 PM.';target=kenyaDateAt(p,21,30);}
  else if(mins>=21*60+30||mins<8*60+55){title='Countdown to morning Mathematics';text='The shared countdown ends at 9:00 AM Kenya time.';target=mins>=21*60+30?kenyaDateAt({year:p.year,month:p.month,day:p.day+1},9,0):todayStart;}
@@ -702,10 +702,17 @@ function showJenzyReadiness(slot,subject,schoolClass,seconds=60){
 async function checkJenzyAutomaticCompetition(){
  if(!currentUser||jenzyAutoLaunchBusy||activeCompetition||jenzyReadinessOverlay)return;
  const p=kenyaParts(new Date()),m=p.hour*60+p.minute,slot=m>=540&&m<560?'morning':m>=840&&m<850?'afternoon':m>=1260&&m<1275?'evening':null;if(!slot)return;
- const date=competitionDateNairobi(),schoolClass=selectedCompetitionClass(),subject=selectedCompetitionSubject(slot),key=[currentUser.id,date,slot,schoolClass,subject].join('|');if(jenzyAutoLaunchedKeys.has(key))return;
+ const date=competitionDateNairobi(),schoolClass=selectedCompetitionClass();
  jenzyAutoLaunchBusy=true;
- try{const {data,error}=await supabaseClient.from('jenzy_competition_registrations').select('entry_number').eq('student_id',currentUser.id).eq('competition_date',date).eq('session_slot',slot).eq('school_class',schoolClass).eq('subject',subject).eq('entry_type','free').eq('status','confirmed').maybeSingle();if(error)throw error;if(data){jenzyAutoLaunchedKeys.add(key);showJenzyReadiness(slot,subject,schoolClass,60);}}
- catch(e){console.warn('Could not check automatic competition entry:',e.message)}finally{jenzyAutoLaunchBusy=false}
+ try{
+  const {data,error}=await supabaseClient.from('jenzy_competition_registrations').select('entry_number,subject,school_class').eq('student_id',currentUser.id).eq('competition_date',date).eq('session_slot',slot).eq('school_class',schoolClass).eq('entry_type','free').eq('status','confirmed').limit(10);
+  if(error)throw error;
+  const registration=(data||[]).find(row=>row.subject);
+  if(registration){
+   const subject=registration.subject,registeredClass=registration.school_class||schoolClass,key=[currentUser.id,date,slot,registeredClass,subject].join('|');
+   if(!jenzyAutoLaunchedKeys.has(key)){jenzyAutoLaunchedKeys.add(key);showJenzyReadiness(slot,subject,registeredClass,60);}
+  }
+ }catch(e){console.warn('Could not check automatic competition entry:',e.message)}finally{jenzyAutoLaunchBusy=false}
 }
 setInterval(checkJenzyAutomaticCompetition,5000);
 setInterval(updateCompetitionRegistrationWindow,1000);
