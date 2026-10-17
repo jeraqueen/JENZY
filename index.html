@@ -691,12 +691,38 @@ function updateJenzySchedule(){const s=scheduleState();const title=document.getE
 try{const a=document.getElementById('afternoonSubject'),e=document.getElementById('eveningSubject'),sc=document.getElementById('scienceLevelChoice');if(a){a.value=localStorage.getItem('jenzy_afternoon_subject')||'English';a.addEventListener('change',()=>localStorage.setItem('jenzy_afternoon_subject',a.value));}if(e){e.value=localStorage.getItem('jenzy_evening_subject')||'Science';e.addEventListener('change',()=>localStorage.setItem('jenzy_evening_subject',e.value));}if(sc){sc.value=localStorage.getItem('jenzy_science_choice')||'Integrated Science';sc.addEventListener('change',()=>localStorage.setItem('jenzy_science_choice',sc.value));}updateScienceOptions();}catch(e){}
 // Auto-launch for confirmed free entrants at each scheduled Kenya-time session.
 let jenzyReadinessOverlay=null,jenzyReadinessTimer=null,jenzyAutoLaunchBusy=false,jenzyAutoLaunchedKeys=new Set();
+function jenzyReadinessSound(kind='tick',urgency=1){
+ try{
+  jenzyAudioContext=jenzyAudioContext||new (window.AudioContext||window.webkitAudioContext)();
+  if(jenzyAudioContext.state==='suspended')jenzyAudioContext.resume();
+  const ctx=jenzyAudioContext,now=ctx.currentTime;
+  const tone=(freq,start,duration,volume,wave='sine',endFreq=null)=>{
+   const osc=ctx.createOscillator(),gain=ctx.createGain();osc.type=wave;osc.frequency.setValueAtTime(freq,start);
+   if(endFreq)osc.frequency.exponentialRampToValueAtTime(Math.max(1,endFreq),start+duration);
+   gain.gain.setValueAtTime(0.0001,start);gain.gain.exponentialRampToValueAtTime(Math.max(0.0002,volume),start+0.012);gain.gain.exponentialRampToValueAtTime(0.0001,start+duration);
+   osc.connect(gain);gain.connect(ctx.destination);osc.start(start);osc.stop(start+duration+0.02);
+  };
+  if(kind==='tick'){tone(1150,now,0.075,0.075,'square');}
+  else if(kind==='tock'){tone(760,now,0.09,0.085,'triangle');}
+  else if(kind==='heartbeat'){
+   const vol=Math.min(0.24,0.11+urgency*0.012),pitch=58+urgency*3;
+   tone(pitch,now,0.16,vol,'sine',pitch*0.58);
+   tone(pitch*0.82,now+0.20,0.19,vol*0.88,'sine',pitch*0.48);
+  }else if(kind==='final'){tone(880,now,0.14,0.16,'sawtooth',330);tone(660,now+0.17,0.18,0.15,'sawtooth',220);}
+ }catch(e){/* Browser or device sound may be unavailable; visual timer still works. */}
+}
 function showJenzyReadiness(slot,subject,schoolClass,seconds=60){
  if(jenzyReadinessOverlay)jenzyReadinessOverlay.remove();if(jenzyReadinessTimer)clearInterval(jenzyReadinessTimer);
  const overlay=document.createElement('div');overlay.className='jenzy-readiness-overlay';
- overlay.innerHTML='<div class="jenzy-readiness-inner"><div class="jenzy-readiness-brand">🏆 JEN<span>ZY</span></div><div class="jenzy-readiness-kicker">Competition starting soon</div><h1 style="margin:0;font-size:clamp(20px,5vw,32px)">'+escapeCompetitionText(subject)+'</h1><div class="jenzy-readiness-circle" role="timer" aria-live="off"><div class="jenzy-readiness-number" id="jenzyReadinessNumber">'+seconds+'</div><div class="jenzy-readiness-caption">SECONDS</div></div><div class="jenzy-readiness-warning">⚠ GET READY!</div><div class="jenzy-readiness-sub">Your '+escapeCompetitionText(subject)+' questions for '+escapeCompetitionText(schoolClass)+' will open automatically.</div><div class="jenzy-readiness-ring-label">JENZY · LEARN · COMPETE · GROW</div></div>';
- document.body.appendChild(overlay);jenzyReadinessOverlay=overlay;let left=seconds;
- jenzyReadinessTimer=setInterval(async()=>{left--;const n=document.getElementById('jenzyReadinessNumber');if(n)n.textContent=String(Math.max(0,left));if(left<=10&&n)n.style.color='#ff3030';if(left<=0){clearInterval(jenzyReadinessTimer);jenzyReadinessTimer=null;if(jenzyReadinessOverlay){jenzyReadinessOverlay.remove();jenzyReadinessOverlay=null;}await startScheduledCompetition(slot,subject,schoolClass);}},1000);
+ overlay.innerHTML='<div class="jenzy-readiness-inner"><div class="jenzy-readiness-brand">🏆 JEN<span>ZY</span></div><div class="jenzy-readiness-kicker">Competition starting soon</div><h1 style="margin:0;font-size:clamp(20px,5vw,32px)">'+escapeCompetitionText(subject)+'</h1><div class="jenzy-readiness-circle" role="timer" aria-live="off"><div class="jenzy-readiness-number" id="jenzyReadinessNumber">'+seconds+'</div><div class="jenzy-readiness-caption">SECONDS</div></div><div class="jenzy-readiness-warning" id="jenzyReadinessWarning">⚠ GET READY!</div><div class="jenzy-readiness-sub">Your '+escapeCompetitionText(subject)+' questions for '+escapeCompetitionText(schoolClass)+' will open automatically.</div><div class="jenzy-readiness-ring-label">TICK · TOCK · HEARTBEAT</div></div>';
+ document.body.appendChild(overlay);jenzyReadinessOverlay=overlay;let left=seconds,beat=0;
+ // Start sound as the readiness screen opens; if the browser blocks audio, the visual countdown continues.
+ jenzyReadinessSound('tick');
+ jenzyReadinessTimer=setInterval(async()=>{left--;const n=document.getElementById('jenzyReadinessNumber'),warning=document.getElementById('jenzyReadinessWarning');if(n)n.textContent=String(Math.max(0,left));
+  if(left>10){jenzyReadinessSound(left%2===0?'tick':'tock');}
+  else if(left>0){beat++;jenzyReadinessSound('heartbeat',11-left);if(n){n.style.color='#ff3030';n.style.transform='scale(1.06)';setTimeout(()=>{if(n)n.style.transform='scale(1)';},130);}if(warning)warning.textContent=left<=3?'⚠ NOW! NOW! NOW!':'⚠ FINAL COUNTDOWN!';}
+  if(left<=0){clearInterval(jenzyReadinessTimer);jenzyReadinessTimer=null;jenzyReadinessSound('final');if(jenzyReadinessOverlay){jenzyReadinessOverlay.remove();jenzyReadinessOverlay=null;}await startScheduledCompetition(slot,subject,schoolClass);}
+ },1000);
 }
 
 async function checkJenzyAutomaticCompetition(){
