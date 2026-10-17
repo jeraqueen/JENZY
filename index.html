@@ -130,9 +130,10 @@ body.theme-dark{--bg:#0b141a;--card:#202c33;--text:#e9edef;--muted:#aab7bf;--lin
   <span class="chip">REGISTER</span><h2>Register for a JENZY competition</h2>
   <p class="muted">Register before the selected session starts. Your entry number is assigned by JENZY after registration.</p>
   <div class="competition-registration-grid">
-    <div class="competition-choice free-choice"><div class="competition-choice-icon">🎓</div><h3>Free competition</h3><p>Practise, learn and compete without paying an entry fee.</p><div class="competition-count"><strong id="competitionFreeCount">0</strong><span>confirmed free entries</span></div><button class="primary" type="button" onclick="openCompetitionRegistration('free')">Join Free</button></div>
-    <div class="competition-choice paid-choice"><div class="competition-choice-icon">🏆</div><h3>Paid competition</h3><p><strong>KSh 20</strong> entry fee. Prizes for the top three after verified entry payments.</p><div class="competition-count"><strong id="competitionPaidCount">0</strong><span>confirmed paid entries</span></div><button class="primary" type="button" onclick="openCompetitionRegistration('paid')">Pay KSh 20 and Join</button><p class="muted small-note">Payment is not active until a provider is connected and payment verification is tested. This button will not charge you.</p></div>
+    <div class="competition-choice free-choice"><div class="competition-choice-icon">🎓</div><h3>Free competition</h3><p>Practise, learn and compete without paying an entry fee.</p><div class="competition-count"><strong id="competitionFreeCount">0</strong><span>students registered for this free competition</span></div><button class="primary" type="button" onclick="openCompetitionRegistration('free')">Join Free</button></div>
+    <div class="competition-choice paid-choice"><div class="competition-choice-icon">🏆</div><h3>Paid competition</h3><p><strong>KSh 20</strong> entry fee. Prizes for the top three after verified entry payments.</p><div class="competition-count"><strong id="competitionPaidCount">0</strong><span>students registered for this paid competition</span></div><button class="primary" type="button" onclick="openCompetitionRegistration('paid')">Pay KSh 20 and Join</button><p class="muted small-note">Payment is not active until a provider is connected and payment verification is tested. This button will not charge you.</p></div>
   </div>
+  <p class="muted competition-count-note">These counts are for the selected date, session, class and subject. They update automatically so you can see how many students are registered in each entry type.</p>
   <div class="competition-picker">
     <h3>Choose your competition</h3>
     <div class="competition-fields">
@@ -470,6 +471,12 @@ async function refreshCompetitionCounts(){
   const free=document.getElementById('competitionFreeCount'),paid=document.getElementById('competitionPaidCount');if(free)free.textContent=counts.free.toLocaleString('en-KE');if(paid)paid.textContent=counts.paid.toLocaleString('en-KE');
  }catch(e){console.warn('Could not refresh competition participant counts:',e.message)}
 }
+
+// Keep the public competition counts fresh while the page is open. The database counts only confirmed registrations.
+let competitionCountRefreshBusy=false;
+async function refreshCompetitionCountsSafely(){if(competitionCountRefreshBusy||document.hidden)return;competitionCountRefreshBusy=true;try{await refreshCompetitionCounts()}finally{competitionCountRefreshBusy=false}}
+setInterval(refreshCompetitionCountsSafely,20000);
+document.addEventListener('visibilitychange',()=>{if(!document.hidden)refreshCompetitionCountsSafely()});
 
 function selectedCompetitionClass(){return document.getElementById('profileClass')?.value || localStorage.getItem(PROFILE_CLASS_KEY) || 'Grade 6';}
 function selectedCompetitionSubject(slot){
