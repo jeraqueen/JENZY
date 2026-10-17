@@ -106,11 +106,14 @@ body.theme-dark{--bg:#0b141a;--card:#202c33;--text:#e9edef;--muted:#aab7bf;--lin
         <label for="educationLevel">Education level</label><select id="educationLevel"><option value="Primary">Primary school</option><option value="Junior School">Junior school</option><option value="Senior School">Senior school</option></select>
         <label for="signupClass">Class / grade</label><select id="signupClass" required><option value="">Choose your class</option><option value="Grade 6">Grade 6</option><option value="Grade 7">Grade 7</option><option value="Grade 8">Grade 8</option><option value="Grade 10">Grade 10</option><option value="Form 3">Form 3</option></select>
       </div>
-      <label for="email">Email address</label><input id="email" type="email" autocomplete="email" required placeholder="you@example.com">
+      <label for="authContactMethod">Sign in or register using</label><select id="authContactMethod"><option value="email">Email address</option><option value="phone">Phone number (no email needed)</option></select>
+      <div id="authEmailField"><label for="email">Email address</label><input id="email" type="email" autocomplete="email" placeholder="you@example.com"></div>
+      <div id="authPhoneField" hidden><label for="phone">Phone number</label><input id="phone" type="tel" inputmode="tel" autocomplete="tel" placeholder="07XXXXXXXX or +2547XXXXXXXX"></div>
       <label for="password">Password</label><div class="password-field"><input id="password" type="password" minlength="8" autocomplete="current-password" required placeholder="At least 8 characters"><button id="togglePasswordVisibility" class="password-toggle" type="button" aria-label="Show password" aria-pressed="false">Show</button></div>
+      <div id="authOtpField" hidden><label for="authOtpCode">Verification code</label><input id="authOtpCode" type="text" inputmode="numeric" autocomplete="one-time-code" maxlength="8" placeholder="Enter the code sent to you"><p class="muted">Enter the code sent to your selected email address or phone number.</p></div>
       <button id="authSubmit" class="primary" type="submit">Log in</button><p id="authStatus" class="status" aria-live="polite"></p>
     </form>
-    <p class="muted">Use an email address you can access. Never share your password with another student.</p>
+    <p class="muted">Choose email or phone number. Verify the code sent to you before using your account. Never share your password or verification code.</p>
   </div>
 </section>
 <div id="appShell">
@@ -259,24 +262,48 @@ let currentLearningLabel="General sample quiz";
 
 function educationLevelForClass(schoolClass,currentValue){if(schoolClass==="Grade 6")return "Primary";if(["Grade 7","Grade 8"].includes(schoolClass))return "Junior School";if(["Grade 10","Form 3"].includes(schoolClass))return "Senior School";return ["Primary","Junior School","Senior School"].includes(currentValue)?currentValue:"Primary"}
 function setStatus(id,message,kind=""){const el=document.getElementById(id);el.textContent=message;el.className="status"+(kind?" "+kind:"")}
-function setAuthMode(mode){authMode=mode;const signup=mode==="signup";document.getElementById("signupFields").hidden=!signup;document.getElementById("loginTab").classList.toggle("active",!signup);document.getElementById("signupTab").classList.toggle("active",signup);document.getElementById("authHeading").textContent=signup?"Create your account":"Welcome back";document.getElementById("authSubmit").textContent=signup?"Create account":"Log in";document.getElementById("password").autocomplete=signup?"new-password":"current-password";["fullName","username","schoolName","signupClass"].forEach(id=>document.getElementById(id).required=signup);setStatus("authStatus","")}
+let authOtpPending=false,authOtpDestination="";
+function normalizeJenzyPhone(value){let p=String(value||"").trim().replace(/[\\s().-]/g,"");if(/^0[17]\\d{8}$/.test(p))return "+254"+p.slice(1);if(/^254[17]\\d{8}$/.test(p))return "+"+p;if(/^[17]\\d{8}$/.test(p))return "+254"+p;if(/^\\+254[17]\\d{8}$/.test(p))return p;throw new Error("Enter a valid Kenyan phone number, for example 0712345678 or +254712345678.");}
+function updateAuthContactFields(){const method=document.getElementById("authContactMethod").value,isPhone=method==="phone";document.getElementById("authEmailField").hidden=isPhone;document.getElementById("authPhoneField").hidden=!isPhone;document.getElementById("email").required=!isPhone;document.getElementById("phone").required=isPhone;}
+document.getElementById("authContactMethod").addEventListener("change",updateAuthContactFields);
+function setAuthMode(mode){authMode=mode;authOtpPending=false;document.getElementById("authOtpField").hidden=true;document.getElementById("authOtpCode").required=false;const signup=mode==="signup";document.getElementById("signupFields").hidden=!signup;document.getElementById("loginTab").classList.toggle("active",!signup);document.getElementById("signupTab").classList.toggle("active",signup);document.getElementById("authHeading").textContent=signup?"Create your account":"Welcome back";document.getElementById("authSubmit").textContent=signup?"Send verification code":"Log in";document.getElementById("password").autocomplete=signup?"new-password":"current-password";["fullName","username","schoolName","signupClass"].forEach(id=>document.getElementById(id).required=signup);updateAuthContactFields();setStatus("authStatus","")}
 document.getElementById("loginTab").addEventListener("click",()=>setAuthMode("login"));
 document.getElementById("signupTab").addEventListener("click",()=>setAuthMode("signup"));
 const passwordVisibilityButton=document.getElementById("togglePasswordVisibility");if(passwordVisibilityButton)passwordVisibilityButton.addEventListener("click",()=>{const field=document.getElementById("password"),show=field.type==="password";field.type=show?"text":"password";passwordVisibilityButton.textContent=show?"Hide":"Show";passwordVisibilityButton.setAttribute("aria-label",show?"Hide password":"Show password");passwordVisibilityButton.setAttribute("aria-pressed",String(show))});
 function syncClassOptions(levelSelect,classSelect,preferredClass){if(!levelSelect||!classSelect)return;const groups={"Primary":["Grade 6"],"Junior School":["Grade 7","Grade 8"],"Senior School":["Grade 10","Form 3"]},allowed=groups[levelSelect.value]||groups.Primary,chosen=preferredClass||classSelect.value;classSelect.innerHTML='<option value="">Choose your class</option>'+allowed.map(g=>'<option value="'+g+'">'+g+'</option>').join("");classSelect.value=allowed.includes(chosen)?chosen:"";}const signupClassField=document.getElementById("signupClass"),signupEducationField=document.getElementById("educationLevel");if(signupClassField&&signupEducationField){syncClassOptions(signupEducationField,signupClassField,signupClassField.value);signupEducationField.addEventListener("change",()=>syncClassOptions(signupEducationField,signupClassField,""));signupClassField.addEventListener("change",()=>{signupEducationField.value=educationLevelForClass(signupClassField.value,signupEducationField.value)});}const profileClassField=document.getElementById("profileClass"),profileEducationField=document.getElementById("schoolLevel");if(profileClassField&&profileEducationField){profileEducationField.addEventListener("change",()=>syncClassOptions(profileEducationField,profileClassField,""));profileClassField.addEventListener("change",()=>{profileEducationField.value=educationLevelForClass(profileClassField.value,profileEducationField.value)});}
 document.getElementById("authForm").addEventListener("submit",async event=>{
-event.preventDefault();const submit=document.getElementById("authSubmit");submit.disabled=true;setStatus("authStatus",authMode==="signup"?"Creating your account…":"Signing you in…");
+event.preventDefault();const submit=document.getElementById("authSubmit");submit.disabled=true;
 try{
-const email=document.getElementById("email").value.trim(),password=document.getElementById("password").value;
-if(authMode==="signup"){
+const method=document.getElementById("authContactMethod").value,password=document.getElementById("password").value;
+let email=method==="email"?document.getElementById("email").value.trim().toLowerCase():"";
+let phone=method==="phone"?normalizeJenzyPhone(document.getElementById("phone").value):"";
+if(authMode==="signup"&&!authOtpPending){
+setStatus("authStatus","Sending your verification code…");
 const fullName=document.getElementById("fullName").value.trim(),username=document.getElementById("username").value.trim(),schoolName=document.getElementById("schoolName").value.trim(),schoolClass=document.getElementById("signupClass").value;
-if(!fullName||!username||!schoolName||!schoolClass)throw new Error("Complete your name, username, school name and class.");if(fullName.trim().split(/\s+/).filter(Boolean).length<2)throw new Error("Please enter both your first name and surname.");
+if(!fullName||!username||!schoolName||!schoolClass)throw new Error("Complete your name, username, school name and class.");
+if(fullName.split(/\s+/).filter(Boolean).length<2)throw new Error("Please enter both your first name and surname.");
+if(password.length<8)throw new Error("Your password must be at least 8 characters.");
 const educationLevel=educationLevelForClass(schoolClass,"");document.getElementById("educationLevel").value=educationLevel;
-const {data,error}=await supabaseClient.auth.signUp({email,password,options:{emailRedirectTo:window.location.origin+window.location.pathname,data:{full_name:fullName,username,school_name:schoolName,education_level:educationLevel,school_class:schoolClass}}});
-if(error)throw error;
-if(data.session&&data.user){await activateUser(data.user);setStatus("authStatus","Account created successfully.","success")}
-else setStatus("authStatus","Account created. Check your email and tap the confirmation link before logging in.","success");
-}else{const {data,error}=await supabaseClient.auth.signInWithPassword({email,password});if(error)throw error;if(data.user)await activateUser(data.user)}
+const options={data:{full_name:fullName,username,school_name:schoolName,education_level:educationLevel,school_class:schoolClass}};
+const credentials=method==="email"?{email,password,options:{...options,emailRedirectTo:window.location.origin+window.location.pathname}}:{phone,password,options};
+const {error}=await supabaseClient.auth.signUp(credentials);if(error)throw error;
+authOtpPending=true;authOtpDestination=method==="email"?email:phone;
+document.getElementById("authOtpField").hidden=false;document.getElementById("authOtpCode").required=true;document.getElementById("authSubmit").textContent="Verify code";
+setStatus("authStatus","A verification code has been requested. Check your "+(method==="email"?"email inbox and spam folder.":"phone messages."),"success");
+}else if(authMode==="signup"&&authOtpPending){
+const token=document.getElementById("authOtpCode").value.trim();if(!token)throw new Error("Enter the verification code you received.");
+setStatus("authStatus","Verifying your code…");
+const verify=method==="email"?{email,token,type:"signup"}:{phone,token,type:"sms"};
+const {data,error}=await supabaseClient.auth.verifyOtp(verify);if(error)throw error;
+if(!data.user)throw new Error("The code was accepted but no account session was returned. Please try logging in.");
+const {error:passwordError}=await supabaseClient.auth.updateUser({password});if(passwordError)throw passwordError;
+authOtpPending=false;document.getElementById("authOtpField").hidden=true;document.getElementById("authOtpCode").required=false;
+await activateUser(data.user);setStatus("authStatus","Your JENZY account is verified and ready.","success");
+}else{
+setStatus("authStatus","Signing you in…");
+const credentials=method==="email"?{email,password}:{phone,password};
+const {data,error}=await supabaseClient.auth.signInWithPassword(credentials);if(error)throw error;if(data.user)await activateUser(data.user)
+}
 }catch(error){setStatus("authStatus",error.message||"Something went wrong. Please try again.","error")}
 finally{submit.disabled=false}
 });
