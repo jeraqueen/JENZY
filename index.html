@@ -1003,7 +1003,7 @@ async function startScheduledCompetition(slot,registeredSubject=null,registeredC
    if(registrationError){alert('JENZY could not verify your competition registration. Please try again.');return;}
    if(!registration){alert('You need a confirmed free or paid registration for this session before the competition starts.');return;}
   }
-  const result=await supabaseClient.from('jenzy_question_bank').select('id,school_class,subject,session_slot,topic_order,topic,subtopic,set_order,question_order,question_text,option_a,option_b,option_c,option_d,curriculum_reference,status').eq('school_class',schoolClass).eq('subject',subject).eq('session_slot',slot).eq('status','published').order('topic_order').order('set_order').order('question_order').limit(expected);
+  const result=await supabaseClient.from('jenzy_question_bank').select('id,school_class,subject,session_slot,topic_order,topic,subtopic,set_order,question_order,question_text,option_a,option_b,option_c,option_d,curriculum_reference,status').eq('school_class',schoolClass).eq('subject',subject).eq('session_slot',slot).eq('status','published').order('updated_at',{ascending:false}).order('topic_order').order('set_order').order('question_order').limit(expected);
   if(result.error)throw result.error;
   data=result.data;
   if(!data||data.length!==expected){const msg='PRIVATE TEST NOT READY: JENZY needs '+expected+' published morning Mathematics questions for '+schoolClass+', but '+(data?data.length:0)+' are currently available. Please publish the missing questions in the JENZY question bank, then tap the private test button again. No score was recorded.';document.getElementById('competitionPlayStatus').textContent=msg;alert(msg);return;}
