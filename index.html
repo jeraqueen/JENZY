@@ -153,6 +153,21 @@ body.theme-dark{--bg:#0b141a;--card:#202c33;--text:#e9edef;--muted:#aab7bf;--lin
 .manual-payment-status.success{color:#047857}
 body.theme-dark .manual-payment-box,body.theme-dark .manual-payment-claim{background:#202c33;border-color:#34434b}
 
+
+/* JENZY admin sandbox challenge */
+.jenzy-admin-test-launch{margin:16px 0;padding:16px;border:1px solid var(--line);border-radius:14px;background:var(--card,rgba(127,127,127,.06))}
+.jenzy-test-overlay{position:fixed;inset:0;z-index:99999;background:rgba(0,0,0,.78);display:none;align-items:center;justify-content:center;padding:12px;overflow:auto}
+.jenzy-test-modal{width:min(760px,100%);max-height:94vh;overflow:auto;background:var(--bg,#fff);color:var(--text,#111);border:1px solid var(--line);border-radius:18px;padding:18px;box-shadow:0 20px 70px rgba(0,0,0,.35)}
+.jenzy-test-top{display:flex;align-items:center;gap:10px;flex-wrap:wrap}
+.jenzy-test-timer{font-size:clamp(24px,6vw,36px);font-weight:800;font-variant-numeric:tabular-nums}
+.jenzy-test-option{display:block;width:100%;text-align:left;margin:8px 0;padding:13px;border:1px solid var(--line);border-radius:10px;background:transparent;color:inherit}
+.jenzy-test-option:disabled{opacity:.9}
+.jenzy-test-option.chosen{outline:2px solid #0d9488}
+.jenzy-test-checks{padding-left:20px}
+.jenzy-test-checks li{margin:8px 0}
+body.theme-dark .jenzy-test-modal{background:#0b141a;color:#e9edef;border-color:#34434b}
+body.theme-dark .jenzy-test-option{background:#202c33;color:#e9edef;border-color:#34434b}
+
 </style>
 </head>
 <body>
@@ -253,6 +268,7 @@ body.theme-dark .manual-payment-box,body.theme-dark .manual-payment-claim{backgr
 <section id="jenzyPaymentAdminPanel" class="card manual-payment-admin" hidden>
   <span class="chip">ADMIN ONLY</span>
   <h2>Manual M-Pesa bulk verification</h2>
+  <div class="jenzy-admin-test-launch"><h3>10-minute Admin Test Challenge</h3><p>Sandbox only: uses a fake access/payment code and never saves official competition scores or real payment records. Test registration deadline rule: 5 minutes before a scheduled session.</p><button class="primary" type="button" onclick="openJenzyAdminTestChallenge()">Open test challenge</button></div>
   <p class="manual-payment-help">Import the complete genuine M-Pesa SMS/statement records for the payments you want to check. Matching transaction code plus exactly KSh 20 becomes VERIFIED. Claims that do not match an imported transaction or show the wrong amount become UNVERIFIED. A code typed by a student alone never proves payment.</p>
   <label for="manualPaymentImportText">Paste M-Pesa messages or CSV</label>
   <textarea id="manualPaymentImportText" placeholder="Example SMS: QWE123ABC4 Confirmed. You have received Ksh20.00 ...&#10;Or CSV: QWE123ABC4,20"></textarea>
@@ -784,6 +800,7 @@ async function initializeManualPayments(){
  try{
   const {data,error}=await supabaseClient.rpc('jenzy_is_payment_admin');
   if(error)throw error;
+  jenzyAdminAuthorized=data===true;
   panel.hidden=data!==true;
   if(data===true){
    await loadManualPaymentClaims();
@@ -1027,6 +1044,141 @@ function openClassResultsPage(schoolClass){
  loadClassCompetitionResults(schoolClass);
 }
 
+
+/* Admin-only local sandbox: no official score or payment RPCs are called. */
+let jenzyAdminAuthorized=false;
+let jenzyTestSecondsLeft=600;
+let jenzyTestInterval=null;
+let jenzyTestQuestionIndex=0;
+let jenzyTestScore=0;
+let jenzyTestAnswered=false;
+let jenzyTestAutoTimedOut=false;
+let jenzyTestCorrectAnswers=0;
+const JENZY_FAKE_TEST_ACCESS_CODE="JENZY-TEST-2026";
+const jenzyAdminTestQuestions=[
+ {q:"What is 12 × 8?",o:["84","96","108","86"],a:1},
+ {q:"What is the capital city of Kenya?",o:["Nakuru","Mombasa","Nairobi","Kisumu"],a:2},
+ {q:"Which gas do plants absorb for photosynthesis?",o:["Oxygen","Carbon dioxide","Helium","Nitrogen"],a:1},
+ {q:"What is 144 ÷ 12?",o:["10","11","12","14"],a:2},
+ {q:"Which is a mammal?",o:["Crocodile","Frog","Dolphin","Eagle"],a:2},
+ {q:"How many sides does a hexagon have?",o:["Five","Six","Seven","Eight"],a:1},
+ {q:"What is 3/4 written as a decimal?",o:["0.25","0.5","0.75","1.25"],a:2},
+ {q:"Which planet is known as the Red Planet?",o:["Earth","Mars","Jupiter","Venus"],a:1},
+ {q:"The opposite of 'ancient' is:",o:["Old","Historic","Modern","Past"],a:2},
+ {q:"Which organ pumps blood around the body?",o:["Lungs","Brain","Kidney","Heart"],a:3}
+];
+function openJenzyAdminTestChallenge(){
+ if(!jenzyAdminAuthorized){alert("This test challenge is available only to an authorized JENZY administrator. Sign in again and check admin access.");return}
+ const overlay=document.getElementById("jenzyAdminTestOverlay");
+ if(!overlay)return;
+ overlay.style.display="flex";
+ document.getElementById("jenzyTestAccessGate").hidden=false;
+ document.getElementById("jenzyTestRun").hidden=true;
+ document.getElementById("jenzyTestResults").hidden=true;
+ document.getElementById("jenzyTestAccessCode").value="";
+ document.getElementById("jenzyTestAccessMessage").textContent="";
+}
+function closeJenzyAdminTestChallenge(){
+ if(jenzyTestInterval){clearInterval(jenzyTestInterval);jenzyTestInterval=null}
+ const overlay=document.getElementById("jenzyAdminTestOverlay");if(overlay)overlay.style.display="none";
+}
+function beginJenzyAdminTestChallenge(){
+ if(!jenzyAdminAuthorized){document.getElementById("jenzyTestAccessMessage").textContent="Admin authorization is required.";return}
+ const entered=String(document.getElementById("jenzyTestAccessCode").value||"").trim();
+ if(entered!==JENZY_FAKE_TEST_ACCESS_CODE){document.getElementById("jenzyTestAccessMessage").textContent="That test code is not correct. Use the admin test code supplied for this sandbox.";return}
+ if(jenzyTestInterval){clearInterval(jenzyTestInterval);jenzyTestInterval=null}
+ jenzyTestSecondsLeft=600;jenzyTestQuestionIndex=0;jenzyTestScore=0;jenzyTestCorrectAnswers=0;jenzyTestAnswered=false;jenzyTestAutoTimedOut=false;
+ document.getElementById("jenzyTestAccessGate").hidden=true;document.getElementById("jenzyTestResults").hidden=true;document.getElementById("jenzyTestRun").hidden=false;
+ renderJenzyAdminTestQuestion();updateJenzyAdminTestTimer();
+ jenzyTestInterval=setInterval(()=>{jenzyTestSecondsLeft--;updateJenzyAdminTestTimer();if(jenzyTestSecondsLeft<=0){jenzyTestAutoTimedOut=true;finishJenzyAdminTestChallenge(true)}},1000);
+}
+function updateJenzyAdminTestTimer(){
+ const el=document.getElementById("jenzyTestTimer");if(!el)return;
+ const m=Math.floor(Math.max(0,jenzyTestSecondsLeft)/60),sec=Math.max(0,jenzyTestSecondsLeft)%60;
+ el.textContent=String(m).padStart(2,"0")+":"+String(sec).padStart(2,"0");
+ if(jenzyTestSecondsLeft<=60)el.style.color="#dc2626";else el.style.color="";
+}
+function renderJenzyAdminTestQuestion(){
+ const q=jenzyAdminTestQuestions[jenzyTestQuestionIndex];if(!q)return;
+ jenzyTestAnswered=false;
+ document.getElementById("jenzyTestProgress").textContent="Question "+(jenzyTestQuestionIndex+1)+" of "+jenzyAdminTestQuestions.length;
+ document.getElementById("jenzyTestQuestion").textContent=q.q;
+ document.getElementById("jenzyTestFeedback").textContent="";
+ document.getElementById("jenzyTestNext").disabled=true;
+ document.getElementById("jenzyTestNext").textContent=jenzyTestQuestionIndex===jenzyAdminTestQuestions.length-1?"View test results":"Next question";
+ const box=document.getElementById("jenzyTestOptions");box.innerHTML="";
+ q.o.forEach((option,index)=>{const b=document.createElement("button");b.type="button";b.className="jenzy-test-option";b.textContent=String.fromCharCode(65+index)+". "+option;b.onclick=()=>answerJenzyAdminTestQuestion(index,b);box.appendChild(b)});
+}
+function answerJenzyAdminTestQuestion(index,button){
+ if(jenzyTestAnswered||jenzyTestSecondsLeft<=0)return;
+ jenzyTestAnswered=true;
+ const q=jenzyAdminTestQuestions[jenzyTestQuestionIndex];
+ document.querySelectorAll("#jenzyTestOptions button").forEach((b,i)=>{b.disabled=true;if(i===q.a)b.classList.add("chosen")});
+ if(index===q.a){jenzyTestScore++;jenzyTestCorrectAnswers++;document.getElementById("jenzyTestFeedback").textContent="Correct answer."}
+ else{button.classList.add("chosen");document.getElementById("jenzyTestFeedback").textContent="Not correct. The right answer is "+q.o[q.a]+"."}
+ document.getElementById("jenzyTestNext").disabled=false;
+}
+function nextJenzyAdminTestQuestion(){
+ if(!jenzyTestAnswered)return;
+ if(jenzyTestQuestionIndex>=jenzyAdminTestQuestions.length-1){finishJenzyAdminTestChallenge(false);return}
+ jenzyTestQuestionIndex++;renderJenzyAdminTestQuestion();
+}
+function finishJenzyAdminTestChallenge(autoTimedOut){
+ if(jenzyTestInterval){clearInterval(jenzyTestInterval);jenzyTestInterval=null}
+ if(autoTimedOut)jenzyTestAutoTimedOut=true;
+ document.getElementById("jenzyTestRun").hidden=true;document.getElementById("jenzyTestResults").hidden=false;
+ document.getElementById("jenzyTestFinalScore").textContent="Score: "+jenzyTestScore+" / "+jenzyAdminTestQuestions.length+" · Questions displayed: "+Math.min(jenzyTestQuestionIndex+1,jenzyAdminTestQuestions.length)+" / "+jenzyAdminTestQuestions.length+(jenzyTestAutoTimedOut?" · Time expired; test auto-finished.":"");
+ const checks=[
+ ["Admin access gate",jenzyAdminAuthorized],
+ ["Fake access/payment code gate",true],
+ ["Questions loaded",jenzyAdminTestQuestions.length===10],
+ ["Answer selection and scoring",jenzyTestCorrectAnswers===jenzyTestScore],
+ ["10-minute countdown started",true],
+ ["Automatic finish at zero",jenzyTestAutoTimedOut],
+ ["Official score/payment tables untouched",true]
+ ];
+ const ul=document.getElementById("jenzyTestChecklist");ul.innerHTML="";
+ checks.forEach(([label,passed])=>{const li=document.createElement("li");li.textContent=(passed?"PASS ✓ ":"NOT TESTED / CHECK ⚠ ")+label;ul.appendChild(li)});
+}
+function resetJenzyAdminTestChallenge(){
+ if(jenzyTestInterval){clearInterval(jenzyTestInterval);jenzyTestInterval=null}
+ document.getElementById("jenzyTestResults").hidden=true;document.getElementById("jenzyTestRun").hidden=true;document.getElementById("jenzyTestAccessGate").hidden=false;
+ document.getElementById("jenzyTestAccessCode").value="";document.getElementById("jenzyTestAccessMessage").textContent="";
+}
+
 </script>
+
+<div id="jenzyAdminTestOverlay" class="jenzy-test-overlay" role="dialog" aria-modal="true" aria-labelledby="jenzyTestHeading">
+ <div class="jenzy-test-modal">
+  <div class="jenzy-test-top"><span class="chip">ADMIN SANDBOX · NOT OFFICIAL</span><span style="flex:1"></span><button type="button" class="small-btn" onclick="closeJenzyAdminTestChallenge()">Close</button></div>
+  <h2 id="jenzyTestHeading">JENZY 10-minute Test Challenge</h2>
+  <p class="muted">This is a safe rehearsal. It does not submit official scores, create competition registrations, or verify real M-Pesa payments.</p>
+  <div id="jenzyTestAccessGate">
+   <p><b>Fake test payment/access code</b></p>
+   <label for="jenzyTestAccessCode">Enter the test code</label>
+   <input id="jenzyTestAccessCode" type="text" autocomplete="off" placeholder="Enter test access code">
+   <p id="jenzyTestAccessMessage" class="status" aria-live="polite"></p>
+   <p class="muted">For the normal schedule, registration closes 5 minutes before the session begins. This admin sandbox can be started immediately.</p>
+   <button class="primary" type="button" onclick="beginJenzyAdminTestChallenge()">Unlock and start 10-minute test</button>
+  </div>
+  <div id="jenzyTestRun" hidden>
+   <div class="jenzy-test-top"><span class="chip">TEST ONLY</span><span style="flex:1"></span><span id="jenzyTestTimer" class="jenzy-test-timer">10:00</span></div>
+   <p id="jenzyTestProgress">Question 1 of 10</p>
+   <h3 id="jenzyTestQuestion"></h3>
+   <div id="jenzyTestOptions"></div>
+   <p id="jenzyTestFeedback" aria-live="polite"></p>
+   <button id="jenzyTestNext" class="primary" type="button" onclick="nextJenzyAdminTestQuestion()" disabled>Next question</button>
+   <button id="jenzyTestFinishEarly" class="small-btn" type="button" onclick="finishJenzyAdminTestChallenge(false)">Finish test now</button>
+  </div>
+  <div id="jenzyTestResults" hidden>
+   <h3>Test results — TEST ONLY</h3>
+   <p id="jenzyTestFinalScore"></p>
+   <ul id="jenzyTestChecklist" class="jenzy-test-checks"></ul>
+   <p class="muted">This result is shown only in this browser and is not an official JENZY competition result.</p>
+   <button class="primary" type="button" onclick="resetJenzyAdminTestChallenge()">Run test again</button>
+  </div>
+ </div>
+</div>
+
 </body>
 </html>
