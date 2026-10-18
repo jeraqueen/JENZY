@@ -399,6 +399,40 @@ if (!window.supabase) {
 }
 </script>
 <script>
+const JENZY_BUILD_VERSION = '20261018-2';
+(function enableAutomaticJenzyUpdates(){
+ const checkEveryMs=60000;
+ let updateFound=false,checking=false;
+ function pageIsSafeToReload(){
+  if(typeof activeCompetition!=='undefined'&&activeCompetition)return false;
+  const el=document.activeElement;
+  if(el&&(/^(INPUT|TEXTAREA|SELECT)$/.test(el.tagName)))return false;
+  const visibleForm=Array.from(document.querySelectorAll('form')).find(form=>!form.hidden&&form.getClientRects().length>0);
+  if(visibleForm){
+   const hasEnteredData=Array.from(visibleForm.querySelectorAll('input,textarea,select')).some(field=>{
+    if(field.type==='checkbox'||field.type==='radio')return field.checked;
+    return String(field.value||'').trim()!=='';
+   });
+   if(hasEnteredData)return false;
+  }
+  return true;
+ }
+ async function checkForUpdate(){
+  if(checking)return;checking=true;
+  try{
+   const url=new URL(location.href);url.searchParams.set('jenzy_update_check',String(Date.now()));
+   const response=await fetch(url.toString(),{cache:'no-store',credentials:'same-origin'});
+   if(!response.ok)return;
+   const html=await response.text();
+   const match=html.match(/const JENZY_BUILD_VERSION\\s*=\\s*['\"]([^'\"]+)['\"]/);
+   if(match&&match[1]!==JENZY_BUILD_VERSION)updateFound=true;
+   if(updateFound&&pageIsSafeToReload())location.reload();
+  }catch(e){/* Offline or host unavailable: try again at the next check. */}
+  finally{checking=false;}
+ }
+ window.setInterval(checkForUpdate,checkEveryMs);
+ document.addEventListener('visibilitychange',()=>{if(!document.hidden)checkForUpdate();});
+})();
 const SUPABASE_URL = "https://nbldckaeabtcftxsvodt.supabase.co";
 const SUPABASE_PUBLISHABLE_KEY = "sb_publishable_lEWWN4K_dt11NRzHSbtxaw_xs9zIb92";
 if (!window.supabase || typeof window.supabase.createClient !== "function") {
