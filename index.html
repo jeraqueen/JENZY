@@ -1065,12 +1065,12 @@ function showJenzyReadiness(slot,subject,schoolClass,startAt){
 async function checkJenzyAutomaticCompetition(){
  if(!currentUser||jenzyAutoLaunchBusy||activeCompetition||jenzyReadinessOverlay)return;
  const now=new Date(),p=kenyaParts(now),date=competitionDateNairobi(now),schoolClass=selectedCompetitionClass();
- // One-day, James-only Mathematics test: readiness timer at 2:24 PM and test opens at 2:25 PM Kenya time.
- if(currentUser.id==='09744f3e-b8b7-4279-8ee6-384a9f87af00'&&date==='2026-10-18'&&p.hour===14&&p.minute>=24&&p.minute<35){
+ // One-day, James-only Mathematics test: readiness timer at 2:29 PM and test opens at exactly 2:30 PM Kenya time.
+ if(currentUser.id==='09744f3e-b8b7-4279-8ee6-384a9f87af00'&&date==='2026-10-18'&&p.hour===14&&p.minute>=29&&p.minute<40){
   const jamesKey=[currentUser.id,'james-maths-test',date].join('|');
   if(!jenzyAutoLaunchedKeys.has(jamesKey)){
    jenzyAutoLaunchedKeys.add(jamesKey);window.jenzyJamesTestOverrideActive=true;
-   const target=kenyaDateAt(p,14,25);
+   const target=kenyaDateAt(p,14,30);
    if(now<target)showJenzyReadiness('morning','Mathematics','Grade 10',target);
    else await startScheduledCompetition('morning','Mathematics','Grade 10');
   }
