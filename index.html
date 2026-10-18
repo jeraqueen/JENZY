@@ -235,7 +235,7 @@ body.theme-dark .manual-payment-box,body.theme-dark .manual-payment-claim{backgr
     <div id="manualMpesaInstructions" class="manual-payment-box" hidden>
       <h3>Pay KSh 20 with M-Pesa</h3>
       <p class="manual-payment-help">Send exactly KSh 20 to the JENZY M-Pesa number below. Then copy the 10-character transaction code from your genuine M-Pesa confirmation SMS and submit it here. Your entry stays pending until it is matched against the administrator's M-Pesa records.</p>
-      <div class="manual-payment-number"><div class="grow"><span class="muted">JENZY M-Pesa number</span><br><strong id="jenzyMpesaNumberDisplay">Not configured yet</strong></div><button id="copyJenzyMpesaNumberButton" class="small-btn" type="button" onclick="copyJenzyMpesaNumber()" disabled>Copy number</button></div>
+      <div class="manual-payment-number"><div class="grow"><span class="muted">Payee name</span><br><strong id="jenzyMpesaPayeeDisplay">CAROLINE OLIENG</strong><br><span class="muted">M-Pesa number</span><br><strong id="jenzyMpesaNumberDisplay">Not configured yet</strong></div><button id="copyJenzyMpesaNumberButton" class="small-btn" type="button" onclick="copyJenzyMpesaNumber()" disabled>Copy number</button></div>
       <label for="competitionPaymentCode">M-Pesa transaction code</label>
       <input id="competitionPaymentCode" maxlength="16" autocomplete="off" autocapitalize="characters" placeholder="e.g. QWE123ABC4" aria-describedby="manualMpesaCodeHelp">
       <p id="manualMpesaCodeHelp" class="manual-payment-help">Do not enter your M-Pesa PIN. Never pay twice because a page is waiting for verification.</p>
@@ -344,6 +344,7 @@ if (!window.supabase || typeof window.supabase.createClient !== "function") {
 }
 const supabaseClient = window.supabase.createClient(SUPABASE_URL, SUPABASE_PUBLISHABLE_KEY);
 const JENZY_MPESA_NUMBER = "0183106113"; // Owner-provided JENZY M-Pesa receiving number.
+const JENZY_MPESA_PAYEE = "CAROLINE OLIENG"; // Display only; the number is the only copyable payment detail.
 let authMode="login", currentUser=null, qi=0, score=0, answered=false, level="Primary", resultSaved=false;
 const sampleQuestions=[
 {q:"What is 7 × 8?",o:["48","54","56","64"],a:2},
@@ -678,7 +679,7 @@ async function openCompetitionRegistration(type){
  document.getElementById('competitionRegistrationStatus').textContent='';
  document.getElementById('competitionRegisterSubmit').hidden=type!=='free';
  document.getElementById('competitionRegisterSubmit').disabled=type==='free';
- const paidPendingButton=document.getElementById('competitionPaidPendingButton');paidPendingButton.hidden=type!=='paid';paidPendingButton.disabled=!JENZY_MPESA_NUMBER;paidPendingButton.textContent='Submit M-Pesa code for verification';document.getElementById('competitionPaidPendingNote').hidden=type!=='paid';document.getElementById('manualMpesaInstructions').hidden=type!=='paid';document.getElementById('competitionPaymentCode').value='';document.getElementById('jenzyMpesaNumberDisplay').textContent=JENZY_MPESA_NUMBER||'Not configured yet';document.getElementById('copyJenzyMpesaNumberButton').disabled=!JENZY_MPESA_NUMBER;if(type==='paid'){document.getElementById('competitionRegistrationStatus').textContent=JENZY_MPESA_NUMBER?'Enter the M-Pesa transaction code after paying KSh 20.':'The receiving M-Pesa number must be added before students can pay. No payment will be accepted until it is configured.';await loadMyManualPaymentStatus();}
+ const paidPendingButton=document.getElementById('competitionPaidPendingButton');paidPendingButton.hidden=type!=='paid';paidPendingButton.disabled=!JENZY_MPESA_NUMBER;paidPendingButton.textContent='Submit M-Pesa code for verification';document.getElementById('competitionPaidPendingNote').hidden=type!=='paid';document.getElementById('manualMpesaInstructions').hidden=type!=='paid';document.getElementById('competitionPaymentCode').value='';document.getElementById('jenzyMpesaPayeeDisplay').textContent=JENZY_MPESA_PAYEE;document.getElementById('jenzyMpesaNumberDisplay').textContent=JENZY_MPESA_NUMBER||'Not configured yet';document.getElementById('copyJenzyMpesaNumberButton').disabled=!JENZY_MPESA_NUMBER;if(type==='paid'){document.getElementById('competitionRegistrationStatus').textContent=JENZY_MPESA_NUMBER?'Enter the M-Pesa transaction code after paying KSh 20.':'The receiving M-Pesa number must be added before students can pay. No payment will be accepted until it is configured.';await loadMyManualPaymentStatus();}
  form.scrollIntoView({behavior:'smooth',block:'start'});
  if(type==='free'){updateCompetitionRegistrationWindow();await loadMyCompetitionRegistration(true);}
 }
