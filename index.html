@@ -234,7 +234,7 @@ body.theme-dark .manual-payment-box,body.theme-dark .manual-payment-claim{backgr
     </div>
     <div id="manualMpesaInstructions" class="manual-payment-box" hidden>
       <h3>Pay KSh 20 with M-Pesa</h3>
-      <p class="manual-payment-help">Send exactly KSh 20 to the JENZY M-Pesa number below. Then copy the 10-character transaction code from your genuine M-Pesa confirmation SMS and submit it here. Your entry stays pending until it is matched against the administrator's M-Pesa records.</p>
+      <p class="manual-payment-help">Send exactly KSh 20 to the JENZY M-Pesa number below. Then copy the 10-character transaction code from your genuine M-Pesa confirmation SMS and submit it here. Your claim shows SUBMITTED until the administrator checks it against genuine M-Pesa records; a matching transaction becomes VERIFIED.</p>
       <div class="manual-payment-number"><div class="grow"><span class="muted">Payee name</span><br><strong id="jenzyMpesaPayeeDisplay">CAROLINE OLIENG</strong><br><span class="muted">M-Pesa number</span><br><strong id="jenzyMpesaNumberDisplay">Not configured yet</strong></div><button id="copyJenzyMpesaNumberButton" class="small-btn" type="button" onclick="copyJenzyMpesaNumber()" disabled>Copy number</button></div>
       <label for="competitionPaymentCode">M-Pesa transaction code</label>
       <input id="competitionPaymentCode" maxlength="16" autocomplete="off" autocapitalize="characters" placeholder="e.g. QWE123ABC4" aria-describedby="manualMpesaCodeHelp">
@@ -264,7 +264,7 @@ body.theme-dark .manual-payment-box,body.theme-dark .manual-payment-claim{backgr
   </div>
   <p id="manualPaymentImportPreview" class="manual-payment-status" aria-live="polite">No transaction list loaded yet.</p>
   <p id="manualPaymentImportResult" class="status" aria-live="polite"></p>
-  <div class="section-head"><h3>Pending payment submissions</h3><button class="small-btn" type="button" onclick="loadManualPaymentClaims()">Refresh</button></div>
+  <div class="section-head"><h3>Submitted / unverified payment claims</h3><button class="small-btn" type="button" onclick="loadManualPaymentClaims()">Refresh</button></div>
   <div id="manualPaymentClaimsList" class="manual-admin-claims"><p class="muted">Loading pending submissions…</p></div>
 </section>
 
@@ -664,10 +664,11 @@ async function loadMyCompetitionRegistration(clearFields=false){
  }
 }
 async function openCompetitionRegistration(type){
+ competitionRegistrationType=type;
  const slotNow=document.getElementById('competitionRegistrationSlot')?.value||'morning',dateNow=competitionDateForSlot(slotNow),windowNow=competitionRegistrationIsOpen(slotNow,dateNow);
  updateCompetitionRegistrationWindow();
- if(!windowNow){const msg='Registration is closed. The deadline is 30 minutes before the session starts. Please register for the next session window.';setStatus('competitionRegistrationStatus',msg,'error');document.getElementById('competitionRegistrationForm').hidden=false;document.getElementById('competitionRegistrationTitle').textContent='Registration closed';document.getElementById('competitionRegistrationDescription').textContent=msg;return;}
- competitionRegistrationType=type;const savedProfile=await getJenzySavedProfile();
+ if(!windowNow){const msg='Registration is closed. The deadline is 30 minutes before the session starts. Please register for the next session window.';document.getElementById('competitionRegistrationForm').hidden=false;document.getElementById('competitionRegistrationTitle').textContent='Registration closed';document.getElementById('competitionRegistrationDescription').textContent=msg;document.getElementById('competitionRegisterSubmit').hidden=type!=='free';document.getElementById('competitionPaidPendingButton').hidden=type!=='paid';document.getElementById('competitionRegisterSubmit').disabled=true;document.getElementById('competitionPaidPendingButton').disabled=true;setStatus('competitionRegistrationStatus',msg,'error');return;}
+ const savedProfile=await getJenzySavedProfile();
  if(savedProfile){const nameFromProfile=String(savedProfile.full_name||'').trim(),nameInput=document.getElementById('studentName');if(nameFromProfile&&nameInput)nameInput.value=nameFromProfile;const classInput=document.getElementById('profileClass');if(savedProfile.school_class&&classInput){classInput.value=savedProfile.school_class;try{localStorage.setItem(PROFILE_CLASS_KEY,savedProfile.school_class)}catch(e){}}const schoolInput=document.getElementById('profileSchool');if(savedProfile.school_name&&schoolInput)schoolInput.value=savedProfile.school_name;}
  const registrantSchool=document.getElementById('competitionRegistrantSchool'),registrantClass=document.getElementById('competitionRegistrantClass'),registrantLevel=document.getElementById('competitionRegistrantLevel');const canonicalClass=String(savedProfile?.school_class||'').trim();if(registrantSchool)registrantSchool.value=String(savedProfile?.school_name||'').trim()||'Not added to profile yet';if(registrantClass)registrantClass.value=canonicalClass||'Class missing — update your profile first';if(registrantLevel)registrantLevel.value=canonicalClass?educationLevelForClass(canonicalClass,''):'Not available';updateCompetitionRegistrationSubjects();const form=document.getElementById('competitionRegistrationForm');const picker=document.querySelector('#competitionEntryHub > .competition-picker');if(form.parentElement&&form.parentElement.id==='competitionEntryHub'){document.body.appendChild(form);}form.hidden=false;form.classList.add('full-page-registration');if(!form.querySelector('.registration-back')){const back=document.createElement('button');back.type='button';back.className='small-btn registration-back';back.textContent='← Back to Compete';back.onclick=()=>{form.classList.remove('full-page-registration');form.hidden=true;const hub=document.getElementById('competitionEntryHub');const currentPicker=form.querySelector('.competition-picker');if(hub&&currentPicker)hub.insertBefore(currentPicker,hub.querySelector('.prize-split-panel'));};form.prepend(back);}if(picker&&!form.contains(picker)){form.insertBefore(picker,form.querySelector('#competitionRegistrationTitle'));}
  document.getElementById('competitionRegistrationTitle').textContent=type==='free'?'Free competition registration':'Paid competition registration';
