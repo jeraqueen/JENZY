@@ -1000,7 +1000,7 @@ async function checkJenzyAutomaticCompetition(){
   if(!registration)return;
   const subject=registration.subject,registeredClass=registration.school_class||schoolClass,key=[currentUser.id,date,session.slot,registeredClass,subject].join('|');
   if(jenzyAutoLaunchedKeys.has(key))return;
-  jenzyAutoLaunchedKeys.add(key);
+  jenzyAutoLaunchedKeys.add(testKey);jenzyAutoLaunchedKeys.add(key);
   if(startDelta>0)showJenzyReadiness(session.slot,subject,registeredClass,session.start);
   else await startScheduledCompetition(session.slot,subject,registeredClass);
  }catch(e){console.warn('Could not check automatic competition entry:',e.message)}finally{jenzyAutoLaunchBusy=false}
@@ -1022,7 +1022,7 @@ async function checkJenzyAutomaticCompetition(){
   }
  }catch(e){console.warn('Could not check automatic competition entry:',e.message)}finally{jenzyAutoLaunchBusy=false}
 }
-setInterval(checkJenzyAutomaticCompetition,5000);
+setInterval(checkJenzyAutomaticCompetition,1000);
 setInterval(updateCompetitionRegistrationWindow,1000);
 
 updateJenzySchedule();setInterval(updateJenzySchedule,1000);
