@@ -4,7 +4,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <meta name="theme-color" content="#4f46e5">
-<meta name="jenzy-build" content="jenzy-build-20261019-03">
+<meta name="jenzy-build" content="jenzy-build-20261019-04">
 <title>JENZY — Learn. Play. Compete.</title>
 <style>
 :root{--bg:#f5f7ff;--card:#fff;--text:#19213b;--muted:#69738c;--primary:#4f46e5;--line:#e7e9f3}
@@ -1182,7 +1182,8 @@ function renderClassCompetitionGroup(key,rows){
  let html='<section class="class-results-subject-section"><h2>'+safeText(first.subject)+'</h2><div class="class-results-summary"><b>'+safeText(formatCompetitionDate(first.competition_date)+' · '+competitionSlotLabel(first.session_slot)+' · '+first.subject)+'</b><br><span>'+Number(first.participant_count||0).toLocaleString("en-KE")+' competitor(s) with an official result</span></div>';
  if(!top.length)html+='<p class="muted">The top three have not been published yet.</p>';
  else html+='<h3 style="font-size:24px;font-weight:950;margin:24px 0 12px">🏆 Top three winners</h3><div class="class-winner-grid">'+top.map(r=>'<div class="class-winner-card rank-'+Number(r.rank_position)+'"><span class="class-rank-medal">'+(medals[Number(r.rank_position)]||"🏅")+'</span><div class="class-winner-details"><strong>'+safeText(r.display_name||"JENZY Student")+'</strong><span>POSITION #'+Number(r.rank_position)+' · '+Number(r.correct_count||0)+'/'+Number(r.question_count||0)+' CORRECT</span></div><div class="class-score">'+Number(r.score_percent||0).toLocaleString("en-KE",{maximumFractionDigits:2})+'%</div></div>').join("")+'</div>';
- const savedUserClass=getSavedUserSchoolClass();\n const showPersonalPosition=!!savedUserClass&&savedUserClass===String(classCompetitionResultsClass||"").trim();\n const me=showPersonalPosition?rows.find(r=>r.is_current_user===true):null;
+ const savedUserClass=getSavedUserSchoolClass();
+ const showPersonalPosition=!!savedUserClass&&savedUserClass===String(classCompetitionResultsClass||"").trim();\n const me=showPersonalPosition?rows.find(r=>r.is_current_user===true):null;
  if(me){html+='<div class="class-personal-row"><span class="class-rank-medal">👤</span><div class="class-winner-details"><strong>Your position: #'+Number(me.rank_position)+' of '+Number(me.participant_count)+'</strong><small>'+Number(me.correct_count||0)+'/'+Number(me.question_count||0)+' correct · '+Number(me.score_percent||0).toLocaleString("en-KE",{maximumFractionDigits:2})+'%</small></div></div>';}
  else{html+='<div class="class-personal-row"><span class="class-rank-medal">👤</span><div class="class-winner-details"><strong>Your position will appear if you competed in this subject</strong><small>Your personal position is shown only for the competition you actually completed.</small></div></div>';}
  return html+'</section>';
