@@ -1024,6 +1024,7 @@ function escapeCompetitionText(value){return String(value??'').replace(/[&<>"']/
 function recordCompetitionAnswer(value){if(!activeCompetition)return;activeCompetition.answers[activeCompetition.questions[activeCompetition.index].id]=Number(value);}
 function nextCompetitionQuestion(){if(!activeCompetition)return;if(activeCompetition.index<activeCompetition.questions.length-1){activeCompetition.index++;renderCompetitionQuestion();}}
 async function submitCompetitionAnswers(auto=false){const c=activeCompetition;if(!c||c.submitting)return;c.submitting=true;if(competitionTimer)clearInterval(competitionTimer);document.getElementById('competitionSubmitBtn').disabled=true;document.getElementById('competitionNextBtn').disabled=true;
+ if(c.privateOneOff){document.getElementById('competitionQuestionBox').innerHTML='';document.getElementById('competitionNextBtn').hidden=true;document.getElementById('competitionSubmitBtn').hidden=true;document.getElementById('competitionPlayStatus').textContent='Private Mathematics test completed.';document.getElementById('competitionResult').innerHTML='<div class="card"><h3>Test completed</h3><p>Your answers were not submitted to the official competition leaderboard.</p></div>';return;}
  try{
   document.getElementById('competitionPlayStatus').textContent='Submitting answers for secure server-side scoring…';
   const {data,error}=await supabaseClient.rpc('jenzy_submit_competition',{p_session_slot:c.slot,p_school_class:c.schoolClass,p_subject:c.subject,p_answers:c.answers});if(error)throw error;
