@@ -332,7 +332,7 @@ body.jenzy-test-open{overflow:hidden!important}
   <div id="manualPaymentClaimsList" class="manual-admin-claims"><p class="muted">Loading pending submissions…</p></div>
 </section>
 
-<div class="card"><span class="chip">9:00 AM</span><h2>Mathematics</h2><p>10 questions · 20 minutes · Ends at 9:20 AM.</p><p class="muted">The morning subject is fixed; no subject selection is needed.</p></div>
+<div class="card"><span class="chip">9:00 AM</span><h2>Choose your Mathematics subject</h2><label for="morningSubject">Your morning subject</label><select id="morningSubject"><option value="Mathematics">Mathematics</option></select><p>10 questions · 20 minutes · Ends at 9:20 AM.</p><p class="muted">Grade 10 students can choose Core Mathematics or Essential Mathematics. Other classes use Mathematics.</p></div>
 <div class="card"><span class="chip">2:00 PM</span><h2>Choose English or Kiswahili</h2><label for="afternoonSubject">Your afternoon subject</label><select id="afternoonSubject"><option value="English">English</option><option value="Kiswahili">Kiswahili</option></select><p>25 questions · 10 minutes.</p></div>
 <div class="card"><span class="chip">9:00 PM</span><h2>Choose your evening subject</h2><label for="eveningSubject">Choose a subject</label><select id="eveningSubject"><option value="Social Studies">Social Studies</option></select><div id="scienceOptionsWrap" hidden><label for="scienceLevelChoice">Science subject</label><select id="scienceLevelChoice"><option value="Science and Technology">Science and Technology</option></select></div><p>20 questions · 10 minutes.</p></div>
 <div class="card" id="competitionPlayArea" hidden><h2 id="competitionPlayTitle">Competition</h2><p id="competitionPlayStatus" class="notice" aria-live="polite"></p><div id="competitionQuestionBox"></div><button class="primary" id="competitionNextBtn" onclick="nextCompetitionQuestion()" hidden>Next question →</button><button class="small-btn" id="competitionSubmitBtn" onclick="submitCompetitionAnswers()" hidden>Submit answers</button><div id="competitionResult" aria-live="polite"></div></div>
@@ -673,11 +673,12 @@ function updateCompetitionRegistrationSubjects(){
  const slot=document.getElementById('competitionRegistrationSlot'),subject=document.getElementById('competitionRegistrationSubject');if(!slot||!subject)return;
  const schoolClass=selectedCompetitionClass();let options=[];
  if(!schoolClass)options=[];
- else if(slot.value==='morning')options=[['Mathematics','Mathematics']];
+ else if(slot.value==='morning')options=schoolClass==='Grade 10'?[['Core Mathematics','Core Mathematics'],['Essential Mathematics','Essential Mathematics']]:[['Mathematics','Mathematics']];
  else if(slot.value==='afternoon')options=[['English','English'],['Kiswahili','Kiswahili']];
  else if(schoolClass==='Grade 6')options=[['Science and Technology','Science and Technology'],['Social Studies','Social Studies']];else if(schoolClass==='Grade 7'||schoolClass==='Grade 8')options=[['Integrated Science','Integrated Science'],['Social Studies','Social Studies']];else if(schoolClass==='Grade 10')options=[['Community Service Learning','Community Service Learning'],['Physical Education','Physical Education']];else if(schoolClass==='Form 3')options=[['Physics','Physics'],['Biology','Biology'],['Chemistry','Chemistry']];else options=[['Social Studies','Social Studies']];
  const old=subject.value;subject.innerHTML=options.length?options.map(([v,label])=>'<option value="'+v+'">'+label+'</option>').join(''):'<option value="">Choose a class in your saved profile first</option>';if(options.some(([v])=>v===old))subject.value=old;
  // Keep the existing competition play selectors aligned with the subject the student registers for.
+ if(slot.value==='morning'){const morning=document.getElementById('morningSubject');if(morning){morning.innerHTML=(schoolClass==='Grade 10'?['Core Mathematics','Essential Mathematics']:['Mathematics']).map(s=>'<option value="'+s+'">'+s+'</option>').join('');if(Array.from(morning.options).some(o=>o.value===subject.value))morning.value=subject.value;}}
  if(slot.value==='afternoon'){const afternoon=document.getElementById('afternoonSubject');if(afternoon)afternoon.value=subject.value;}
  if(slot.value==='evening'){const evening=document.getElementById('eveningSubject');if(evening){updateScienceOptions();if(Array.from(evening.options).some(o=>o.value===subject.value))evening.value=subject.value;}}
  updateCompetitionRegistrationWindow();
@@ -931,7 +932,7 @@ document.addEventListener('visibilitychange',()=>{if(!document.hidden)refreshCom
 
 function selectedCompetitionClass(){const allowed=["Grade 6","Grade 7","Grade 8","Grade 10","Form 3"];const value=String(document.getElementById('profileClass')?.value||localStorage.getItem(PROFILE_CLASS_KEY)||"").trim();return allowed.includes(value)?value:"";}
 function selectedCompetitionSubject(slot){
- if(slot==='morning') return 'Mathematics';
+ if(slot==='morning') return document.getElementById('morningSubject')?.value||'Mathematics';
  if(slot==='afternoon') return document.getElementById('afternoonSubject').value;
  return document.getElementById('eveningSubject').value;
 }
