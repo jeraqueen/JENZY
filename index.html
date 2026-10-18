@@ -220,7 +220,7 @@ body.theme-dark .manual-payment-box,body.theme-dark .manual-payment-claim{backgr
       <div><label for="competitionRegistrationSlot">Session</label><select id="competitionRegistrationSlot" onchange="updateCompetitionRegistrationSubjects();refreshCompetitionCounts()"><option value="morning">Morning · 9:00 AM</option><option value="afternoon">Afternoon · 2:00 PM</option><option value="evening">Evening · 9:00 PM</option></select></div>
       <div><label for="competitionRegistrationSubject">Subject</label><select id="competitionRegistrationSubject" onchange="updateCompetitionRegistrationSubjects();refreshCompetitionCounts()"><option value="Mathematics">Mathematics</option></select></div>
     </div>
-    <p id="competitionRegistrationWindow" class="notice" aria-live="polite">Choose a session to see its registration status.</p>
+    <p id="competitionRegistrationWindow" class="notice" aria-live="polite">Choose a session to see the 30-minute registration deadline and countdown.</p>
   </div>
   <div id="competitionRegistrationForm" class="competition-picker" hidden>
     <h3 id="competitionRegistrationTitle">Free competition registration</h3>
@@ -253,7 +253,7 @@ body.theme-dark .manual-payment-box,body.theme-dark .manual-payment-claim{backgr
 <section id="jenzyPaymentAdminPanel" class="card manual-payment-admin" hidden>
   <span class="chip">ADMIN ONLY</span>
   <h2>Manual M-Pesa bulk verification</h2>
-  <p class="manual-payment-help">Open your genuine M-Pesa confirmation messages or official statement. Paste the SMS messages or CSV rows below, one transaction per line. The importer matches the transaction code and KSh 20 amount against pending JENZY submissions. It never approves a code by itself if the amount is missing or wrong.</p>
+  <p class="manual-payment-help">Import the complete genuine M-Pesa SMS/statement records for the payments you want to check. Matching transaction code plus exactly KSh 20 becomes VERIFIED. Claims that do not match an imported transaction or show the wrong amount become UNVERIFIED. A code typed by a student alone never proves payment.</p>
   <label for="manualPaymentImportText">Paste M-Pesa messages or CSV</label>
   <textarea id="manualPaymentImportText" placeholder="Example SMS: QWE123ABC4 Confirmed. You have received Ksh20.00 ...&#10;Or CSV: QWE123ABC4,20"></textarea>
   <label for="manualPaymentImportFile">Or choose a statement text/CSV file</label>
@@ -602,6 +602,8 @@ let competitionRegistrationType='free';
 function competitionDateNairobi(date=new Date()){const p=kenyaParts(date);return p.year+'-'+String(p.month).padStart(2,'0')+'-'+String(p.day).padStart(2,'0')}
 function competitionDateForSlot(slot,now=new Date()){const p=kenyaParts(now),m=p.hour*60+p.minute,start=slot==='morning'?570:slot==='afternoon'?840:1260;const target=new Date(Date.UTC(p.year,p.month-1,p.day+(m>=start?1:0)));return competitionDateNairobi(target)}
 function competitionStartAt(slot,dateString){const [y,mo,d]=dateString.split('-').map(Number),hm=slot==='morning'?[9,0]:slot==='afternoon'?[14,0]:[21,0];return new Date(Date.UTC(y,mo-1,d,hm[0]-3,hm[1]))}
+function competitionRegistrationDeadlineAt(slot,dateString){return new Date(competitionStartAt(slot,dateString).getTime()-30*60*1000)}
+function competitionRegistrationIsOpen(slot,dateString,now=new Date()){return now<competitionRegistrationDeadlineAt(slot,dateString)}
 function updateCompetitionRegistrationSubjects(){
  const slot=document.getElementById('competitionRegistrationSlot'),subject=document.getElementById('competitionRegistrationSubject');if(!slot||!subject)return;
  const schoolClass=selectedCompetitionClass();let options=[];
@@ -622,10 +624,13 @@ function updateCompetitionRegistrationSubjects(){
 }
 function updateCompetitionRegistrationWindow(){
  const slot=document.getElementById('competitionRegistrationSlot')?.value,el=document.getElementById('competitionRegistrationWindow');if(!el||!slot)return;
- const now=new Date(),labels={morning:'9:00 AM',afternoon:'2:00 PM',evening:'9:00 PM'};
- if(currentSlotIsActive(slot)){el.style.color='#b45309';el.textContent='This session is in progress. Registration now reserves your place for the next occurrence at '+labels[slot]+' Kenya time.';}
- else{const date=competitionDateForSlot(slot,now),target=competitionStartAt(slot,date),remaining=target-now;el.style.color='';el.textContent='Registration is open for the '+slot+' session ('+labels[slot]+' Kenya time). Countdown to start: '+fmtCountdown(remaining)+'. At the scheduled start, a full-screen 60-second readiness timer appears, then questions open automatically.';}
+ const now=new Date(),labels={morning:'9:00 AM',afternoon:'2:00 PM',evening:'9:00 PM'},date=competitionDateForSlot(slot,now),deadline=competitionRegistrationDeadlineAt(slot,date),remaining=deadline-now,open=remaining>0;
+ el.style.color=open?'':'#b91c1c';
+ if(open){el.textContent='REGISTRATION OPEN · '+slot.toUpperCase()+' session at '+labels[slot]+' Kenya time. Time left to register: '+fmtCountdown(remaining)+'. Registration closes automatically 30 minutes before the session starts.';}
+ else{el.textContent='REGISTRATION CLOSED for this session. The 30-minute deadline has passed. You can register for the next occurrence when its registration window opens.';}
  const freeBtn=document.querySelector('.free-choice button');if(freeBtn){freeBtn.disabled=false;freeBtn.textContent='Join Free';}
+ const form=document.getElementById('competitionRegistrationForm');
+ if(form&&!form.hidden){const free=document.getElementById('competitionRegisterSubmit'),paid=document.getElementById('competitionPaidPendingButton');if(free&&competitionRegistrationType==='free')free.disabled=!open;if(paid&&competitionRegistrationType==='paid')paid.disabled=!open||!JENZY_MPESA_NUMBER;}
 }
 function resetCompetitionRegistrationForm(){
  const form=document.getElementById('competitionRegistrationForm');if(form)form.hidden=true;
@@ -658,6 +663,9 @@ async function loadMyCompetitionRegistration(clearFields=false){
  }
 }
 async function openCompetitionRegistration(type){
+ const slotNow=document.getElementById('competitionRegistrationSlot')?.value||'morning',dateNow=competitionDateForSlot(slotNow),windowNow=competitionRegistrationIsOpen(slotNow,dateNow);
+ updateCompetitionRegistrationWindow();
+ if(!windowNow){const msg='Registration is closed. The deadline is 30 minutes before the session starts. Please register for the next session window.';setStatus('competitionRegistrationStatus',msg,'error');document.getElementById('competitionRegistrationForm').hidden=false;document.getElementById('competitionRegistrationTitle').textContent='Registration closed';document.getElementById('competitionRegistrationDescription').textContent=msg;return;}
  competitionRegistrationType=type;const savedProfile=await getJenzySavedProfile();
  if(savedProfile){const nameFromProfile=String(savedProfile.full_name||'').trim(),nameInput=document.getElementById('studentName');if(nameFromProfile&&nameInput)nameInput.value=nameFromProfile;const classInput=document.getElementById('profileClass');if(savedProfile.school_class&&classInput){classInput.value=savedProfile.school_class;try{localStorage.setItem(PROFILE_CLASS_KEY,savedProfile.school_class)}catch(e){}}const schoolInput=document.getElementById('profileSchool');if(savedProfile.school_name&&schoolInput)schoolInput.value=savedProfile.school_name;}
  const registrantSchool=document.getElementById('competitionRegistrantSchool'),registrantClass=document.getElementById('competitionRegistrantClass'),registrantLevel=document.getElementById('competitionRegistrantLevel');const canonicalClass=String(savedProfile?.school_class||'').trim();if(registrantSchool)registrantSchool.value=String(savedProfile?.school_name||'').trim()||'Not added to profile yet';if(registrantClass)registrantClass.value=canonicalClass||'Class missing — update your profile first';if(registrantLevel)registrantLevel.value=canonicalClass?educationLevelForClass(canonicalClass,''):'Not available';updateCompetitionRegistrationSubjects();const form=document.getElementById('competitionRegistrationForm');const picker=document.querySelector('#competitionEntryHub > .competition-picker');if(form.parentElement&&form.parentElement.id==='competitionEntryHub'){document.body.appendChild(form);}form.hidden=false;form.classList.add('full-page-registration');if(!form.querySelector('.registration-back')){const back=document.createElement('button');back.type='button';back.className='small-btn registration-back';back.textContent='← Back to Compete';back.onclick=()=>{form.classList.remove('full-page-registration');form.hidden=true;const hub=document.getElementById('competitionEntryHub');const currentPicker=form.querySelector('.competition-picker');if(hub&&currentPicker)hub.insertBefore(currentPicker,hub.querySelector('.prize-split-panel'));};form.prepend(back);}if(picker&&!form.contains(picker)){form.insertBefore(picker,form.querySelector('#competitionRegistrationTitle'));}
@@ -689,11 +697,12 @@ async function loadMyManualPaymentStatus(){
   const {data,error}=await supabaseClient.from('jenzy_manual_payment_submissions').select('transaction_code,amount_kes,status,created_at').eq('student_id',currentUser.id).eq('competition_date',date).eq('session_slot',slot).maybeSingle();
   if(error)throw error;
   if(data){
-   document.getElementById('competitionEntryNumber').textContent=data.status==='approved'?'Payment verified · '+data.transaction_code:'Payment pending · '+data.transaction_code;
+   const state=String(data.status||'submitted').toLowerCase(),verified=state==='verified'||state==='approved',unverified=state==='unverified';
+   document.getElementById('competitionEntryNumber').textContent=(verified?'VERIFIED':unverified?'UNVERIFIED':'SUBMITTED')+' · '+data.transaction_code;
    document.getElementById('competitionPaymentCode').value=data.transaction_code;
    document.getElementById('competitionPaidPendingButton').disabled=true;
-   document.getElementById('competitionPaidPendingButton').textContent=data.status==='approved'?'Payment verified':'Code already submitted';
-   setStatus('competitionRegistrationStatus',data.status==='approved'?'Your KSh '+data.amount_kes+' payment is verified. Your paid entry is confirmed.':'Your code has been submitted. JENZY will unlock access after it matches a genuine KSh '+data.amount_kes+' M-Pesa transaction. Do not pay again.',data.status==='approved'?'success':'');
+   document.getElementById('competitionPaidPendingButton').textContent=verified?'Payment verified':unverified?'Payment unverified':'Code submitted';
+   setStatus('competitionRegistrationStatus',verified?'VERIFIED: your KSh '+data.amount_kes+' payment is confirmed and your paid entry is active.':unverified?'UNVERIFIED: the transaction code or amount did not match the imported M-Pesa records. Contact the JENZY administrator before paying again.':'SUBMITTED: your claim is waiting for an administrator to check the genuine M-Pesa record.',verified?'success':unverified?'error':'');
   }
  }catch(e){console.warn('Could not load manual payment status:',e.message)}
 }
@@ -706,15 +715,16 @@ async function submitManualPayment(){
  const subject=document.getElementById('competitionRegistrationSubject').value;
  const date=competitionDateForSlot(slot);
  const button=document.getElementById('competitionPaidPendingButton');
+ if(!competitionRegistrationIsOpen(slot,date)){updateCompetitionRegistrationWindow();setStatus('competitionRegistrationStatus','Registration is closed. The deadline is 30 minutes before the session starts.','error');button.disabled=true;return;}
  if(!/^[A-Z0-9]{10}$/.test(code)){setStatus('competitionRegistrationStatus','Enter the 10-character M-Pesa transaction code from your confirmation SMS.','error');return}
  button.disabled=true;setStatus('competitionRegistrationStatus','Submitting your payment code securely…');
  try{
   const {data,error}=await supabaseClient.rpc('jenzy_submit_manual_payment',{p_competition_date:date,p_session_slot:slot,p_subject:subject,p_transaction_code:code,p_phone:phone||null});
   if(error)throw error;
-  document.getElementById('competitionEntryNumber').textContent='Payment pending · '+code;
+  document.getElementById('competitionEntryNumber').textContent='SUBMITTED · '+code;
   document.getElementById('competitionPaymentCode').value=code;
   button.textContent='Code submitted';
-  setStatus('competitionRegistrationStatus',data?.message||'Payment code submitted. Waiting for verification. Do not pay again.', 'success');
+  setStatus('competitionRegistrationStatus',data?.message||'SUBMITTED: your claim is awaiting payment verification. Do not pay again.','success');
   await refreshCompetitionCounts();
  }catch(e){setStatus('competitionRegistrationStatus',e.message||'Could not submit the payment code. Please check your entry and try again.','error');button.disabled=false}
 }
@@ -749,12 +759,12 @@ async function previewManualPaymentImport(){
 async function verifyManualPaymentImport(){
  if(!manualPaymentParsedTransactions.length){await previewManualPaymentImport();if(!manualPaymentParsedTransactions.length)return}
  const btn=document.getElementById('manualPaymentVerifyButton');btn.disabled=true;
- setStatus('manualPaymentImportResult','Matching imported transactions to pending student submissions…');
+ setStatus('manualPaymentImportResult','Checking submitted claims against the imported M-Pesa records…');
  try{
   const {data,error}=await supabaseClient.rpc('jenzy_bulk_verify_manual_payments',{p_transactions:manualPaymentParsedTransactions});
   if(error)throw error;
   const d=data||{};
-  setStatus('manualPaymentImportResult','Finished: '+(d.approved||0)+' newly approved · '+(d.already_approved||0)+' already approved · '+(d.invalid_or_wrong_amount||0)+' missing/invalid/wrong-amount records · '+(d.registration_conflicts||0)+' registration conflicts. Unmatched codes remain pending.', 'success');
+  setStatus('manualPaymentImportResult','Finished: '+(d.verified||d.approved||0)+' newly VERIFIED · '+(d.already_verified||d.already_approved||0)+' already VERIFIED · '+(d.unverified||0)+' marked UNVERIFIED · '+(d.invalid_records||d.invalid_or_wrong_amount||0)+' invalid imported records · '+(d.registration_conflicts||0)+' registration conflicts. Import the complete official transaction list before running verification.', 'success');
   await loadManualPaymentClaims();await refreshCompetitionCounts();
  }catch(e){setStatus('manualPaymentImportResult',e.message||'Bulk verification failed. Check the imported records and try again.','error')}
  finally{btn.disabled=manualPaymentParsedTransactions.length===0}
@@ -762,9 +772,9 @@ async function verifyManualPaymentImport(){
 async function loadManualPaymentClaims(){
  const list=document.getElementById('manualPaymentClaimsList');if(!list||!currentUser)return;
  try{
-  const {data,error}=await supabaseClient.from('jenzy_manual_payment_submissions').select('id,full_name,competition_date,session_slot,school_class,subject,amount_kes,transaction_code,status,created_at').eq('status','pending').order('created_at',{ascending:false}).limit(500);
+  const {data,error}=await supabaseClient.from('jenzy_manual_payment_submissions').select('id,full_name,competition_date,session_slot,school_class,subject,amount_kes,transaction_code,status,created_at').in('status',['submitted','unverified']).order('created_at',{ascending:false}).limit(500);
   if(error)throw error;
-  list.innerHTML=(data||[]).length?(data||[]).map(x=>'<div class="manual-payment-claim"><strong>'+escapeCompetitionText(x.full_name)+' · KSh '+Number(x.amount_kes)+'</strong><div>'+escapeCompetitionText(x.school_class)+' · '+escapeCompetitionText(x.subject)+' · '+escapeCompetitionText(x.session_slot)+' · '+escapeCompetitionText(x.competition_date)+'</div><div>Code: <b>'+escapeCompetitionText(x.transaction_code)+'</b></div><div class="muted">Submitted '+escapeCompetitionText(new Date(x.created_at).toLocaleString())+'</div></div>').join(''):'<p class="muted">No pending payment submissions.</p>';
+  list.innerHTML=(data||[]).length?(data||[]).map(x=>'<div class="manual-payment-claim"><strong>'+escapeCompetitionText(x.full_name)+' · KSh '+Number(x.amount_kes)+'</strong><div>'+escapeCompetitionText(x.school_class)+' · '+escapeCompetitionText(x.subject)+' · '+escapeCompetitionText(x.session_slot)+' · '+escapeCompetitionText(x.competition_date)+'</div><div>Code: <b>'+escapeCompetitionText(x.transaction_code)+'</b></div><div><b>Status: '+escapeCompetitionText(String(x.status).toUpperCase())+'</b></div><div class="muted">Submitted '+escapeCompetitionText(new Date(x.created_at).toLocaleString())+'</div></div>').join(''):'<p class="muted">No submitted or unverified payment claims.</p>';
  }catch(e){list.innerHTML='<p class="status error">Could not load pending submissions: '+escapeCompetitionText(e.message)+'</p>'}
 }
 async function initializeManualPayments(){
