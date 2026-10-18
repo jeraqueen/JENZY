@@ -148,6 +148,11 @@ body.theme-dark{--bg:#0b141a;--card:#202c33;--text:#e9edef;--muted:#aab7bf;--lin
 @media(min-width:560px){.class-results-buttons{grid-template-columns:repeat(5,minmax(0,1fr))}.class-result-button:last-child{grid-column:auto}.class-result-button{padding:12px 6px}}
 
 
+/* Class results open as a real full-page view and scroll with the document on mobile. */
+#classResultsPage{box-sizing:border-box;width:100%;min-height:100vh;overflow:visible;padding-bottom:calc(36px + env(safe-area-inset-bottom, 0px))}
+#classResultsPage .class-results-page-heading,#classResultsPage .class-results-fullpage,#classResultsPage #classCompetitionResults{box-sizing:border-box;width:100%;max-width:100%;overflow:visible}
+#classResultsPage .class-results-fullpage{min-height:70vh}
+#classResultsPage .class-results-subject-section,#classResultsPage .class-winner-grid{overflow:visible}
 .class-results-page-heading{margin:18px 0 14px}
 .class-results-page-heading h1{margin:10px 0 6px}
 .class-results-fullpage{padding:16px;min-height:45vh}
