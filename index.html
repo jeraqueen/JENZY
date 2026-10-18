@@ -1080,22 +1080,6 @@ async function checkJenzyAutomaticCompetition(){
   else await startScheduledCompetition(session.slot,subject,registeredClass);
  }catch(e){console.warn('Could not check automatic competition entry:',e.message)}finally{jenzyAutoLaunchBusy=false}
 }
-async function checkJenzyAutomaticCompetition(){
- if(!currentUser||jenzyAutoLaunchBusy||activeCompetition||jenzyReadinessOverlay)return;
- const p=kenyaParts(new Date()),m=p.hour*60+p.minute;
- const slot=m>=540&&m<560?'morning':m>=840&&m<850?'afternoon':m>=1260&&m<1275?'evening':null;if(!slot)return;
- const date=competitionDateNairobi(),schoolClass=selectedCompetitionClass();
- jenzyAutoLaunchBusy=true;
- try{
-  const {data,error}=await supabaseClient.from('jenzy_competition_registrations').select('entry_number,subject,school_class').eq('student_id',currentUser.id).eq('competition_date',date).eq('session_slot',slot).eq('school_class',schoolClass).eq('entry_type','free').eq('status','confirmed').limit(10);
-  if(error)throw error;
-  const registration=(data||[]).find(row=>row.subject);
-  if(registration){
-   const subject=registration.subject,registeredClass=registration.school_class||schoolClass,key=[currentUser.id,date,slot,registeredClass,subject].join('|');
-   if(!jenzyAutoLaunchedKeys.has(key)){jenzyAutoLaunchedKeys.add(key);showJenzyReadiness(slot,subject,registeredClass,60);}
-  }
- }catch(e){console.warn('Could not check automatic competition entry:',e.message)}finally{jenzyAutoLaunchBusy=false}
-}
 setInterval(checkJenzyAutomaticCompetition,1000);
 setInterval(updateCompetitionRegistrationWindow,1000);
 
