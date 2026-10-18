@@ -277,7 +277,7 @@ body.jenzy-test-open{overflow:hidden!important}
   <div class="card"><h3>Today's schedule · Tap a session for details</h3><button class="schedule-link" onclick="openSchedule('math')"><div class="feature-icon">➗</div><div class="grow"><b>9:00–9:20 AM · Mathematics</b><div class="muted">10 questions · 20 minutes</div></div><span>›</span></button><button class="schedule-link" onclick="openSchedule('afternoon')"><div class="feature-icon">📚</div><div class="grow"><b>2:00–2:10 PM · English or Kiswahili</b><div class="muted">Choose one · 25 questions · 10 minutes</div></div><span>›</span></button><button class="schedule-link" onclick="openSchedule('evening')"><div class="feature-icon">🔬</div><div class="grow"><b>9:00–9:10 PM · Class-specific evening subject</b><div class="muted">Choose one · 20 questions · 10 minutes</div></div><span>›</span></button><p class="notice">Reminder alarms appear only from 8:55–9:00 AM, 1:55–2:00 PM, and 8:55–9:00 PM. No other scheduled alarms.</p></div>
   <div class="card"><h3>How JENZY competitions work</h3><p class="muted">Choose your class and the available subject. Questions should match your class and move through topics in order, combining about three subtopics before progressing. Official class-specific question sets and verified scoring still need to be published before live competition play can be enabled.</p></div>
 </section>
-<section class="page" id="quiz"><button type="button" onclick="showPage('home')">← Home</button><h1>🧠 Practice Quiz</h1><p class="muted">These are sample questions; scores are not official competition results.</p>
+<section class="page" id="quiz"><button type="button" onclick="showPage('home')">← Home</button><h1>🧠 Practice Quiz</h1><p class="muted">Questions are loaded from your class's published JENZY question bank. Practice scores are not official competition results.</p>
   <div class="card"><div class="row"><span class="chip" id="qProgress">Question 1 of 5</span><span class="grow"></span><b id="qScore">Score: 0</b></div><h2 id="qText"></h2><div id="qOptions"></div><p id="qFeedback" aria-live="polite"></p><button class="primary" id="nextBtn" onclick="nextQuestion()" style="display:none">Next question →</button></div>
 </section>
 <section class="page" id="competitions"><div class="compete-top-actions"><button type="button" class="free-top-button" onclick="openCompetitionRegistration('free')">FREE</button><button type="button" class="pay-top-button" onclick="openCompetitionRegistration('paid')">PAY · KSh 20</button></div>
@@ -365,7 +365,7 @@ body.jenzy-test-open{overflow:hidden!important}
 <form id="chatComposer" class="chat-composer"><input id="chatMessageInput" maxlength="2000" autocomplete="off" placeholder="Write a message…" aria-label="Write a message"><button type="button" id="voiceRecordButton" class="voice-record-button" onclick="toggleVoiceRecording()" aria-label="Record voice message" title="Record voice message"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 14.5a3.5 3.5 0 0 0 3.5-3.5V5a3.5 3.5 0 0 0-7 0v6a3.5 3.5 0 0 0 3.5 3.5Zm6-3.5a6 6 0 0 1-12 0M12 17v4m-4 0h8"/></svg></button><button type="submit" class="send-chat-button" aria-label="Send message" title="Send message">➤</button></form>
 <p id="chatStatus" class="chat-status" aria-live="polite"></p>
 </section>
-<section class="page" id="subjects"><h1>📚 Subjects</h1><button class="primary" onclick="showPage('learning')">Study by grade and topic →</button><p class="muted">Choose a subject to practise. Sample questions are for demonstration only.</p><div class="grid"><button class="subject-card" onclick="startQuiz()"><div class="icon">➗</div><h3>Mathematics</h3><p>Arithmetic, patterns and reasoning</p></button><button class="subject-card" onclick="startQuiz()"><div class="icon">🔬</div><h3>Science</h3><p>Living things, matter and energy</p></button><button class="subject-card" onclick="startQuiz()"><div class="icon">📖</div><h3>English</h3><p>Grammar and comprehension</p></button><button class="subject-card" onclick="startQuiz()"><div class="icon">🇰🇪</div><h3>Social Studies</h3><p>People, places and citizenship</p></button><button class="subject-card" onclick="startQuiz()"><div class="icon">🗣️</div><h3>Kiswahili</h3><p>Lugha na ufahamu</p></button><button class="subject-card" onclick="startQuiz()"><div class="icon">💻</div><h3>Digital Skills</h3><p>Technology and safe internet use</p></button></div><p class="notice">Subject-specific question banks must be added by the administrator before these become official quizzes.</p></section>
+<section class="page" id="subjects"><h1>📚 Subjects</h1><button class="primary" onclick="showPage('learning')">Study by grade and topic →</button><p class="muted">Choose a subject to practise using your class's latest published questions.</p><div class="grid"><button class="subject-card" onclick="startQuiz(&quot;Mathematics&quot;)"><div class="icon">➗</div><h3>Mathematics</h3><p>Arithmetic, patterns and reasoning</p></button><button class="subject-card" onclick="startQuiz(&quot;Science&quot;)"><div class="icon">🔬</div><h3>Science</h3><p>Living things, matter and energy</p></button><button class="subject-card" onclick="startQuiz(&quot;English&quot;)"><div class="icon">📖</div><h3>English</h3><p>Grammar and comprehension</p></button><button class="subject-card" onclick="startQuiz(&quot;Social Studies&quot;)"><div class="icon">🇰🇪</div><h3>Social Studies</h3><p>People, places and citizenship</p></button><button class="subject-card" onclick="startQuiz()"><div class="icon">🗣️</div><h3>Kiswahili</h3><p>Lugha na ufahamu</p></button><button class="subject-card" onclick="startQuiz()"><div class="icon">💻</div><h3>Digital Skills</h3><p>Technology and safe internet use</p></button></div><p class="notice">Subject-specific question banks must be added by the administrator before these become official quizzes.</p></section>
 
 <section class="page" id="learning">
 <h1>🗺️ Learning Path</h1><p class="muted">Choose your school level, grade, subject and topic. Practise step by step and review explanations.</p>
@@ -373,8 +373,8 @@ body.jenzy-test-open{overflow:hidden!important}
 <label for="learnGrade">Grade / class</label><select id="learnGrade" onchange="updateLearningChoices()"></select>
 <label for="learnSubject">Subject</label><select id="learnSubject" onchange="updateLearningChoices()"><option>Mathematics</option><option>English</option><option>Science</option><option>Biology</option><option>Chemistry</option><option>Physics</option><option>Social Studies</option><option>Kiswahili</option><option>Digital Skills</option></select>
 <label for="learnTopic">Topic</label><select id="learnTopic" onchange="updateLearningChoices()"></select><p class="notice" id="learningTopicInfo">Choose a topic to begin.</p><button class="primary" onclick="startLearningQuiz()">Start this topic →</button></div>
-<div class="card"><h2>How learning works</h2><div class="feature-row"><div class="feature-icon">📘</div><div class="grow"><b>Learn</b><div class="muted">Choose a topic at your level.</div></div></div><div class="feature-row"><div class="feature-icon">✍️</div><div class="grow"><b>Practise</b><div class="muted">Answer questions and get feedback.</div></div></div><div class="feature-row"><div class="feature-icon">🔁</div><div class="grow"><b>Review and repeat</b><div class="muted">Use results to identify what to practise next.</div></div></div></div>
-<p class="notice">This is an initial demonstration bank of original questions, not a complete or officially endorsed KICD question bank. Full curriculum mapping and teacher review are still required.</p></section>
+<div class="card"><h2>How learning works</h2><div class="feature-row"><div class="feature-icon">📘</div><div class="grow"><b>Learn</b><div class="muted">Choose a published topic at your level.</div></div></div><div class="feature-row"><div class="feature-icon">✍️</div><div class="grow"><b>Practise</b><div class="muted">Answer questions and get feedback.</div></div></div><div class="feature-row"><div class="feature-icon">🔁</div><div class="grow"><b>Review and repeat</b><div class="muted">Use results to identify what to practise next.</div></div></div></div>
+<p class="notice">Practice questions are retrieved from the JENZY question bank for your saved class. Only published questions appear here.</p></section>
 
 <section class="page" id="progress"><h1>📈 My progress</h1><p class="muted">Your practice history on this device. These are not official competition scores.</p><div class="stat-grid"><div class="stat"><span class="muted">Quizzes completed</span><strong id="progressCount">0</strong></div><div class="stat"><span class="muted">Best score</span><strong id="progressBest">—</strong></div><div class="stat"><span class="muted">Correct answers</span><strong id="progressCorrect">0</strong></div><div class="stat"><span class="muted">Badges earned</span><strong id="progressBadges">0</strong></div></div><h2>Recent practice</h2><div class="card" id="practiceHistory"><div class="empty-state"><div class="icon">🌱</div><b>Your learning journey starts here</b><p class="muted">Complete a practice quiz to see your progress.</p><button class="primary" onclick="startQuiz()">Start practising</button></div></div><h2>Achievements</h2><div class="card"><div class="feature-row"><div class="feature-icon">🌟</div><div class="grow"><b>First Steps</b><div class="muted">Complete your first practice quiz.</div></div><span class="chip" id="firstStepsStatus">Locked</span></div><div class="feature-row"><div class="feature-icon">🎯</div><div class="grow"><b>Sharp Mind</b><div class="muted">Score at least 4 out of 5 in a practice quiz.</div></div><span class="chip" id="sharpMindStatus">Locked</span></div></div><button class="small-btn" onclick="clearPracticeHistory()">Clear practice history on this device</button></section>
 <section class="page" id="profile">
@@ -458,30 +458,60 @@ const supabaseClient = window.supabase.createClient(SUPABASE_URL, SUPABASE_PUBLI
 const JENZY_MPESA_NUMBER = "0183106113"; // Owner-provided JENZY M-Pesa receiving number.
 const JENZY_MPESA_PAYEE = "CAROLINE OLIENG"; // Display only; the number is the only copyable payment detail.
 let authMode="login", currentUser=null, qi=0, score=0, answered=false, level="Primary", resultSaved=false;
-const sampleQuestions=[
-{q:"What is 7 × 8?",o:["48","54","56","64"],a:2},
-{q:"Which planet do we live on?",o:["Mars","Earth","Venus","Jupiter"],a:1},
-{q:"What is the capital city of Kenya?",o:["Mombasa","Kisumu","Nakuru","Nairobi"],a:3},
-{q:"Which gas do plants mainly absorb for photosynthesis?",o:["Oxygen","Carbon dioxide","Hydrogen","Helium"],a:1},
-{q:"How many sides does a triangle have?",o:["Two","Three","Four","Five"],a:1}
-];
-let questions=sampleQuestions;
-const learningBank={
-"Mathematics|Whole numbers":[
-{q:"What is 245 + 178?",o:["413","423","433","403"],a:1,why:"245 + 178 = 423."},{q:"What is 9 × 7?",o:["56","63","72","49"],a:1,why:"Nine groups of seven make 63."},{q:"What is 144 ÷ 12?",o:["10","11","12","14"],a:2,why:"12 × 12 = 144."},{q:"Which number is greatest?",o:["3,908","3,890","3,809","3,098"],a:0,why:"Compare place values from left to right."},{q:"Round 6,748 to the nearest hundred.",o:["6,700","6,750","6,800","6,000"],a:0,why:"The tens digit is 4, so round down to 6,700."}],
-"Mathematics|Fractions":[
-{q:"What is 1/2 + 1/4?",o:["2/6","3/4","1/6","1/4"],a:1,why:"2/4 + 1/4 = 3/4."},{q:"Which fraction equals 2/3?",o:["3/5","4/6","2/5","5/6"],a:1,why:"Multiply numerator and denominator by 2."},{q:"What is 3/5 of 20?",o:["8","10","12","15"],a:2,why:"20 ÷ 5 = 4, and 4 × 3 = 12."},{q:"Which is the smallest fraction?",o:["1/2","1/3","1/4","1/5"],a:3,why:"For unit fractions, a larger denominator means a smaller fraction."},{q:"Simplify 6/8.",o:["3/4","2/3","4/6","1/2"],a:0,why:"Divide numerator and denominator by 2."}],
-"Mathematics|Algebra basics":[
-{q:"If x + 5 = 12, what is x?",o:["5","6","7","17"],a:2,why:"Subtract 5 from both sides."},{q:"Simplify 3a + 2a.",o:["5","5a","6a","a"],a:1,why:"Combine like terms to get 5a."},{q:"If y = 4, what is 2y + 3?",o:["8","9","11","14"],a:2,why:"2 × 4 + 3 = 11."},{q:"Solve 2x = 18.",o:["6","8","9","16"],a:2,why:"Divide both sides by 2."},{q:"Which means 'seven more than n'?",o:["7n","n − 7","n + 7","7 − n"],a:2,why:"More than means add."}],
-"English|Grammar":[
-{q:"Choose the correct sentence.",o:["She go to school.","She goes to school.","She going school.","She gone to school."],a:1,why:"With 'she' in the simple present, use 'goes'."},{q:"What is the plural of 'child'?",o:["Childs","Childes","Children","Childrens"],a:2,why:"The plural form is children."},{q:"Which word is an adjective in 'the bright sun'?",o:["the","bright","sun","is"],a:1,why:"Bright describes the noun sun."},{q:"Choose the past tense of 'write'.",o:["Writed","Wrote","Writtened","Writing"],a:1,why:"The simple past tense is wrote."},{q:"Which punctuation mark ends a question?",o:["Full stop","Comma","Question mark","Colon"],a:2,why:"A question mark ends a direct question."}],
-"Science|Living things":[
-{q:"Which plant part mainly absorbs water from soil?",o:["Flower","Roots","Leaves","Fruit"],a:1,why:"Roots absorb water and mineral salts."},{q:"What lets green plants make food using sunlight?",o:["Digestion","Respiration only","Photosynthesis","Evaporation"],a:2,why:"Photosynthesis uses light energy to make food."},{q:"Which is a mammal?",o:["Frog","Tilapia","Bat","Lizard"],a:2,why:"Bats are mammals."},{q:"Which organ pumps blood around the body?",o:["Lungs","Heart","Stomach","Kidney"],a:1,why:"The heart pumps blood through blood vessels."},{q:"Which is a producer in a food chain?",o:["Grass","Hawk","Lion","Mushroom"],a:0,why:"Grass makes its own food using photosynthesis."}],
-"Social Studies|Kenya and citizenship":[
-{q:"What is the capital city of Kenya?",o:["Mombasa","Nairobi","Kisumu","Eldoret"],a:1,why:"Nairobi is the capital city of Kenya."},{q:"How many colours are on Kenya's national flag?",o:["Three","Four","Five","Six"],a:1,why:"It has black, red and green, with white stripes."},{q:"Which is a responsibility of a good citizen?",o:["Destroy public property","Ignore all laws","Respect others' rights","Spread false information"],a:2,why:"Respecting rights supports peaceful communities."},{q:"Which ocean borders Kenya?",o:["Atlantic","Pacific","Indian","Arctic"],a:2,why:"Kenya has a coastline along the Indian Ocean."},{q:"What is the main purpose of voting?",o:["Choose representatives","Close schools","Select the weather","Change the flag"],a:0,why:"Voting lets citizens choose leaders or decide on issues."}]
-};
-function updateLearningChoices(){const schoolClass=document.getElementById("profileClass")?.value||localStorage.getItem(PROFILE_CLASS_KEY)||"Grade 6",level=educationLevelForClass(schoolClass,"Primary"),levelSelect=document.getElementById("learnLevel"),grade=document.getElementById("learnGrade");levelSelect.value=level;levelSelect.disabled=true;const grades=[schoolClass],old=grade.value;grade.innerHTML=grades.map(g=>"<option>"+g+"</option>").join("");grade.value=schoolClass;grade.disabled=true;const subjects=schoolClass==="Grade 6"?["Mathematics","English","Integrated Science","Agriculture and Nutrition","Social Studies","Kiswahili","Digital Skills"]:["Grade 7","Grade 8"].includes(schoolClass)?["Mathematics","English","Integrated Science","Social Studies","Kiswahili","Digital Skills"]:["Mathematics","English","Biology","Chemistry","Physics","Social Studies","Kiswahili","Digital Skills"];const subjectSelect=document.getElementById("learnSubject"),previous=subjectSelect.value;subjectSelect.innerHTML=subjects.map(s=>"<option>"+s+"</option>").join("");if(subjects.includes(previous))subjectSelect.value=previous;const subject=subjectSelect.value,topics=Object.keys(learningBank).filter(k=>k.startsWith(subject+"|")).map(k=>k.split("|")[1]),topic=document.getElementById("learnTopic");topic.innerHTML=topics.length?topics.map(t=>"<option>"+t+"</option>").join(""):"<option>No demo topic yet</option>";document.getElementById("learningTopicInfo").textContent=topics.length?grade.value+" · "+subject+" · "+topic.value+" — "+learningBank[subject+"|"+topic.value].length+" original demonstration questions.":"No published demonstration questions are loaded for this subject yet. The subject is available for the selected school level, but its question bank still needs to be added.";}
-function startLearningQuiz(){if(!currentUser)return;const subject=document.getElementById("learnSubject").value,topic=document.getElementById("learnTopic").value,key=subject+"|"+topic;if(!learningBank[key]){document.getElementById("learningTopicInfo").textContent="Choose a topic with a loaded demonstration set.";return}questions=learningBank[key];currentLearningLabel=document.getElementById("learnGrade").value+" · "+subject+" · "+topic;qi=0;score=0;resultSaved=false;document.getElementById("nextBtn").onclick=nextQuestion;showPage("quiz");renderQuestion();}
+let questions=[];
+let currentLearningLabel="Published question bank";
+let learningTopics=[];
+function jenzyPracticeClass(){return document.getElementById("profileClass")?.value||localStorage.getItem(PROFILE_CLASS_KEY)||"Grade 6";}
+function jenzyPracticeSubject(subject,schoolClass){if(subject!=="Science")return subject;return ["Grade 6","Grade 7","Grade 8"].includes(schoolClass)?"Integrated Science":"Biology";}
+function jenzyPracticeQuestions(rows){return (rows||[]).map(row=>({q:row.question_text,o:[row.option_a,row.option_b,row.option_c,row.option_d],a:Number(row.correct_option),why:row.explanation||"",topic:row.topic||"",subtopic:row.subtopic||""}));}
+async function loadJenzyPracticeQuestions(subject,topic=null){
+ const schoolClass=jenzyPracticeClass(),actualSubject=jenzyPracticeSubject(subject,schoolClass);
+ let query=supabaseClient.from("jenzy_question_bank").select("school_class,subject,session_slot,topic_order,topic,subtopic,set_order,question_order,question_text,option_a,option_b,option_c,option_d,correct_option,explanation,status,updated_at").eq("school_class",schoolClass).eq("subject",actualSubject).eq("status","published");
+ if(topic)query=query.eq("topic",topic);
+ const {data,error}=await query.order("updated_at",{ascending:false}).order("topic_order").order("set_order").order("question_order").limit(50);
+ if(error)throw error;
+ return jenzyPracticeQuestions(data);
+}
+async function startQuiz(subject){
+ if(!currentUser)return;
+ const chosen=subject||document.getElementById("learnSubject")?.value||"Mathematics",status=document.getElementById("qFeedback");
+ if(status)status.textContent="Loading the latest published questions…";
+ try{
+  const loaded=await loadJenzyPracticeQuestions(chosen);
+  if(!loaded.length){alert("There are no published questions for "+chosen+" in "+jenzyPracticeClass()+" yet. Please choose a subject with published questions.");if(status)status.textContent="No published questions were found for this class and subject.";return;}
+  questions=loaded;currentLearningLabel=jenzyPracticeClass()+" · "+jenzyPracticeSubject(chosen,jenzyPracticeClass());qi=0;score=0;resultSaved=false;
+  document.getElementById("qFeedback").style.whiteSpace="";document.getElementById("nextBtn").onclick=nextQuestion;showPage("quiz");renderQuestion();
+ }catch(error){const msg="Could not load published questions: "+(error?.message||"Please check your connection and try again.");if(status)status.textContent=msg;alert(msg);}
+}
+async function updateLearningChoices(){
+ const schoolClass=jenzyPracticeClass(),level=educationLevelForClass(schoolClass,"Primary");
+ const levelSelect=document.getElementById("learnLevel"),grade=document.getElementById("learnGrade"),subjectSelect=document.getElementById("learnSubject"),topic=document.getElementById("learnTopic"),info=document.getElementById("learningTopicInfo");
+ levelSelect.value=level;levelSelect.disabled=true;grade.innerHTML="<option>"+schoolClass+"</option>";grade.value=schoolClass;grade.disabled=true;info.textContent="Loading published subjects and topics from the JENZY question bank…";
+ try{
+  const {data,error}=await supabaseClient.from("jenzy_question_bank").select("subject,topic,topic_order,updated_at").eq("school_class",schoolClass).eq("status","published").order("updated_at",{ascending:false}).order("topic_order");
+  if(error)throw error;
+  const rows=data||[],subjects=[...new Set(rows.map(r=>r.subject).filter(Boolean))],oldSubject=subjectSelect.value;
+  subjectSelect.innerHTML=subjects.length?subjects.map(x=>"<option>"+escapeCompetitionText(x)+"</option>").join(""):"<option value=''>No published subjects</option>";
+  if(subjects.includes(oldSubject))subjectSelect.value=oldSubject;
+  const chosen=subjectSelect.value;learningTopics=[...new Set(rows.filter(r=>r.subject===chosen).map(r=>r.topic).filter(Boolean))];const oldTopic=topic.value;
+  topic.innerHTML=learningTopics.length?learningTopics.map(x=>"<option>"+escapeCompetitionText(x)+"</option>").join(""):"<option value=''>No published topics</option>";
+  if(learningTopics.includes(oldTopic))topic.value=oldTopic;
+  info.textContent=learningTopics.length?schoolClass+" · "+chosen+" · "+learningTopics.length+" published topics. Questions are loaded from your latest bank updates.":"No published topics are available for this subject in "+schoolClass+".";
+ }catch(error){subjectSelect.innerHTML="<option value=''>Could not load subjects</option>";topic.innerHTML="<option value=''>Could not load topics</option>";info.textContent="Could not load the published question bank: "+(error?.message||"Check your connection and try again.");}
+}
+async function startLearningQuiz(){
+ if(!currentUser)return;
+ const subject=document.getElementById("learnSubject").value,topic=document.getElementById("learnTopic").value,info=document.getElementById("learningTopicInfo");
+ if(!subject||!topic){info.textContent="There are no published topics to practise for this selection.";return;}
+ info.textContent="Loading published questions for "+topic+"…";
+ try{
+  const loaded=await loadJenzyPracticeQuestions(subject,topic);
+  if(!loaded.length){info.textContent="No published questions were found for "+topic+". Please add and publish questions in the bank.";return;}
+  questions=loaded;currentLearningLabel=jenzyPracticeClass()+" · "+subject+" · "+topic;qi=0;score=0;resultSaved=false;
+  document.getElementById("qFeedback").style.whiteSpace="";document.getElementById("nextBtn").onclick=nextQuestion;showPage("quiz");renderQuestion();
+ }catch(error){info.textContent="Could not load published questions: "+(error?.message||"Please try again.");}
+}
+
 let currentLearningLabel="General sample quiz";
 
 
