@@ -339,7 +339,7 @@ body.jenzy-test-open{overflow:hidden!important}
 
 
 
-<div class="card"><span class="chip">9:00 AM</span><h2>Choose your Mathematics subject</h2><label for="morningSubject">Your morning subject</label><select id="morningSubject"><option value="Mathematics">Mathematics</option></select><p>10 questions · 20 minutes · Ends at 9:20 AM.</p><p class="muted">Grade 10 students can choose Core Mathematics or Essential Mathematics. Other classes use Mathematics.</p></div>
+<div class="card"><span class="chip">9:00 AM</span><h2>Choose your Mathematics subject</h2><label for="morningSubject">Your morning subject</label><select id="morningSubject"><option value="Mathematics">Mathematics</option></select><p>15 questions · 30 minutes · Ends at 9:30 AM.</p><p class="muted">Grade 10 students can choose Core Mathematics or Essential Mathematics. Other classes use Mathematics.</p></div>
 <div class="card"><span class="chip">2:00 PM</span><h2>Choose English or Kiswahili</h2><label for="afternoonSubject">Your afternoon subject</label><select id="afternoonSubject"><option value="English">English</option><option value="Kiswahili">Kiswahili</option></select><p>25 questions · 10 minutes.</p></div>
 <div class="card"><span class="chip">9:00 PM</span><h2>Choose your evening subject</h2><label for="eveningSubject">Choose a subject</label><select id="eveningSubject"><option value="Social Studies">Social Studies</option></select><div id="scienceOptionsWrap" hidden><label for="scienceLevelChoice">Science subject</label><select id="scienceLevelChoice"><option value="Science and Technology">Science and Technology</option></select></div><p>20 questions · 10 minutes.</p></div>
 <div class="card" id="competitionPlayArea" hidden><h2 id="competitionPlayTitle">Competition</h2><p id="competitionPlayStatus" class="notice" aria-live="polite"></p><div id="competitionQuestionBox"></div><button class="primary" id="competitionNextBtn" onclick="nextCompetitionQuestion()" hidden>Next question →</button><button class="small-btn" id="competitionSubmitBtn" onclick="submitCompetitionAnswers()" hidden>Submit answers</button><div id="competitionResult" aria-live="polite"></div></div>
@@ -982,13 +982,13 @@ function selectedCompetitionSubject(slot){
  return document.getElementById('eveningSubject').value;
 }
 function currentSlotIsActive(slot){const p=kenyaParts(new Date()),m=p.hour*60+p.minute;
- return slot==='morning' ? m>=540&&m<560 : slot==='afternoon' ? m>=840&&m<850 : m>=1260&&m<1275;
+ return slot==='morning' ? m>=540&&m<570 : slot==='afternoon' ? m>=840&&m<850 : m>=1260&&m<1275;
 }
 async function getJenzySavedProfile(){if(!currentUser)return null;try{const {data,error}=await supabaseClient.from('profiles').select('full_name,school_class,school_name').eq('id',currentUser.id).maybeSingle();if(error)throw error;return data||null;}catch(e){console.warn('Could not load saved JENZY profile:',e.message);return null;}}
 async function startScheduledCompetition(slot,registeredSubject=null,registeredClass=null){
  if(!currentUser){setStatus('authStatus','Please sign in first.','error');return;}
  if(!currentSlotIsActive(slot)){alert('This competition opens only at its scheduled time in Kenya. Please return during the active competition window.');return;}
- const schoolClass=registeredClass||selectedCompetitionClass(),subject=registeredSubject||selectedCompetitionSubject(slot),expected=slot==='morning'?10:slot==='afternoon'?25:20,date=competitionDateNairobi();
+ const schoolClass=registeredClass||selectedCompetitionClass(),subject=registeredSubject||selectedCompetitionSubject(slot),expected=slot==='morning'?(subject==='Mathematics'?15:10):slot==='afternoon'?25:20,date=competitionDateNairobi();
  const area=document.getElementById('competitionPlayArea');area.hidden=false;area.classList.add('jenzy-test-fullscreen');document.body.classList.add('jenzy-test-open');
  document.getElementById('competitionPlayTitle').textContent=subject+' · '+schoolClass;
  document.getElementById('competitionPlayStatus').textContent='Loading published questions…';
@@ -1004,7 +1004,7 @@ async function startScheduledCompetition(slot,registeredSubject=null,registeredC
   if(result.error)throw result.error;
   data=result.data;
   if(!data||data.length!==expected)throw new Error('Questions are not ready for '+schoolClass+' '+subject+'. JENZY needs '+expected+' published questions for this session, but '+(data?data.length:0)+' are currently available. Please contact the administrator; no score was recorded.');
-  const now=new Date(),kp=kenyaParts(now),endHM=slot==='morning'?[9,20]:slot==='afternoon'?[14,10]:[21,10];
+  const now=new Date(),kp=kenyaParts(now),endHM=slot==='morning'?[9,30]:slot==='afternoon'?[14,10]:[21,10];
   activeCompetition={slot,schoolClass,subject,questions:data,answers:{},index:0,startedAt:now.getTime(),deadline:kenyaDateAt(kp,endHM[0],endHM[1]).getTime(),submitting:false};
   renderCompetitionQuestion();
   if(competitionTimer)clearInterval(competitionTimer);
