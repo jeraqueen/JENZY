@@ -1080,17 +1080,35 @@ function openJenzyAdminTestChallenge(){
 }
 function closeJenzyAdminTestChallenge(){
  if(jenzyTestInterval){clearInterval(jenzyTestInterval);jenzyTestInterval=null}
+ if(jenzyTestStartWaitInterval){clearInterval(jenzyTestStartWaitInterval);jenzyTestStartWaitInterval=null}
  const overlay=document.getElementById("jenzyAdminTestOverlay");if(overlay)overlay.style.display="none";
+}
+const JENZY_TEST_START_AT_UTC=Date.UTC(2026,9,18,10,30,0); // 1:30 PM Kenya time, 18 Oct 2026
+let jenzyTestStartWaitInterval=null;
+function launchJenzyAdminTestNow(){
+ if(jenzyTestStartWaitInterval){clearInterval(jenzyTestStartWaitInterval);jenzyTestStartWaitInterval=null}
+ jenzyTestSecondsLeft=600;jenzyTestQuestionIndex=0;jenzyTestScore=0;jenzyTestCorrectAnswers=0;jenzyTestAnswered=false;jenzyTestAutoTimedOut=false;
+ document.getElementById("jenzyTestAccessGate").hidden=true;document.getElementById("jenzyTestResults").hidden=true;document.getElementById("jenzyTestRun").hidden=false;
+ renderJenzyAdminTestQuestion();updateJenzyAdminTestTimer();
+ if(jenzyTestInterval){clearInterval(jenzyTestInterval);jenzyTestInterval=null}
+ jenzyTestInterval=setInterval(()=>{jenzyTestSecondsLeft--;updateJenzyAdminTestTimer();if(jenzyTestSecondsLeft<=0){jenzyTestAutoTimedOut=true;finishJenzyAdminTestChallenge(true)}},1000);
 }
 function beginJenzyAdminTestChallenge(){
  if(!jenzyAdminAuthorized){document.getElementById("jenzyTestAccessMessage").textContent="Admin authorization is required.";return}
  const entered=String(document.getElementById("jenzyTestAccessCode").value||"").trim();
  if(entered!==JENZY_FAKE_TEST_ACCESS_CODE){document.getElementById("jenzyTestAccessMessage").textContent="That test code is not correct. Use the admin test code supplied for this sandbox.";return}
- if(jenzyTestInterval){clearInterval(jenzyTestInterval);jenzyTestInterval=null}
- jenzyTestSecondsLeft=600;jenzyTestQuestionIndex=0;jenzyTestScore=0;jenzyTestCorrectAnswers=0;jenzyTestAnswered=false;jenzyTestAutoTimedOut=false;
- document.getElementById("jenzyTestAccessGate").hidden=true;document.getElementById("jenzyTestResults").hidden=true;document.getElementById("jenzyTestRun").hidden=false;
- renderJenzyAdminTestQuestion();updateJenzyAdminTestTimer();
- jenzyTestInterval=setInterval(()=>{jenzyTestSecondsLeft--;updateJenzyAdminTestTimer();if(jenzyTestSecondsLeft<=0){jenzyTestAutoTimedOut=true;finishJenzyAdminTestChallenge(true)}},1000);
+ const now=Date.now();
+ if(now>=JENZY_TEST_START_AT_UTC){launchJenzyAdminTestNow();return}
+ document.getElementById("jenzyTestAccessMessage").textContent="Code accepted. Your admin test starts automatically at 1:30 PM Kenya time. Please keep this page open.";
+ const updateWait=()=>{
+  const remaining=Math.max(0,JENZY_TEST_START_AT_UTC-Date.now());
+  const sec=Math.ceil(remaining/1000);
+  document.getElementById("jenzyTestAccessMessage").textContent="Code accepted. Test starts in "+Math.floor(sec/60)+":"+String(sec%60).padStart(2,"0")+" (1:30 PM Kenya time). Keep this page open.";
+  if(remaining<=0)launchJenzyAdminTestNow();
+ };
+ if(jenzyTestStartWaitInterval)clearInterval(jenzyTestStartWaitInterval);
+ updateWait();
+ jenzyTestStartWaitInterval=setInterval(updateWait,200);
 }
 function updateJenzyAdminTestTimer(){
  const el=document.getElementById("jenzyTestTimer");if(!el)return;
@@ -1142,6 +1160,7 @@ function finishJenzyAdminTestChallenge(autoTimedOut){
 }
 function resetJenzyAdminTestChallenge(){
  if(jenzyTestInterval){clearInterval(jenzyTestInterval);jenzyTestInterval=null}
+ if(jenzyTestStartWaitInterval){clearInterval(jenzyTestStartWaitInterval);jenzyTestStartWaitInterval=null}
  document.getElementById("jenzyTestResults").hidden=true;document.getElementById("jenzyTestRun").hidden=true;document.getElementById("jenzyTestAccessGate").hidden=false;
  document.getElementById("jenzyTestAccessCode").value="";document.getElementById("jenzyTestAccessMessage").textContent="";
 }
