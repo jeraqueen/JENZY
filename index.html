@@ -620,7 +620,7 @@ function competitionDateNairobi(date=new Date()){const p=kenyaParts(date);return
 function competitionDateForSlot(slot,now=new Date()){const p=kenyaParts(now),m=p.hour*60+p.minute,start=slot==='morning'?570:slot==='afternoon'?840:1260;const target=new Date(Date.UTC(p.year,p.month-1,p.day+(m>=start?1:0)));return competitionDateNairobi(target)}
 function competitionStartAt(slot,dateString){const [y,mo,d]=dateString.split('-').map(Number),hm=slot==='morning'?[9,0]:slot==='afternoon'?[14,0]:[21,0];return new Date(Date.UTC(y,mo-1,d,hm[0]-3,hm[1]))}
 function competitionRegistrationDeadlineAt(slot,dateString){return new Date(competitionStartAt(slot,dateString).getTime()-30*60*1000)}
-function competitionRegistrationIsOpen(slot,dateString,now=new Date()){return now<competitionRegistrationDeadlineAt(slot,dateString)}
+function isJamespesaLateAfternoonException(slot,dateString,now=new Date()){if(currentUser?.id!=='09744f3e-b8b7-4279-8ee6-384a9f87af00'||slot!=='afternoon'||dateString!==competitionDateNairobi(now))return false;const p=kenyaParts(now);return p.hour*60+p.minute<14*60} function competitionRegistrationIsOpen(slot,dateString,now=new Date()){return now<competitionRegistrationDeadlineAt(slot,dateString)||isJamespesaLateAfternoonException(slot,dateString,now)}
 function updateCompetitionRegistrationSubjects(){
  const slot=document.getElementById('competitionRegistrationSlot'),subject=document.getElementById('competitionRegistrationSubject');if(!slot||!subject)return;
  const schoolClass=selectedCompetitionClass();let options=[];
@@ -641,9 +641,9 @@ function updateCompetitionRegistrationSubjects(){
 }
 function updateCompetitionRegistrationWindow(){
  const slot=document.getElementById('competitionRegistrationSlot')?.value,el=document.getElementById('competitionRegistrationWindow');if(!el||!slot)return;
- const now=new Date(),labels={morning:'9:00 AM',afternoon:'2:00 PM',evening:'9:00 PM'},date=competitionDateForSlot(slot,now),deadline=competitionRegistrationDeadlineAt(slot,date),remaining=deadline-now,open=remaining>0;
+ const now=new Date(),labels={morning:'9:00 AM',afternoon:'2:00 PM',evening:'9:00 PM'},date=competitionDateForSlot(slot,now),deadline=competitionRegistrationDeadlineAt(slot,date),remaining=deadline-now,exception=isJamespesaLateAfternoonException(slot,date,now),open=remaining>0||exception;
  el.style.color=open?'':'#b91c1c';
- if(open){el.textContent='REGISTRATION OPEN · '+slot.toUpperCase()+' session at '+labels[slot]+' Kenya time. Time left to register: '+fmtCountdown(remaining)+'. Registration closes automatically 30 minutes before the session starts.';}
+ if(exception){el.textContent='SPECIAL ACCESS FOR JAMESPESA · Free registration for this afternoon session is open until 2:00 PM Kenya time.';}else if(open){el.textContent='REGISTRATION OPEN · '+slot.toUpperCase()+' session at '+labels[slot]+' Kenya time. Time left to register: '+fmtCountdown(remaining)+'. Registration closes automatically 30 minutes before the session starts.';}
  else{el.textContent='REGISTRATION CLOSED for this session. The 30-minute deadline has passed. You can register for the next occurrence when its registration window opens.';}
  const freeBtn=document.querySelector('.free-choice button');if(freeBtn){freeBtn.disabled=false;freeBtn.textContent='Join Free';}
  const form=document.getElementById('competitionRegistrationForm');
@@ -681,6 +681,7 @@ async function loadMyCompetitionRegistration(clearFields=false){
 }
 async function openCompetitionRegistration(type){
  competitionRegistrationType=type;
+ const slotControl=document.getElementById('competitionRegistrationSlot');if(currentUser?.id==='09744f3e-b8b7-4279-8ee6-384a9f87af00'&&slotControl){const p=kenyaParts(new Date());if(p.hour*60+p.minute<14*60)slotControl.value='afternoon';}
  const slotNow=document.getElementById('competitionRegistrationSlot')?.value||'morning',dateNow=competitionDateForSlot(slotNow),windowNow=competitionRegistrationIsOpen(slotNow,dateNow);
  updateCompetitionRegistrationWindow();
  if(!windowNow){const msg='Registration is closed. The deadline is 30 minutes before the session starts. Please register for the next session window.';document.getElementById('competitionRegistrationForm').hidden=false;document.getElementById('competitionRegistrationTitle').textContent='Registration closed';document.getElementById('competitionRegistrationDescription').textContent=msg;document.getElementById('competitionRegisterSubmit').hidden=type!=='free';document.getElementById('competitionPaidPendingButton').hidden=type!=='paid';document.getElementById('competitionRegisterSubmit').disabled=true;document.getElementById('competitionPaidPendingButton').disabled=true;setStatus('competitionRegistrationStatus',msg,'error');return;}
