@@ -317,7 +317,6 @@ body.jenzy-test-open{overflow:hidden!important}
 <section id="jenzyPaymentAdminPanel" class="card manual-payment-admin" hidden>
   <span class="chip">ADMIN ONLY</span>
   <h2>Manual M-Pesa bulk verification</h2>
-  <div class="jenzy-admin-test-launch"><h3>10-minute Admin Test Challenge</h3><p>Sandbox only: uses a fake access code and never saves official competition scores or real payment records. Admin test registration opens at 1:32 PM, closes at 1:37 PM, and the authorized admin automatically enters the session at 1:42 PM Kenya time.</p><button class="primary" type="button" onclick="openJenzyAdminTestChallenge()">Open test challenge</button></div>
   <p class="manual-payment-help">Import the complete genuine M-Pesa SMS/statement records for the payments you want to check. Matching transaction code plus exactly KSh 20 becomes VERIFIED. Claims that do not match an imported transaction or show the wrong amount become UNVERIFIED. A code typed by a student alone never proves payment.</p>
   <label for="manualPaymentImportText">Paste M-Pesa messages or CSV</label>
   <textarea id="manualPaymentImportText" placeholder="Example SMS: QWE123ABC4 Confirmed. You have received Ksh20.00 ...&#10;Or CSV: QWE123ABC4,20"></textarea>
@@ -399,7 +398,7 @@ if (!window.supabase) {
 }
 </script>
 <script>
-const JENZY_BUILD_VERSION = '20261018-5';
+const JENZY_BUILD_VERSION = '20261018-6';
 (function enableAutomaticJenzyUpdates(){
  const checkEveryMs=30000;
  let updateFound=false,checking=false;
@@ -996,12 +995,10 @@ function selectedCompetitionSubject(slot){
 function currentSlotIsActive(slot){const p=kenyaParts(new Date()),m=p.hour*60+p.minute;
  return slot==='morning' ? m>=540&&m<560 : slot==='afternoon' ? m>=840&&m<850 : m>=1260&&m<1275;
 }
-async function jenzyIsActiveTester(){if(!currentUser?.email)return false;try{const {data,error}=await supabaseClient.from('jenzy_testers').select('email').eq('email',currentUser.email.toLowerCase()).eq('is_active',true).maybeSingle();return !error&&!!data;}catch(e){return false;}}
 async function getJenzySavedProfile(){if(!currentUser)return null;try{const {data,error}=await supabaseClient.from('profiles').select('full_name,school_class,school_name').eq('id',currentUser.id).maybeSingle();if(error)throw error;return data||null;}catch(e){console.warn('Could not load saved JENZY profile:',e.message);return null;}}
 async function startScheduledCompetition(slot,registeredSubject=null,registeredClass=null){
  if(!currentUser){setStatus('authStatus','Please sign in first.','error');return;}
- const testerOverride=!!window.jenzyTesterOverrideActive&&await jenzyIsActiveTester();
- if(!currentSlotIsActive(slot)&&!testerOverride){alert('This competition opens only at its scheduled time in Kenya. Please return during the active competition window.');return;}
+ if(!currentSlotIsActive(slot)){alert('This competition opens only at its scheduled time in Kenya. Please return during the active competition window.');return;}
  const schoolClass=registeredClass||selectedCompetitionClass(),subject=registeredSubject||selectedCompetitionSubject(slot),expected=slot==='morning'?10:slot==='afternoon'?25:20,date=competitionDateNairobi();
  const area=document.getElementById('competitionPlayArea');area.hidden=false;area.classList.add('jenzy-test-fullscreen');document.body.classList.add('jenzy-test-open');
  document.getElementById('competitionPlayTitle').textContent=subject+' · '+schoolClass;
@@ -1019,8 +1016,7 @@ async function startScheduledCompetition(slot,registeredSubject=null,registeredC
   data=result.data;
   if(!data||data.length!==expected)throw new Error('Questions are not ready for '+schoolClass+' '+subject+'. JENZY needs '+expected+' published questions for this session, but '+(data?data.length:0)+' are currently available. Please contact the administrator; no score was recorded.');
   const now=new Date(),kp=kenyaParts(now),endHM=slot==='morning'?[9,20]:slot==='afternoon'?[14,10]:[21,10];
-  activeCompetition={slot,schoolClass,subject,questions:data,answers:{},index:0,startedAt:now.getTime(),deadline:testerOverride?now.getTime()+15*60*1000:kenyaDateAt(kp,endHM[0],endHM[1]).getTime(),submitting:false,testOnly:false};
-  window.jenzyTesterOverrideActive=false;
+  activeCompetition={slot,schoolClass,subject,questions:data,answers:{},index:0,startedAt:now.getTime(),deadline:kenyaDateAt(kp,endHM[0],endHM[1]).getTime(),submitting:false};
   renderCompetitionQuestion();
   if(competitionTimer)clearInterval(competitionTimer);
   competitionTimer=setInterval(()=>{if(!activeCompetition)return;const remain=activeCompetition.deadline-Date.now();document.getElementById('competitionPlayStatus').textContent=subject+' · '+schoolClass+' · Time left '+fmtCountdown(remain);if(remain<=2000){clearInterval(competitionTimer);submitCompetitionAnswers(true);}},500);
@@ -1147,7 +1143,6 @@ async function checkJenzyAutomaticCompetition(){
 async function checkJenzyAutomaticCompetition(){
  if(!currentUser||jenzyAutoLaunchBusy||activeCompetition||jenzyReadinessOverlay)return;
  const p=kenyaParts(new Date()),m=p.hour*60+p.minute;
- if(p.hour===0&&m>=34&&m<36&&await jenzyIsActiveTester()){const testSlot=document.getElementById('competitionRegistrationSlot')?.value||'morning',testSubject=document.getElementById('competitionRegistrationSubject')?.value||selectedCompetitionSubject(testSlot),testClass=selectedCompetitionClass(),testKey=[currentUser.id,'tester-test',competitionDateNairobi(),testSlot,testSubject].join('|');if(!jenzyAutoLaunchedKeys.has(testKey)){jenzyAutoLaunchedKeys.add(testKey);window.jenzyTesterOverrideActive=true;showJenzyReadiness(testSlot,testSubject,testClass,60);}return;}
  const slot=m>=540&&m<560?'morning':m>=840&&m<850?'afternoon':m>=1260&&m<1275?'evening':null;if(!slot)return;
  const date=competitionDateNairobi(),schoolClass=selectedCompetitionClass();
  jenzyAutoLaunchBusy=true;
@@ -1217,165 +1212,9 @@ function openClassResultsPage(schoolClass){
 }
 
 
-/* Admin-only local sandbox: no official score or payment RPCs are called. */
-let jenzyAdminAuthorized=false;
-let jenzyTestSecondsLeft=600;
-let jenzyTestInterval=null;
-let jenzyTestQuestionIndex=0;
-let jenzyTestScore=0;
-let jenzyTestAnswered=false;
-let jenzyTestAutoTimedOut=false;
-let jenzyTestCorrectAnswers=0;
-const JENZY_FAKE_TEST_ACCESS_CODE="JENZY-TEST-2026";
-const jenzyAdminTestQuestions=[
- {q:"What is 12 × 8?",o:["84","96","108","86"],a:1},
- {q:"What is the capital city of Kenya?",o:["Nakuru","Mombasa","Nairobi","Kisumu"],a:2},
- {q:"Which gas do plants absorb for photosynthesis?",o:["Oxygen","Carbon dioxide","Helium","Nitrogen"],a:1},
- {q:"What is 144 ÷ 12?",o:["10","11","12","14"],a:2},
- {q:"Which is a mammal?",o:["Crocodile","Frog","Dolphin","Eagle"],a:2},
- {q:"How many sides does a hexagon have?",o:["Five","Six","Seven","Eight"],a:1},
- {q:"What is 3/4 written as a decimal?",o:["0.25","0.5","0.75","1.25"],a:2},
- {q:"Which planet is known as the Red Planet?",o:["Earth","Mars","Jupiter","Venus"],a:1},
- {q:"The opposite of 'ancient' is:",o:["Old","Historic","Modern","Past"],a:2},
- {q:"Which organ pumps blood around the body?",o:["Lungs","Brain","Kidney","Heart"],a:3}
-];
-function openJenzyAdminTestChallenge(){
- if(!jenzyAdminAuthorized){alert("This test challenge is available only to an authorized JENZY administrator. Sign in again and check admin access.");return}
- const overlay=document.getElementById("jenzyAdminTestOverlay");
- if(!overlay)return;
- overlay.style.display="flex";
- document.getElementById("jenzyTestAccessGate").hidden=false;
- document.getElementById("jenzyTestRun").hidden=true;
- document.getElementById("jenzyTestResults").hidden=true;
- document.getElementById("jenzyTestAccessCode").value="";
- document.getElementById("jenzyTestAccessMessage").textContent="";
-}
-function closeJenzyAdminTestChallenge(){
- if(jenzyTestInterval){clearInterval(jenzyTestInterval);jenzyTestInterval=null}
- if(jenzyTestStartWaitInterval){clearInterval(jenzyTestStartWaitInterval);jenzyTestStartWaitInterval=null}
- const overlay=document.getElementById("jenzyAdminTestOverlay");if(overlay)overlay.style.display="none";
-}
-const JENZY_TEST_REGISTRATION_OPENS_UTC=Date.UTC(2026,9,18,10,32,0); // 1:32 PM Kenya time, 18 Oct 2026
-const JENZY_TEST_REGISTRATION_DEADLINE_UTC=Date.UTC(2026,9,18,10,37,0); // 1:37 PM Kenya time
-const JENZY_TEST_SESSION_START_UTC=Date.UTC(2026,9,18,10,42,0); // Admin automatically enters at 1:42 PM Kenya time
-let jenzyTestStartWaitInterval=null;
-function launchJenzyAdminTestNow(){
- if(jenzyTestStartWaitInterval){clearInterval(jenzyTestStartWaitInterval);jenzyTestStartWaitInterval=null}
- jenzyTestSecondsLeft=600;jenzyTestQuestionIndex=0;jenzyTestScore=0;jenzyTestCorrectAnswers=0;jenzyTestAnswered=false;jenzyTestAutoTimedOut=false;
- document.getElementById("jenzyTestAccessGate").hidden=true;document.getElementById("jenzyTestResults").hidden=true;document.getElementById("jenzyTestRun").hidden=false;
- renderJenzyAdminTestQuestion();updateJenzyAdminTestTimer();
- if(jenzyTestInterval){clearInterval(jenzyTestInterval);jenzyTestInterval=null}
- jenzyTestInterval=setInterval(()=>{jenzyTestSecondsLeft--;updateJenzyAdminTestTimer();if(jenzyTestSecondsLeft<=0){jenzyTestAutoTimedOut=true;finishJenzyAdminTestChallenge(true)}},1000);
-}
-function beginJenzyAdminTestChallenge(){
- if(!jenzyAdminAuthorized){document.getElementById("jenzyTestAccessMessage").textContent="Admin authorization is required.";return}
- const entered=String(document.getElementById("jenzyTestAccessCode").value||"").trim();
- if(entered!==JENZY_FAKE_TEST_ACCESS_CODE){document.getElementById("jenzyTestAccessMessage").textContent="That test code is not correct. Use the admin test code supplied for this sandbox.";return}
- const now=Date.now();
- if(now<JENZY_TEST_REGISTRATION_OPENS_UTC){document.getElementById("jenzyTestAccessMessage").textContent="Admin test registration opens at 1:32 PM Kenya time. Please try again from 1:32 PM.";return}
- if(now>=JENZY_TEST_REGISTRATION_DEADLINE_UTC){document.getElementById("jenzyTestAccessMessage").textContent="The admin test registration deadline was 1:37 PM Kenya time. Registration is closed.";return}
- document.getElementById("jenzyTestAccessMessage").textContent="Admin test registration accepted. Keep this page open. You will enter the session automatically at 1:42 PM Kenya time.";
- const updateWait=()=>{
-  const remaining=Math.max(0,JENZY_TEST_SESSION_START_UTC-Date.now());
-  const sec=Math.ceil(remaining/1000);
-  if(remaining<=0){launchJenzyAdminTestNow();return}
-  document.getElementById("jenzyTestAccessMessage").textContent="Registration accepted. Automatic session entry in "+Math.floor(sec/60)+":"+String(sec%60).padStart(2,"0")+" (1:42 PM Kenya time). Keep this page open.";
- };
- if(jenzyTestStartWaitInterval)clearInterval(jenzyTestStartWaitInterval);
- updateWait();
- jenzyTestStartWaitInterval=setInterval(updateWait,200);
-}
-function updateJenzyAdminTestTimer(){
- const el=document.getElementById("jenzyTestTimer");if(!el)return;
- const m=Math.floor(Math.max(0,jenzyTestSecondsLeft)/60),sec=Math.max(0,jenzyTestSecondsLeft)%60;
- el.textContent=String(m).padStart(2,"0")+":"+String(sec).padStart(2,"0");
- if(jenzyTestSecondsLeft<=60)el.style.color="#dc2626";else el.style.color="";
-}
-function renderJenzyAdminTestQuestion(){
- const q=jenzyAdminTestQuestions[jenzyTestQuestionIndex];if(!q)return;
- jenzyTestAnswered=false;
- document.getElementById("jenzyTestProgress").textContent="Question "+(jenzyTestQuestionIndex+1)+" of "+jenzyAdminTestQuestions.length;
- document.getElementById("jenzyTestQuestion").textContent=q.q;
- document.getElementById("jenzyTestFeedback").textContent="";
- document.getElementById("jenzyTestNext").disabled=true;
- document.getElementById("jenzyTestNext").textContent=jenzyTestQuestionIndex===jenzyAdminTestQuestions.length-1?"View test results":"Next question";
- const box=document.getElementById("jenzyTestOptions");box.innerHTML="";
- q.o.forEach((option,index)=>{const b=document.createElement("button");b.type="button";b.className="jenzy-test-option";b.textContent=String.fromCharCode(65+index)+". "+option;b.onclick=()=>answerJenzyAdminTestQuestion(index,b);box.appendChild(b)});
-}
-function answerJenzyAdminTestQuestion(index,button){
- if(jenzyTestAnswered||jenzyTestSecondsLeft<=0)return;
- jenzyTestAnswered=true;
- const q=jenzyAdminTestQuestions[jenzyTestQuestionIndex];
- document.querySelectorAll("#jenzyTestOptions button").forEach(b=>{b.disabled=true});
- if(index===q.a){jenzyTestScore++;jenzyTestCorrectAnswers++;button.classList.add("chosen")}
- else{button.classList.add("chosen")}
- document.getElementById("jenzyTestFeedback").textContent="Answer recorded. Correct answers will be shown only after the test is finished."
- document.getElementById("jenzyTestNext").disabled=false;
-}
-function nextJenzyAdminTestQuestion(){
- if(!jenzyTestAnswered)return;
- if(jenzyTestQuestionIndex>=jenzyAdminTestQuestions.length-1){finishJenzyAdminTestChallenge(false);return}
- jenzyTestQuestionIndex++;renderJenzyAdminTestQuestion();
-}
-function finishJenzyAdminTestChallenge(autoTimedOut){
- if(jenzyTestInterval){clearInterval(jenzyTestInterval);jenzyTestInterval=null}
- if(autoTimedOut)jenzyTestAutoTimedOut=true;
- document.getElementById("jenzyTestRun").hidden=true;document.getElementById("jenzyTestResults").hidden=false;
- document.getElementById("jenzyTestFinalScore").textContent="Score: "+jenzyTestScore+" / "+jenzyAdminTestQuestions.length+" · Questions displayed: "+Math.min(jenzyTestQuestionIndex+1,jenzyAdminTestQuestions.length)+" / "+jenzyAdminTestQuestions.length+(jenzyTestAutoTimedOut?" · Time expired; test auto-finished.":"");
- const checks=[
- ["Admin access gate",jenzyAdminAuthorized],
- ["Fake access/payment code gate",true],
- ["Questions loaded",jenzyAdminTestQuestions.length===10],
- ["Answer selection and scoring",jenzyTestCorrectAnswers===jenzyTestScore],
- ["10-minute countdown started",true],
- ["Automatic finish at zero",jenzyTestAutoTimedOut],
- ["Official score/payment tables untouched",true]
- ];
- const ul=document.getElementById("jenzyTestChecklist");ul.innerHTML="";
- checks.forEach(([label,passed])=>{const li=document.createElement("li");li.textContent=(passed?"PASS ✓ ":"NOT TESTED / CHECK ⚠ ")+label;ul.appendChild(li)});
- const review=document.getElementById("jenzyTestAnswerReview");if(review){review.textContent="";const heading=document.createElement("h3");heading.textContent="Correct answers";review.appendChild(heading);jenzyAdminTestQuestions.forEach((q,i)=>{const p=document.createElement("p");p.textContent=(i+1)+". "+q.q+" — "+q.o[q.a];review.appendChild(p)})}
-}
-function resetJenzyAdminTestChallenge(){
- if(jenzyTestInterval){clearInterval(jenzyTestInterval);jenzyTestInterval=null}
- if(jenzyTestStartWaitInterval){clearInterval(jenzyTestStartWaitInterval);jenzyTestStartWaitInterval=null}
- document.getElementById("jenzyTestResults").hidden=true;document.getElementById("jenzyTestRun").hidden=true;document.getElementById("jenzyTestAccessGate").hidden=false;
- document.getElementById("jenzyTestAccessCode").value="";document.getElementById("jenzyTestAccessMessage").textContent="";
-}
 
 </script>
 
-<div id="jenzyAdminTestOverlay" class="jenzy-test-overlay" role="dialog" aria-modal="true" aria-labelledby="jenzyTestHeading">
- <div class="jenzy-test-modal">
-  <div class="jenzy-test-top"><span class="chip">ADMIN SANDBOX · NOT OFFICIAL</span><span style="flex:1"></span><button type="button" class="small-btn" onclick="closeJenzyAdminTestChallenge()">Close</button></div>
-  <h2 id="jenzyTestHeading">JENZY 10-minute Test Challenge</h2>
-  <p class="muted">This is a safe rehearsal. It does not submit official scores, create competition registrations, or verify real M-Pesa payments.</p>
-  <div id="jenzyTestAccessGate">
-   <p><b>Fake test payment/access code</b></p>
-   <label for="jenzyTestAccessCode">Enter the test code</label>
-   <input id="jenzyTestAccessCode" type="text" autocomplete="off" placeholder="Enter test access code">
-   <p id="jenzyTestAccessMessage" class="status" aria-live="polite"></p>
-   <p class="muted">For the normal schedule, registration closes 5 minutes before the session begins. This admin sandbox can be started immediately.</p>
-   <button class="primary" type="button" onclick="beginJenzyAdminTestChallenge()">Unlock and start 10-minute test</button>
-  </div>
-  <div id="jenzyTestRun" hidden>
-   <div class="jenzy-test-top"><span class="chip">TEST ONLY</span><span style="flex:1"></span><span id="jenzyTestTimer" class="jenzy-test-timer">10:00</span></div>
-   <p id="jenzyTestProgress">Question 1 of 10</p>
-   <h3 id="jenzyTestQuestion"></h3>
-   <div id="jenzyTestOptions"></div>
-   <p id="jenzyTestFeedback" aria-live="polite"></p>
-   <button id="jenzyTestNext" class="primary" type="button" onclick="nextJenzyAdminTestQuestion()" disabled>Next question</button>
-   <button id="jenzyTestFinishEarly" class="small-btn" type="button" onclick="finishJenzyAdminTestChallenge(false)">Finish test now</button>
-  </div>
-  <div id="jenzyTestResults" hidden>
- <div id="jenzyTestAnswerReview"></div>
-   <h3>Test results — TEST ONLY</h3>
-   <p id="jenzyTestFinalScore"></p>
-   <ul id="jenzyTestChecklist" class="jenzy-test-checks"></ul>
-   <p class="muted">This result is shown only in this browser and is not an official JENZY competition result.</p>
-   <button class="primary" type="button" onclick="resetJenzyAdminTestChallenge()">Run test again</button>
-  </div>
- </div>
-</div>
 
 </body>
 </html>
