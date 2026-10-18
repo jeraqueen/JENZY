@@ -314,23 +314,7 @@ body.jenzy-test-open{overflow:hidden!important}
 </div>
 
 
-<section id="jenzyPaymentAdminPanel" class="card manual-payment-admin" hidden>
-  <span class="chip">ADMIN ONLY</span>
-  <h2>Manual M-Pesa bulk verification</h2>
-  <p class="manual-payment-help">Import the complete genuine M-Pesa SMS/statement records for the payments you want to check. Matching transaction code plus exactly KSh 20 becomes VERIFIED. Claims that do not match an imported transaction or show the wrong amount become UNVERIFIED. A code typed by a student alone never proves payment.</p>
-  <label for="manualPaymentImportText">Paste M-Pesa messages or CSV</label>
-  <textarea id="manualPaymentImportText" placeholder="Example SMS: QWE123ABC4 Confirmed. You have received Ksh20.00 ...&#10;Or CSV: QWE123ABC4,20"></textarea>
-  <label for="manualPaymentImportFile">Or choose a statement text/CSV file</label>
-  <input id="manualPaymentImportFile" type="file" accept=".txt,.csv,text/plain,text/csv">
-  <div class="row" style="flex-wrap:wrap">
-    <button class="small-btn" type="button" onclick="previewManualPaymentImport()">Preview transactions</button>
-    <button id="manualPaymentVerifyButton" class="primary" type="button" onclick="verifyManualPaymentImport()" disabled>Match and approve payments</button>
-  </div>
-  <p id="manualPaymentImportPreview" class="manual-payment-status" aria-live="polite">No transaction list loaded yet.</p>
-  <p id="manualPaymentImportResult" class="status" aria-live="polite"></p>
-  <div class="section-head"><h3>Submitted / unverified payment claims</h3><button class="small-btn" type="button" onclick="loadManualPaymentClaims()">Refresh</button></div>
-  <div id="manualPaymentClaimsList" class="manual-admin-claims"><p class="muted">Loading pending submissions…</p></div>
-</section>
+
 
 <div class="card"><span class="chip">9:00 AM</span><h2>Choose your Mathematics subject</h2><label for="morningSubject">Your morning subject</label><select id="morningSubject"><option value="Mathematics">Mathematics</option></select><p>10 questions · 20 minutes · Ends at 9:20 AM.</p><p class="muted">Grade 10 students can choose Core Mathematics or Essential Mathematics. Other classes use Mathematics.</p></div>
 <div class="card"><span class="chip">2:00 PM</span><h2>Choose English or Kiswahili</h2><label for="afternoonSubject">Your afternoon subject</label><select id="afternoonSubject"><option value="English">English</option><option value="Kiswahili">Kiswahili</option></select><p>25 questions · 10 minutes.</p></div>
@@ -398,7 +382,7 @@ if (!window.supabase) {
 }
 </script>
 <script>
-const JENZY_BUILD_VERSION = '20261018-6';
+const JENZY_BUILD_VERSION = '20261018-7';
 (function enableAutomaticJenzyUpdates(){
  const checkEveryMs=30000;
  let updateFound=false,checking=false;
@@ -560,7 +544,7 @@ function jenzyInitialAvatar(initial){const letter=(initial||'J').toUpperCase().r
 function updateScienceOptions(){const wrap=document.getElementById('scienceOptionsWrap'),schoolClass=document.getElementById('profileClass')?.value||localStorage.getItem(PROFILE_CLASS_KEY)||'Grade 6',select=document.getElementById('scienceLevelChoice'),evening=document.getElementById('eveningSubject');if(!wrap||!select||!evening)return;const subjects=schoolClass==='Grade 6'?['Science and Technology','Social Studies']:['Grade 7','Grade 8'].includes(schoolClass)?['Integrated Science','Social Studies']:schoolClass==='Grade 10'?['Community Service Learning','Physical Education']:schoolClass==='Form 3'?['Physics','Biology','Chemistry']:['Social Studies'];const previous=evening.value;evening.innerHTML=subjects.map(s=>'<option value="'+s+'">'+s+'</option>').join('');if(subjects.includes(previous))evening.value=previous;wrap.hidden=true;select.innerHTML='';}
 document.addEventListener('click',function(e){const surface=e.target.closest('.chat-user-avatar,.conversation-avatar,[data-student-avatar]');if(!surface)return;const img=surface.matches('img')?surface:surface.querySelector('img');if(!img||img.id==='profileAvatar')return;e.preventDefault();e.stopPropagation();e.stopImmediatePropagation();const row=surface.closest('.chat-user-row');const name=row?.querySelector('.chat-user-info strong')?.textContent||document.getElementById('conversationName')?.textContent||img.alt||'Student';openStudentAvatarViewer(img.currentSrc||img.src,name)},true);document.addEventListener('keydown',function(e){if(e.key!=='Enter'&&e.key!==' ')return;const surface=e.target.closest('.chat-user-avatar,.conversation-avatar,[data-student-avatar]');if(!surface)return;const img=surface.matches('img')?surface:surface.querySelector('img');if(!img||img.id==='profileAvatar')return;e.preventDefault();e.stopPropagation();e.stopImmediatePropagation();const row=surface.closest('.chat-user-row');const name=row?.querySelector('.chat-user-info strong')?.textContent||document.getElementById('conversationName')?.textContent||img.alt||'Student';openStudentAvatarViewer(img.currentSrc||img.src,name)},true);function openStudentAvatarViewer(src,name,event){if(event)event.stopPropagation();const modal=document.getElementById("profileImageViewer"),img=document.getElementById("profileImageViewerImg"),fallback=document.getElementById("profileImageViewerCoverFallback");if(!modal||!img||!fallback)return;document.body.appendChild(modal);if(src){img.src=src;img.alt=(name||"Student")+" profile picture";img.hidden=false;fallback.hidden=true}else{img.hidden=true;fallback.hidden=false;const letter=document.getElementById("profileImageViewerCoverLetter");if(letter)letter.textContent=((name||"J").trim().charAt(0)||"J").toUpperCase()}modal.setAttribute("aria-label",(name||"Student")+" profile picture");modal.hidden=false;document.body.style.overflow="hidden"}function openProfileImageViewer(kind,event){if(event&&kind==='cover'&&event.target?.closest('.profile-summary,.primary,.profile-cover-button,.profile-camera-button'))return;if(event&&event.target?.closest('button'))return;const modal=document.getElementById('profileImageViewer'),img=document.getElementById('profileImageViewerImg'),fallback=document.getElementById('profileImageViewerCoverFallback'),letter=document.getElementById('profileImageViewerCoverLetter');if(!modal||!img||!fallback)return;document.body.appendChild(modal);const isAvatar=kind==='avatar';const src=isAvatar?(document.getElementById('profileAvatar')?.src||''):localStorage.getItem(profileAccountKey(PROFILE_COVER_KEY))||'';if(src){img.src=src;img.hidden=false;fallback.hidden=true}else{img.hidden=true;fallback.hidden=false;const parts=(document.getElementById('studentName')?.value||'JENZY Student').trim().split(/\s+/);letter.textContent=(parts.length>1?parts[parts.length-1].charAt(0):'J').toUpperCase()}modal.hidden=false;document.body.style.overflow='hidden'}function closeProfileImageViewer(){const modal=document.getElementById('profileImageViewer');if(modal)modal.hidden=true;document.body.style.overflow=''}document.addEventListener('keydown',e=>{if(e.key==='Escape')closeProfileImageViewer()});async function uploadProfileMedia(file,kind){if(!currentUser)throw new Error('Please sign in before changing your picture.');const ext=(file.type.split('/')[1]||'jpeg').replace('jpeg','jpg').replace(/[^a-z0-9]/gi,'');const path=currentUser.id+'/'+kind+'-'+Date.now()+'.'+ext;const {error:uploadError}=await supabaseClient.storage.from('jenzy-profile-media').upload(path,file,{upsert:true,contentType:file.type,cacheControl:'3600'});if(uploadError)throw uploadError;const {data}=supabaseClient.storage.from('jenzy-profile-media').getPublicUrl(path);const url=data.publicUrl;const column=kind==='avatar'?'avatar_url':'cover_photo_url';const {error:saveError}=await supabaseClient.from('profiles').update({[column]:url}).eq('id',currentUser.id);if(saveError)throw saveError;localStorage.setItem(profileAccountKey(kind==='avatar'?PROFILE_PHOTO_KEY:PROFILE_COVER_KEY),url);renderProfileSummary();return url}
 function openProfilePhotoChoices(){const modal=document.getElementById('profilePhotoChoiceModal');if(modal)modal.hidden=false}function closeProfilePhotoChoices(){const modal=document.getElementById('profilePhotoChoiceModal');if(modal)modal.hidden=true}function takeProfilePhoto(){closeProfilePhotoChoices();const input=document.getElementById('profileCameraInput');if(input){input.value='';input.click()}}function chooseProfilePhoto(){closeProfilePhotoChoices();const input=document.getElementById('profilePhotoInput');if(input){input.value='';input.click()}}async function handleProfilePhotoChange(input){const f=input.files&&input.files[0];if(!f)return;if(!f.type.startsWith('image/')){setStatus('profileStatus','Please choose an image file.','error');input.value='';return}if(f.size>1500000){setStatus('profileStatus','Please choose a photo smaller than 1.5 MB.','error');input.value='';return}try{setStatus('profileStatus','Saving profile picture…');await uploadProfileMedia(f,'avatar');setStatus('profileStatus','Profile picture saved. It will appear in your profile and chat wherever the student avatar is shown.','success');if(document.getElementById('chats')?.classList.contains('active'))loadChatInbox()}catch(e){setStatus('profileStatus',e.message||'Could not save this profile picture.','error')}finally{input.value=''}}async function handleProfileCoverChange(input){const f=input.files&&input.files[0];if(!f)return;if(!f.type.startsWith('image/')){setStatus('profileStatus','Please choose an image file.','error');input.value='';return}if(f.size>1800000){setStatus('profileStatus','Please choose a background photo smaller than 1.8 MB.','error');input.value='';return}try{setStatus('profileStatus','Saving cover photo…');await uploadProfileMedia(f,'cover');setStatus('profileStatus','Cover photo saved to your account.','success')}catch(e){setStatus('profileStatus',e.message||'Could not save this cover photo.','error')}finally{input.value=''}}document.addEventListener('DOMContentLoaded',()=>{['profilePhotoInput','profileCameraInput'].forEach(id=>{const input=document.getElementById(id);if(input)input.addEventListener('change',()=>handleProfilePhotoChange(input))});const coverInput=document.getElementById('profileCoverInput');if(coverInput)coverInput.addEventListener('change',()=>handleProfileCoverChange(coverInput));const lvl=document.getElementById('schoolLevel'),sub=document.getElementById('eveningSubject');if(lvl)lvl.addEventListener('change',updateScienceOptions);if(sub)sub.addEventListener('change',updateScienceOptions);});
-async function activateUser(user){currentUser=user;resetCompetitionRegistrationForm();document.body.classList.add("signed-in");configureOptionalProfileEmail(user);await loadProfile(user);await initializeManualPayments();if(document.body.classList.contains("class-required")){toggleProfileEdit(true);return}subscribeUnreadMessages();refreshUnreadBadge();showPage("home")}
+async function activateUser(user){currentUser=user;resetCompetitionRegistrationForm();document.body.classList.add("signed-in");configureOptionalProfileEmail(user);await loadProfile(user);if(document.body.classList.contains("class-required")){toggleProfileEdit(true);return}subscribeUnreadMessages();refreshUnreadBadge();showPage("home")}
 async function loadProfile(user){
 const {data,error}=await supabaseClient.from("profiles").select("id, username, full_name, school_name, education_level, school_class, phone_number, avatar_url, cover_photo_url").eq("id",user.id).maybeSingle();
 if(error){setStatus("profileStatus","Signed in, but the profile could not be loaded. Check the profiles SELECT RLS policy for the user's own id. Details: "+error.message,"error");return}
@@ -879,70 +863,6 @@ async function submitManualPayment(){
   await refreshCompetitionCounts();
  }catch(e){setStatus('competitionRegistrationStatus',e.message||'Could not submit the payment code. Please check your entry and try again.','error');button.disabled=false}
 }
-let manualPaymentParsedTransactions=[];
-function parseManualPaymentImport(text){
- const lines=String(text||'').split(/\r?\n/).map(x=>x.trim()).filter(Boolean),byCode=new Map();
- for(const line of lines){
-  const codeMatch=line.match(/\b[A-Z0-9]{10}\b/i);
-  if(!codeMatch)continue;
-  const code=codeMatch[0].toUpperCase();
-  let amountMatch=line.match(/\b(?:Kshs?|KES)\.?\s*([\d,]+(?:\.\d{1,2})?)/i),amount=null;
-  if(amountMatch)amount=Number(amountMatch[1].replace(/,/g,''));
-  else{
-   const fields=line.split(/[,\t;|]/).map(x=>x.trim());
-   const codeIndex=fields.findIndex(x=>x.toUpperCase()===code);
-   const other=fields[codeIndex===0?1:0];
-   if(other&&/^\d+(?:\.\d{1,2})?$/.test(other))amount=Number(other);
-  }
-  byCode.set(code,{transaction_code:code,amount_kes:amount});
- }
- return Array.from(byCode.values());
-}
-async function previewManualPaymentImport(){
- const text=document.getElementById('manualPaymentImportText').value;
- manualPaymentParsedTransactions=parseManualPaymentImport(text);
- const valid=manualPaymentParsedTransactions.filter(x=>x.amount_kes===20).length;
- const missing=manualPaymentParsedTransactions.filter(x=>x.amount_kes===null).length;
- const other=manualPaymentParsedTransactions.length-valid-missing;
- document.getElementById('manualPaymentImportPreview').textContent=manualPaymentParsedTransactions.length+' unique transaction codes found · '+valid+' show KSh 20 · '+missing+' have no readable amount · '+other+' show a different amount. Only exact KSh 20 matches can be approved.';
- document.getElementById('manualPaymentVerifyButton').disabled=manualPaymentParsedTransactions.length===0;
-}
-async function verifyManualPaymentImport(){
- if(!manualPaymentParsedTransactions.length){await previewManualPaymentImport();if(!manualPaymentParsedTransactions.length)return}
- const btn=document.getElementById('manualPaymentVerifyButton');btn.disabled=true;
- setStatus('manualPaymentImportResult','Checking submitted claims against the imported M-Pesa records…');
- try{
-  const {data,error}=await supabaseClient.rpc('jenzy_bulk_verify_manual_payments',{p_transactions:manualPaymentParsedTransactions});
-  if(error)throw error;
-  const d=data||{};
-  setStatus('manualPaymentImportResult','Finished: '+(d.verified||d.approved||0)+' newly VERIFIED · '+(d.already_verified||d.already_approved||0)+' already VERIFIED · '+(d.unverified||0)+' marked UNVERIFIED · '+(d.invalid_records||d.invalid_or_wrong_amount||0)+' invalid imported records · '+(d.registration_conflicts||0)+' registration conflicts. Import the complete official transaction list before running verification.', 'success');
-  await loadManualPaymentClaims();await refreshCompetitionCounts();
- }catch(e){setStatus('manualPaymentImportResult',e.message||'Bulk verification failed. Check the imported records and try again.','error')}
- finally{btn.disabled=manualPaymentParsedTransactions.length===0}
-}
-async function loadManualPaymentClaims(){
- const list=document.getElementById('manualPaymentClaimsList');if(!list||!currentUser)return;
- try{
-  const {data,error}=await supabaseClient.from('jenzy_manual_payment_submissions').select('id,full_name,competition_date,session_slot,school_class,subject,amount_kes,transaction_code,status,created_at').in('status',['submitted','unverified']).order('created_at',{ascending:false}).limit(500);
-  if(error)throw error;
-  list.innerHTML=(data||[]).length?(data||[]).map(x=>'<div class="manual-payment-claim"><strong>'+escapeCompetitionText(x.full_name)+' · KSh '+Number(x.amount_kes)+'</strong><div>'+escapeCompetitionText(x.school_class)+' · '+escapeCompetitionText(x.subject)+' · '+escapeCompetitionText(x.session_slot)+' · '+escapeCompetitionText(x.competition_date)+'</div><div>Code: <b>'+escapeCompetitionText(x.transaction_code)+'</b></div><div><b>Status: '+escapeCompetitionText(String(x.status).toUpperCase())+'</b></div><div class="muted">Submitted '+escapeCompetitionText(new Date(x.created_at).toLocaleString())+'</div></div>').join(''):'<p class="muted">No submitted or unverified payment claims.</p>';
- }catch(e){list.innerHTML='<p class="status error">Could not load pending submissions: '+escapeCompetitionText(e.message)+'</p>'}
-}
-async function initializeManualPayments(){
- const panel=document.getElementById('jenzyPaymentAdminPanel');if(!panel||!currentUser)return;
- try{
-  const {data,error}=await supabaseClient.rpc('jenzy_is_payment_admin');
-  if(error)throw error;
-  jenzyAdminAuthorized=data===true;
-  panel.hidden=data!==true;
-  if(data===true){
-   await loadManualPaymentClaims();
-   const file=document.getElementById('manualPaymentImportFile');
-   if(file&&!file.dataset.bound){file.dataset.bound='1';file.addEventListener('change',async()=>{const f=file.files&&file.files[0];if(!f)return;if(f.size>5000000){setStatus('manualPaymentImportResult','Please choose a statement file smaller than 5 MB.','error');file.value='';return}try{document.getElementById('manualPaymentImportText').value=await f.text();await previewManualPaymentImport()}catch(e){setStatus('manualPaymentImportResult','Could not read that file. Paste its text instead.','error')}})}
-  }
- }catch(e){panel.hidden=true;console.warn('Payment admin panel remains hidden:',e.message)}
-}
-
 async function registerFreeCompetition(){
  if(!currentUser){setStatus('authStatus','Please sign in before registering.','error');return;}
  if(competitionRegistrationType!=='free')return;
