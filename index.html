@@ -4,7 +4,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <meta name="theme-color" content="#4f46e5">
-<meta name="jenzy-build" content="a97ea9958dca6ad958acb8c03301abd87bf5b4b1">
+<meta name="jenzy-build" content="jenzy-build-20261018-02">
 <title>JENZY — Learn. Play. Compete.</title>
 <style>
 :root{--bg:#f5f7ff;--card:#fff;--text:#19213b;--muted:#69738c;--primary:#4f46e5;--line:#e7e9f3}
@@ -1191,9 +1191,14 @@ function openClassResultsPage(schoolClass){
    if(!response.ok)return;
    const html=await response.text();
    const match=html.match(/<meta[^>]*name=["']jenzy-build["'][^>]*content=["']([^"']+)["']/i);
-   if(match&&match[1]!==currentBuild&&safeToReload())location.reload();
+   if(match&&match[1]!==currentBuild&&safeToReload()){
+    location.reload();
+    return;
+   }
   }catch(e){}finally{checking=false;}
  }
+ // Check as soon as the page opens, then repeat every 10 seconds.
+ checkForUpdate();
  setInterval(checkForUpdate,10000);
 })();
 </script>
