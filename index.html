@@ -834,8 +834,22 @@ async function openCompetitionRegistration(type){
  // In paid flow, show the existing manual M-Pesa payment box immediately after session/subject selection.
  const paymentBox=document.getElementById('manualMpesaInstructions');
  const formTitle=document.getElementById('competitionRegistrationTitle');
- if(type==='paid'&&paymentBox&&picker&&picker.parentElement===form){form.insertBefore(paymentBox,formTitle);}
- else if(type==='free'&&paymentBox&&formTitle){const fields=form.querySelector('.competition-fields');if(fields&&paymentBox.parentElement===form)form.insertBefore(paymentBox,form.querySelector('.entry-number-panel'));}
+ const entryPanel=document.querySelector('.entry-number-panel');
+ const statusLine=document.getElementById('competitionRegistrationStatus');
+ const freeSubmit=document.getElementById('competitionRegisterSubmit');
+ const paidSubmit=document.getElementById('competitionPaidPendingButton');
+ const paidNote=document.getElementById('competitionPaidPendingNote');
+ if(type==='paid'&&paymentBox&&picker&&picker.parentElement===form){
+   form.insertBefore(paymentBox,formTitle);
+   // Keep payment code, payment status, and the paid-submit action together in one payment section.
+   [entryPanel,statusLine,paidSubmit,paidNote].forEach(el=>{if(el)paymentBox.appendChild(el);});
+ }else if(type==='free'&&paymentBox&&formTitle){
+   const fields=form.querySelector('.competition-fields');
+   if(fields&&paymentBox.parentElement===form)form.insertBefore(paymentBox,form.querySelector('.entry-number-panel'));
+   // Restore shared status and entry elements outside the hidden M-Pesa box for free registration.
+   const anchor=paymentBox.parentElement===form?paymentBox:formTitle;
+   [entryPanel,statusLine,freeSubmit,paidSubmit,paidNote].forEach(el=>{if(el)form.insertBefore(el,anchor.nextSibling);});
+ }
  document.getElementById('competitionRegistrationTitle').textContent=type==='free'?'Free competition registration':'Paid competition registration';
  document.getElementById('competitionRegistrationDescription').textContent=type==='free'?'Check your signed-in profile details, choose the session and subject for your registered class, then confirm your free entry.':'Pay KSh 20 to the JENZY M-Pesa number, then submit the transaction code from your confirmation message. Your paid entry will be approved only after the code and amount are matched to the administrator’s imported M-Pesa records.';if(!savedProfile?.school_class)document.getElementById('competitionRegistrationStatus').textContent='Your class is missing from your saved profile. Go to My Profile, save your class, then return to register.';else if(!savedProfile?.school_name)document.getElementById('competitionRegistrationStatus').textContent='Please add your school name in My Profile before registering.';
  const profileName=document.getElementById('studentName')?.value.trim()||currentUser.user_metadata?.full_name||'';
