@@ -815,7 +815,7 @@ async function loadClassCompetitionResults(schoolClass){
  if(!currentUser){box.innerHTML='<div class="empty-state"><b>Please sign in first.</b><p class="muted">Sign in to view competition results and your personal position.</p></div>';return;}
  box.innerHTML='<div class="empty-state">Loading '+safeText(schoolClass)+' results…</div>';
  try{
-  const {data,error}=await supabaseClient.rpc("jenzy_get_class_competition_results",{p_school_class:schoolClass});
+  const {data,error}=await supabaseClient.rpc("jenzy_get_class_competition_results_public",{p_school_class:schoolClass});
   if(error)throw error;
   classCompetitionResultsRows=Array.isArray(data)?data:[];
   if(!classCompetitionResultsRows.length){
