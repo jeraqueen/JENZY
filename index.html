@@ -929,6 +929,7 @@ async function startScheduledCompetition(slot,registeredSubject=null,registeredC
  const testerOverride=!!window.jenzyTesterOverrideActive&&await jenzyIsActiveTester();
  if(!currentSlotIsActive(slot)&&!testerOverride&&!jamesTestOverride){alert('This competition opens only at its scheduled time in Kenya. Please return during the active competition window.');return;}
  const schoolClass=registeredClass||selectedCompetitionClass(),subject=registeredSubject||selectedCompetitionSubject(slot),expected=slot==='morning'?10:slot==='afternoon'?25:20,date=competitionDateNairobi();
+ if(jamesTestOverride){showPage('competitions');const launchStatus=document.getElementById('jamesTestLaunchStatus');if(launchStatus)launchStatus.textContent='Countdown finished. Your Mathematics questions are opening below.';}
  const area=document.getElementById('competitionPlayArea');area.hidden=false;
  document.getElementById('competitionPlayTitle').textContent=subject+' · '+schoolClass+(jamesTestOverride?' · JAMES TEST ONLY':'');
  document.getElementById('competitionPlayStatus').textContent=jamesTestOverride?'Opening temporary test questions…':'Loading published questions…';
