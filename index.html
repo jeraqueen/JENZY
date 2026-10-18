@@ -325,6 +325,7 @@ body.jenzy-test-open{overflow:hidden!important}
 </section><section class="page" id="classResultsPage">
   <button type="button" class="small-btn" onclick="showPage('competitions')">← Back to Compete</button>
   <div class="class-results-page-heading"><span class="chip">LIVE CLASS LEADERBOARD</span><h1 id="classResultsPageTitle">🏆 Class results</h1><p id="classResultsPageDescription" class="muted">Current session results for this class.</p></div>
+  <div id="classResultsAdminPreviewTools" class="card" hidden><p><strong>Administrator preview</strong> · These fictional examples are for checking the leaderboard design only. They are not official results and are not saved to the database.</p><button type="button" class="small-btn" onclick="showGrade6SampleResults()">Preview sample Grade 6 results</button></div>
   <div class="card class-results-fullpage">
     <div id="classCompetitionResults" class="class-competition-results" aria-live="polite"><div class="empty-state">Choose a class from the Compete page.</div></div>
   </div>
@@ -1152,9 +1153,18 @@ function renderClassCompetitionGroup(key,rows){
  else{html+='<div class="class-personal-row"><span class="class-rank-medal">👤</span><div class="class-winner-details"><strong>Your position will appear if you competed in this subject</strong><small>Your personal position is shown only for the competition you actually completed.</small></div></div>';}
  return html+'</section>';
 }
+function showGrade6SampleResults(){
+ if(!isJenzyAdmin()||classCompetitionResultsClass!=="Grade 6")return;
+ const box=document.getElementById("classCompetitionResults");if(!box)return;
+ const examples=[{rank:1,name:"Amani Otieno",correct:10,total:12},{rank:2,name:"Wanjiku Njeri",correct:9,total:12},{rank:3,name:"Brian Kiptoo",correct:8,total:12}];
+ const pct=n=>(n/12*100).toLocaleString("en-KE",{maximumFractionDigits:2});
+ box.innerHTML='<div class="notice" style="border:2px solid #a855f7;background:rgba(168,85,247,.10);padding:12px;border-radius:12px"><strong>⚠️ SAMPLE DATA — NOT OFFICIAL RESULTS</strong><br>Fictional Grade 6 Mathematics example, for administrator design preview only.</div><section class="class-results-subject-section"><h2>Mathematics · SAMPLE</h2><div class="class-results-summary"><b>Example session · Sample date</b><br><span>3 fictional sample competitors — not connected to real scores</span></div><h3>Sample top three</h3>'+examples.map(r=>'<div class="class-winner-row"><span class="class-rank-medal">'+({1:"🥇",2:"🥈",3:"🥉"}[r.rank]) +'</span><div class="class-winner-details"><strong>'+safeText(r.name)+'</strong><span class="muted">Position '+r.rank+' · '+r.correct+'/'+r.total+' correct</span></div><div class="class-score">'+pct(r.correct)+'%</div></div>').join("")+'</section>';
+}
 function openClassResultsPage(schoolClass){
  const title=document.getElementById("classResultsPageTitle");
  const desc=document.getElementById("classResultsPageDescription");
+ const tools=document.getElementById("classResultsAdminPreviewTools");
+ if(tools)tools.hidden=!(isJenzyAdmin()&&schoolClass==="Grade 6");
  if(title)title.textContent="🏆 "+schoolClass+" Competition Results";
  if(desc)desc.textContent="Current session leaderboard for "+schoolClass+". Only the current session is shown; it updates when the next session begins.";
  showPage("classResultsPage");
