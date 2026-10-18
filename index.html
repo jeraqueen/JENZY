@@ -126,6 +126,16 @@ body.theme-dark{--bg:#0b141a;--card:#202c33;--text:#e9edef;--muted:#aab7bf;--lin
 .class-personal-row .class-winner-details small{display:block;color:#555b73}
 @media(min-width:560px){.class-results-buttons{grid-template-columns:repeat(5,minmax(0,1fr))}.class-result-button:last-child{grid-column:auto}.class-result-button{padding:12px 6px}}
 
+
+.class-results-page-heading{margin:18px 0 14px}
+.class-results-page-heading h1{margin:10px 0 6px}
+.class-results-fullpage{padding:16px;min-height:45vh}
+.class-results-fullpage .class-results-summary{font-size:15px}
+.class-results-fullpage .class-winner-row{padding:16px 6px}
+.class-results-fullpage .class-winner-details strong{font-size:16px}
+.class-results-fullpage .class-personal-row{margin-top:18px;padding:16px}
+.class-results-hub .class-result-button{text-align:left;display:flex;align-items:center;justify-content:space-between;gap:6px}
+
 </style>
 </head>
 <body>
@@ -168,18 +178,15 @@ body.theme-dark{--bg:#0b141a;--card:#202c33;--text:#e9edef;--muted:#aab7bf;--lin
 </section>
 <section class="page" id="competitions"><div class="compete-top-actions"><button type="button" class="free-top-button" onclick="openCompetitionRegistration('free')">FREE</button><button type="button" class="pay-top-button" onclick="openCompetitionRegistration('paid')">PAY · KSh 20</button></div>
 <section class="class-results-hub card" aria-labelledby="classResultsHeading">
-  <span class="chip">CLASS RESULTS</span>
-  <h2 id="classResultsHeading">🏆 View your class competition</h2>
-  <p class="muted">Choose your class to see the top three competitors and your own position in a competition you completed.</p>
-  <div class="class-results-buttons" role="group" aria-label="Choose a class">
-    <button type="button" class="class-result-button" onclick="loadClassCompetitionResults('Grade 6')">Grade 6</button>
-    <button type="button" class="class-result-button" onclick="loadClassCompetitionResults('Grade 7')">Grade 7</button>
-    <button type="button" class="class-result-button" onclick="loadClassCompetitionResults('Grade 8')">Grade 8</button>
-    <button type="button" class="class-result-button" onclick="loadClassCompetitionResults('Grade 10')">Grade 10</button>
-    <button type="button" class="class-result-button" onclick="loadClassCompetitionResults('Form 3')">Form 3</button>
-  </div>
-  <div id="classCompetitionResults" class="class-competition-results" aria-live="polite">
-    <div class="empty-state">Select a class above to view its published competition results.</div>
+  <span class="chip">CLASS LEADERBOARDS</span>
+  <h2 id="classResultsHeading">🏆 Competition results</h2>
+  <p class="muted">Choose your class to open its full-page leaderboard with the top three competitors and your own position.</p>
+  <div class="class-results-buttons" role="group" aria-label="Choose a class leaderboard">
+    <button type="button" class="class-result-button" onclick="openClassResultsPage('Grade 6')">Grade 6 <span aria-hidden="true">→</span></button>
+    <button type="button" class="class-result-button" onclick="openClassResultsPage('Grade 7')">Grade 7 <span aria-hidden="true">→</span></button>
+    <button type="button" class="class-result-button" onclick="openClassResultsPage('Grade 8')">Grade 8 <span aria-hidden="true">→</span></button>
+    <button type="button" class="class-result-button" onclick="openClassResultsPage('Grade 10')">Grade 10 <span aria-hidden="true">→</span></button>
+    <button type="button" class="class-result-button" onclick="openClassResultsPage('Form 3')">Form 3 <span aria-hidden="true">→</span></button>
   </div>
 </section><h1>🏆 Compete</h1><p class="muted">All times use Kenya time (EAT).</p>
 <div class="card competition-entry-hub registration-options-lower" id="competitionEntryHub">
@@ -222,6 +229,12 @@ body.theme-dark{--bg:#0b141a;--card:#202c33;--text:#e9edef;--muted:#aab7bf;--lin
 <div class="card"><span class="chip">9:00 PM</span><h2>Choose your evening subject</h2><label for="eveningSubject">Choose a subject</label><select id="eveningSubject"><option value="Science">Science</option><option value="Social Studies">Social Studies</option></select><div id="scienceOptionsWrap" hidden><label for="scienceLevelChoice">Science topics for your school level</label><select id="scienceLevelChoice"><option value="Integrated Science">Primary: Integrated Science</option><option value="Agriculture and Nutrition">Primary: Agriculture and Nutrition</option></select><p class="muted">Primary learners can choose Integrated Science or Agriculture and Nutrition. Secondary learners can choose Biology, Chemistry or Physics.</p></div><p>24 questions · 12 minutes.</p><button class="primary" id="eveningJoinBtn" onclick="startScheduledCompetition('evening')">Enter selected evening competition</button></div>
 <div class="card" id="competitionPlayArea" hidden><h2 id="competitionPlayTitle">Competition</h2><p id="competitionPlayStatus" class="notice" aria-live="polite"></p><div id="competitionQuestionBox"></div><button class="primary" id="competitionNextBtn" onclick="nextCompetitionQuestion()" hidden>Next question →</button><button class="small-btn" id="competitionSubmitBtn" onclick="submitCompetitionAnswers()" hidden>Submit answers</button><div id="competitionResult" aria-live="polite"></div></div>
 <div class="card"><h3 id="scheduleStatusTitleCompetition">Schedule status</h3><p id="scheduleStatusTextCompetition" class="muted">Loading schedule…</p><div id="scheduleClockCompetition" style="font-size:25px;font-weight:850">—</div><p id="alarmMessage" class="notice" aria-live="polite">Reminder alerts are scheduled only for the three five-minute windows.</p><button class="small-btn" id="enableAlarmBtn" onclick="enableScheduleAlerts()">Enable sound reminders</button></div>
+</section><section class="page" id="classResultsPage">
+  <button type="button" class="small-btn" onclick="showPage('competitions')">← Back to Compete</button>
+  <div class="class-results-page-heading"><span class="chip">LIVE CLASS LEADERBOARD</span><h1 id="classResultsPageTitle">🏆 Class results</h1><p id="classResultsPageDescription" class="muted">Current session results for this class.</p></div>
+  <div class="card class-results-fullpage">
+    <div id="classCompetitionResults" class="class-competition-results" aria-live="polite"><div class="empty-state">Choose a class from the Compete page.</div></div>
+  </div>
 </section><section class="page" id="leaderboard"><h1>📊 Leaderboard</h1><div class="card"><div class="icon">🌟</div><h3>Your progress starts with practice</h3><p>Official rankings will be shown only when verified scores are connected.</p><button class="primary" onclick="startQuiz()">Take a practice quiz</button></div><p class="notice">No official rankings or scores are being displayed yet.</p></section>
 <section class="page" id="chats">
 <div class="chat-tabs" aria-label="Chat sections"><button id="chatTabChats" class="chat-tab active" onclick="switchChatSection('chats')">💬 Chats</button><button id="chatTabDiscover" class="chat-tab" onclick="switchChatSection('discover')">🔎 Discover</button></div>
@@ -846,6 +859,16 @@ function renderSelectedClassCompetitionResults(key){
  if(me){html+='<div class="class-personal-row"><span class="class-rank-medal">👤</span><div class="class-winner-details"><strong>Your position: #'+Number(me.rank_position)+' of '+Number(me.participant_count)+'</strong><small>'+Number(me.correct_count||0)+'/'+Number(me.question_count||0)+' correct · '+Number(me.score_percent||0).toLocaleString("en-KE",{maximumFractionDigits:2})+'%</small></div></div>';}
  else{html+='<div class="class-personal-row"><span class="class-rank-medal">👤</span><div class="class-winner-details"><strong>Your position is not available yet</strong><small>Complete this exact competition and submit your answers to receive a position out of '+Number(first.participant_count||0)+' competitors with official results.</small></div></div>';}
  box.innerHTML=html;
+}
+
+
+function openClassResultsPage(schoolClass){
+ const title=document.getElementById("classResultsPageTitle");
+ const desc=document.getElementById("classResultsPageDescription");
+ if(title)title.textContent="🏆 "+schoolClass+" Competition Results";
+ if(desc)desc.textContent="Current session leaderboard for "+schoolClass+". Only the current session is shown; it updates when the next session begins.";
+ showPage("classResultsPage");
+ loadClassCompetitionResults(schoolClass);
 }
 
 </script>
