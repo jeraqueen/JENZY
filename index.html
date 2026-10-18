@@ -1152,7 +1152,7 @@ async function loadClassCompetitionResults(schoolClass){
   if(error)throw error;
   classCompetitionResultsRows=Array.isArray(data)?data:[];
   if(!classCompetitionResultsRows.length){
-   box.innerHTML='<div class="empty-state"><div class="icon">🏅</div><b>No results have been recorded for the current session yet.</b><p class="muted">This page automatically shows only the current session. The top three and your own position will appear here after the official results for '+safeText(schoolClass)+' are saved. Previous-session results are no longer displayed.</p></div>';
+   box.innerHTML='<div style="min-height:58vh;display:flex;flex-direction:column;align-items:center;justify-content:center;text-align:center;padding:36px 18px;color:#f8fafc;background:#050505;border:1px solid #242424;border-radius:24px"><div style="font-size:54px;margin-bottom:16px">🏆</div><h2 style="font-size:clamp(24px,5vw,32px);font-weight:950;margin:0 0 10px">'+safeText(schoolClass)+' Results</h2><p style="font-size:16px;line-height:1.6;color:#a3a3a3;max-width:420px;margin:0">The leaderboard is getting ready. Student names, scores and positions will appear here when official results are released.</p><div style="margin-top:22px;padding:10px 15px;border-radius:999px;background:#242424;color:#d4d4d4;font-size:13px;font-weight:800">AWAITING OFFICIAL RESULTS</div></div>'
    return;
   }
   const groups=new Map();
@@ -1190,7 +1190,7 @@ function openClassResultsPage(schoolClass){
  const title=document.getElementById("classResultsPageTitle");
  const desc=document.getElementById("classResultsPageDescription");
  const tools=document.getElementById("classResultsAdminPreviewTools");
- const adminSample=isJenzyAdmin()&&schoolClass==="Grade 6";
+ const adminSample=false; // Keep demo data off for all accounts until official results are released.
  if(tools)tools.hidden=true;
  if(title)title.textContent="🏆 "+schoolClass+" Competition Results";
  if(desc)desc.textContent=adminSample?"Administrator preview · Grade 6 sample leaderboard.":"Current session leaderboard for "+schoolClass+". Only the current session is shown; it updates when the next session begins.";
