@@ -1006,13 +1006,13 @@ async function startScheduledCompetition(slot,registeredSubject=null,registeredC
   const result=await supabaseClient.from('jenzy_question_bank').select('id,school_class,subject,session_slot,topic_order,topic,subtopic,set_order,question_order,question_text,option_a,option_b,option_c,option_d,curriculum_reference,status').eq('school_class',schoolClass).eq('subject',subject).eq('session_slot',slot).eq('status','published').order('topic_order').order('set_order').order('question_order').limit(expected);
   if(result.error)throw result.error;
   data=result.data;
-  if(!data||data.length!==expected)throw new Error('Questions are not ready for '+schoolClass+' '+subject+'. JENZY needs '+expected+' published questions for this session, but '+(data?data.length:0)+' are currently available. Please contact the administrator; no score was recorded.');
+  if(!data||data.length!==expected){const msg='PRIVATE TEST NOT READY: JENZY needs '+expected+' published morning Mathematics questions for '+schoolClass+', but '+(data?data.length:0)+' are currently available. Please publish the missing questions in the JENZY question bank, then tap the private test button again. No score was recorded.';document.getElementById('competitionPlayStatus').textContent=msg;alert(msg);return;}
   const now=new Date(),kp=kenyaParts(now),endHM=slot==='morning'?[9,30]:slot==='afternoon'?[14,15]:[21,10];
   activeCompetition={slot,schoolClass,subject,questions:data,answers:{},index:0,startedAt:now.getTime(),deadline:privateOneOff?now.getTime()+20*60*1000:kenyaDateAt(kp,endHM[0],endHM[1]).getTime(),submitting:false,privateOneOff:!!privateOneOff};
   renderCompetitionQuestion();
   if(competitionTimer)clearInterval(competitionTimer);
   competitionTimer=setInterval(()=>{if(!activeCompetition)return;const remain=activeCompetition.deadline-Date.now();document.getElementById('competitionPlayStatus').textContent=subject+' · '+schoolClass+' · Time left '+fmtCountdown(remain);if(remain<=2000){clearInterval(competitionTimer);submitCompetitionAnswers(true);}},500);
- }catch(e){document.getElementById('competitionPlayStatus').textContent=e.message||'Could not load the published question set.';}
+ }catch(e){const msg='JENZY could not open the private Mathematics test: '+(e&&e.message?e.message:'Could not load the published question set.');const status=document.getElementById('competitionPlayStatus');if(status)status.textContent=msg;const area=document.getElementById('competitionPlayArea');if(area){area.hidden=false;area.classList.add('jenzy-test-fullscreen');document.body.classList.add('jenzy-test-open');area.scrollIntoView({behavior:'smooth',block:'start'});}alert(msg);}
 }
 function closeCompetitionFullscreen(){const area=document.getElementById('competitionPlayArea');if(area)area.classList.remove('jenzy-test-fullscreen');document.body.classList.remove('jenzy-test-open');showPage('home');}
 function renderCompetitionQuestion(){if(!activeCompetition)return;const c=activeCompetition,q=c.questions[c.index],opts=[q.option_a,q.option_b,q.option_c,q.option_d];
