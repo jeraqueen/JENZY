@@ -343,7 +343,7 @@ if (!window.supabase || typeof window.supabase.createClient !== "function") {
   throw new Error("Supabase client library failed to load from both CDNs.");
 }
 const supabaseClient = window.supabase.createClient(SUPABASE_URL, SUPABASE_PUBLISHABLE_KEY);
-const JENZY_MPESA_NUMBER = ""; // Set after the owner confirms the exact receiving number.
+const JENZY_MPESA_NUMBER = "0183106113"; // Owner-provided JENZY M-Pesa receiving number.
 let authMode="login", currentUser=null, qi=0, score=0, answered=false, level="Primary", resultSaved=false;
 const sampleQuestions=[
 {q:"What is 7 × 8?",o:["48","54","56","64"],a:2},
