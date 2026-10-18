@@ -399,23 +399,25 @@ if (!window.supabase) {
 }
 </script>
 <script>
-const JENZY_BUILD_VERSION = '20261018-2';
+const JENZY_BUILD_VERSION = '20261018-3';
 (function enableAutomaticJenzyUpdates(){
- const checkEveryMs=60000;
+ const checkEveryMs=30000;
  let updateFound=false,checking=false;
  function pageIsSafeToReload(){
   if(typeof activeCompetition!=='undefined'&&activeCompetition)return false;
   const el=document.activeElement;
   if(el&&(/^(INPUT|TEXTAREA|SELECT)$/.test(el.tagName)))return false;
-  const visibleForm=Array.from(document.querySelectorAll('form')).find(form=>!form.hidden&&form.getClientRects().length>0);
-  if(visibleForm){
-   const hasEnteredData=Array.from(visibleForm.querySelectorAll('input,textarea,select')).some(field=>{
-    if(field.type==='checkbox'||field.type==='radio')return field.checked;
-    return String(field.value||'').trim()!=='';
+  const hasUnsavedData=Array.from(document.querySelectorAll('form')).some(form=>{
+   if(form.hidden||!form.getClientRects().length)return false;
+   return Array.from(form.querySelectorAll('input,textarea,select')).some(field=>{
+    if(field.type==='checkbox'||field.type==='radio')return field.checked!==field.defaultChecked;
+    return String(field.value||'')!==String(field.defaultValue||'');
    });
-   if(hasEnteredData)return false;
-  }
-  return true;
+  });
+  return !hasUnsavedData;
+ }
+ function reloadIfSafe(){
+  if(updateFound&&pageIsSafeToReload())location.reload();
  }
  async function checkForUpdate(){
   if(checking)return;checking=true;
@@ -424,14 +426,17 @@ const JENZY_BUILD_VERSION = '20261018-2';
    const response=await fetch(url.toString(),{cache:'no-store',credentials:'same-origin'});
    if(!response.ok)return;
    const html=await response.text();
-   const match=html.match(/const JENZY_BUILD_VERSION\s*=\s*['\"]([^'\"]+)['\"]/);
+   const match=html.match(/const JENZY_BUILD_VERSION\s*=\s*['"]([^'"]+)['"]/);
    if(match&&match[1]!==JENZY_BUILD_VERSION)updateFound=true;
-   if(updateFound&&pageIsSafeToReload())location.reload();
+   reloadIfSafe();
   }catch(e){/* Offline or host unavailable: try again at the next check. */}
   finally{checking=false;}
  }
  window.setInterval(checkForUpdate,checkEveryMs);
  document.addEventListener('visibilitychange',()=>{if(!document.hidden)checkForUpdate();});
+ window.addEventListener('focus',checkForUpdate);
+ document.addEventListener('focusout',()=>{if(updateFound)window.setTimeout(reloadIfSafe,250);});
+ window.addEventListener('online',checkForUpdate);
 })();
 const SUPABASE_URL = "https://nbldckaeabtcftxsvodt.supabase.co";
 const SUPABASE_PUBLISHABLE_KEY = "sb_publishable_lEWWN4K_dt11NRzHSbtxaw_xs9zIb92";
