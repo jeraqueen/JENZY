@@ -137,6 +137,22 @@ body.theme-dark{--bg:#0b141a;--card:#202c33;--text:#e9edef;--muted:#aab7bf;--lin
 .class-results-hub .class-result-button{text-align:left;display:flex;align-items:center;justify-content:space-between;gap:6px}
 
 .class-results-subject-section{padding:4px 0 18px;margin-bottom:16px;border-bottom:1px solid var(--line)}.class-results-subject-section:last-child{border-bottom:0;margin-bottom:0}.class-results-subject-section h2{margin:8px 0 12px}
+
+/* Manual M-Pesa payments and bulk verification */
+.manual-payment-box{border:1px solid var(--line);background:var(--card);border-radius:14px;padding:14px;margin:12px 0}
+.manual-payment-number{display:flex;gap:8px;align-items:center;flex-wrap:wrap;margin:8px 0}
+.manual-payment-number strong{font-size:20px;overflow-wrap:anywhere}
+.manual-payment-number button{flex-shrink:0}
+.manual-payment-help{font-size:13px;color:var(--muted);line-height:1.5}
+.manual-payment-admin textarea{width:100%;min-height:150px;resize:vertical;font:13px ui-monospace,SFMono-Regular,monospace}
+.manual-payment-admin .manual-admin-claims{display:grid;gap:8px;margin-top:12px}
+.manual-payment-claim{border:1px solid var(--line);border-radius:12px;padding:11px;overflow-wrap:anywhere}
+.manual-payment-claim strong{display:block;margin-bottom:4px}
+.manual-payment-status{font-size:13px;margin:8px 0}
+.manual-payment-status.pending{color:#a16207}
+.manual-payment-status.success{color:#047857}
+body.theme-dark .manual-payment-box,body.theme-dark .manual-payment-claim{background:#202c33;border-color:#34434b}
+
 </style>
 </head>
 <body>
@@ -216,14 +232,41 @@ body.theme-dark{--bg:#0b141a;--card:#202c33;--text:#e9edef;--muted:#aab7bf;--lin
       <div><label for="competitionRegistrantLevel">Education level</label><input id="competitionRegistrantLevel" readonly aria-readonly="true" placeholder="Based on your registered class"></div>
       <div id="competitionRegistrantPhoneField"><label for="competitionRegistrantPhone">M-Pesa phone number (paid entries only)</label><input id="competitionRegistrantPhone" type="tel" inputmode="tel" maxlength="16" autocomplete="tel" placeholder="07XXXXXXXX or +2547XXXXXXXX"><p class="muted small-note">Only used for paid-entry payment instructions; it is not shown publicly.</p></div>
     </div>
-    <div class="entry-number-panel"><span>Entry number</span><strong id="competitionEntryNumber">Assigned after confirmed registration</strong></div>
+    <div id="manualMpesaInstructions" class="manual-payment-box" hidden>
+      <h3>Pay KSh 20 with M-Pesa</h3>
+      <p class="manual-payment-help">Send exactly KSh 20 to the JENZY M-Pesa number below. Then copy the 10-character transaction code from your genuine M-Pesa confirmation SMS and submit it here. Your entry stays pending until it is matched against the administrator's M-Pesa records.</p>
+      <div class="manual-payment-number"><div class="grow"><span class="muted">JENZY M-Pesa number</span><br><strong id="jenzyMpesaNumberDisplay">Not configured yet</strong></div><button id="copyJenzyMpesaNumberButton" class="small-btn" type="button" onclick="copyJenzyMpesaNumber()" disabled>Copy number</button></div>
+      <label for="competitionPaymentCode">M-Pesa transaction code</label>
+      <input id="competitionPaymentCode" maxlength="16" autocomplete="off" autocapitalize="characters" placeholder="e.g. QWE123ABC4" aria-describedby="manualMpesaCodeHelp">
+      <p id="manualMpesaCodeHelp" class="manual-payment-help">Do not enter your M-Pesa PIN. Never pay twice because a page is waiting for verification.</p>
+    </div>
+    <div class="entry-number-panel"><span>Entry number / payment status</span><strong id="competitionEntryNumber">Assigned after confirmed registration</strong></div>
     <p id="competitionRegistrationStatus" class="status" aria-live="polite"></p>
     <button id="competitionRegisterSubmit" class="primary" type="button" onclick="registerFreeCompetition()">Confirm Free Registration</button>
-    <button id="competitionPaidPendingButton" class="small-btn" type="button" disabled hidden>Payment setup pending</button>
-    <p id="competitionPaidPendingNote" class="notice" hidden>We have not connected a payment provider yet. No money will be requested or collected. Your paid entry number will be assigned only after a verified payment.</p>
+    <button id="competitionPaidPendingButton" class="primary" type="button" onclick="submitManualPayment()" hidden>Submit M-Pesa code for verification</button>
+    <p id="competitionPaidPendingNote" class="notice" hidden>After you submit your code, JENZY will wait until the code and KSh 20 amount match a genuine transaction record imported by the administrator. Access is not unlocked by code entry alone.</p>
   </div>
   <div class="prize-split-panel"><h3>Prizes</h3><div class="prize-line"><span>🥇 1st place</span><strong>Will receive a prize</strong></div><div class="prize-line"><span>🥈 2nd place</span><strong>Will receive a prize</strong></div><div class="prize-line"><span>🥉 3rd place</span><strong>Will receive a prize</strong></div><p class="muted small-note">Final prize details will be announced by JENZY.</p></div>
 </div>
+
+
+<section id="jenzyPaymentAdminPanel" class="card manual-payment-admin" hidden>
+  <span class="chip">ADMIN ONLY</span>
+  <h2>Manual M-Pesa bulk verification</h2>
+  <p class="manual-payment-help">Open your genuine M-Pesa confirmation messages or official statement. Paste the SMS messages or CSV rows below, one transaction per line. The importer matches the transaction code and KSh 20 amount against pending JENZY submissions. It never approves a code by itself if the amount is missing or wrong.</p>
+  <label for="manualPaymentImportText">Paste M-Pesa messages or CSV</label>
+  <textarea id="manualPaymentImportText" placeholder="Example SMS: QWE123ABC4 Confirmed. You have received Ksh20.00 ...&#10;Or CSV: QWE123ABC4,20"></textarea>
+  <label for="manualPaymentImportFile">Or choose a statement text/CSV file</label>
+  <input id="manualPaymentImportFile" type="file" accept=".txt,.csv,text/plain,text/csv">
+  <div class="row" style="flex-wrap:wrap">
+    <button class="small-btn" type="button" onclick="previewManualPaymentImport()">Preview transactions</button>
+    <button id="manualPaymentVerifyButton" class="primary" type="button" onclick="verifyManualPaymentImport()" disabled>Match and approve payments</button>
+  </div>
+  <p id="manualPaymentImportPreview" class="manual-payment-status" aria-live="polite">No transaction list loaded yet.</p>
+  <p id="manualPaymentImportResult" class="status" aria-live="polite"></p>
+  <div class="section-head"><h3>Pending payment submissions</h3><button class="small-btn" type="button" onclick="loadManualPaymentClaims()">Refresh</button></div>
+  <div id="manualPaymentClaimsList" class="manual-admin-claims"><p class="muted">Loading pending submissions…</p></div>
+</section>
 
 <div class="card"><span class="chip">9:00 AM</span><h2>Mathematics</h2><p>10 questions · 20 minutes · Ends at 9:20 AM.</p><p class="muted">The morning subject is fixed; no subject selection is needed.</p></div>
 <div class="card"><span class="chip">2:00 PM</span><h2>Choose English or Kiswahili</h2><label for="afternoonSubject">Your afternoon subject</label><select id="afternoonSubject"><option value="English">English</option><option value="Kiswahili">Kiswahili</option></select><p>25 questions · 10 minutes.</p></div>
@@ -300,6 +343,7 @@ if (!window.supabase || typeof window.supabase.createClient !== "function") {
   throw new Error("Supabase client library failed to load from both CDNs.");
 }
 const supabaseClient = window.supabase.createClient(SUPABASE_URL, SUPABASE_PUBLISHABLE_KEY);
+const JENZY_MPESA_NUMBER = ""; // Set after the owner confirms the exact receiving number.
 let authMode="login", currentUser=null, qi=0, score=0, answered=false, level="Primary", resultSaved=false;
 const sampleQuestions=[
 {q:"What is 7 × 8?",o:["48","54","56","64"],a:2},
@@ -412,7 +456,7 @@ function jenzyInitialAvatar(initial){const letter=(initial||'J').toUpperCase().r
 function updateScienceOptions(){const wrap=document.getElementById('scienceOptionsWrap'),schoolClass=document.getElementById('profileClass')?.value||localStorage.getItem(PROFILE_CLASS_KEY)||'Grade 6',select=document.getElementById('scienceLevelChoice');if(!wrap||!select)return;const evening=document.getElementById('eveningSubject')?.value==='Science';wrap.hidden=!evening;if(schoolClass==='Grade 10'||schoolClass==='Form 3'){select.innerHTML='<option value="Biology">Biology</option><option value="Chemistry">Chemistry</option><option value="Physics">Physics</option>';}else if(schoolClass==='Grade 7'||schoolClass==='Grade 8'){select.innerHTML='<option value="Integrated Science">Junior School: Integrated Science</option>';}else{select.innerHTML='<option value="Integrated Science">Primary: Integrated Science</option><option value="Agriculture and Nutrition">Primary: Agriculture and Nutrition</option>';}}
 document.addEventListener('click',function(e){const surface=e.target.closest('.chat-user-avatar,.conversation-avatar,[data-student-avatar]');if(!surface)return;const img=surface.matches('img')?surface:surface.querySelector('img');if(!img||img.id==='profileAvatar')return;e.preventDefault();e.stopPropagation();e.stopImmediatePropagation();const row=surface.closest('.chat-user-row');const name=row?.querySelector('.chat-user-info strong')?.textContent||document.getElementById('conversationName')?.textContent||img.alt||'Student';openStudentAvatarViewer(img.currentSrc||img.src,name)},true);document.addEventListener('keydown',function(e){if(e.key!=='Enter'&&e.key!==' ')return;const surface=e.target.closest('.chat-user-avatar,.conversation-avatar,[data-student-avatar]');if(!surface)return;const img=surface.matches('img')?surface:surface.querySelector('img');if(!img||img.id==='profileAvatar')return;e.preventDefault();e.stopPropagation();e.stopImmediatePropagation();const row=surface.closest('.chat-user-row');const name=row?.querySelector('.chat-user-info strong')?.textContent||document.getElementById('conversationName')?.textContent||img.alt||'Student';openStudentAvatarViewer(img.currentSrc||img.src,name)},true);function openStudentAvatarViewer(src,name,event){if(event)event.stopPropagation();const modal=document.getElementById("profileImageViewer"),img=document.getElementById("profileImageViewerImg"),fallback=document.getElementById("profileImageViewerCoverFallback");if(!modal||!img||!fallback)return;document.body.appendChild(modal);if(src){img.src=src;img.alt=(name||"Student")+" profile picture";img.hidden=false;fallback.hidden=true}else{img.hidden=true;fallback.hidden=false;const letter=document.getElementById("profileImageViewerCoverLetter");if(letter)letter.textContent=((name||"J").trim().charAt(0)||"J").toUpperCase()}modal.setAttribute("aria-label",(name||"Student")+" profile picture");modal.hidden=false;document.body.style.overflow="hidden"}function openProfileImageViewer(kind,event){if(event&&kind==='cover'&&event.target?.closest('.profile-summary,.primary,.profile-cover-button,.profile-camera-button'))return;if(event&&event.target?.closest('button'))return;const modal=document.getElementById('profileImageViewer'),img=document.getElementById('profileImageViewerImg'),fallback=document.getElementById('profileImageViewerCoverFallback'),letter=document.getElementById('profileImageViewerCoverLetter');if(!modal||!img||!fallback)return;document.body.appendChild(modal);const isAvatar=kind==='avatar';const src=isAvatar?(document.getElementById('profileAvatar')?.src||''):localStorage.getItem(profileAccountKey(PROFILE_COVER_KEY))||'';if(src){img.src=src;img.hidden=false;fallback.hidden=true}else{img.hidden=true;fallback.hidden=false;const parts=(document.getElementById('studentName')?.value||'JENZY Student').trim().split(/\s+/);letter.textContent=(parts.length>1?parts[parts.length-1].charAt(0):'J').toUpperCase()}modal.hidden=false;document.body.style.overflow='hidden'}function closeProfileImageViewer(){const modal=document.getElementById('profileImageViewer');if(modal)modal.hidden=true;document.body.style.overflow=''}document.addEventListener('keydown',e=>{if(e.key==='Escape')closeProfileImageViewer()});async function uploadProfileMedia(file,kind){if(!currentUser)throw new Error('Please sign in before changing your picture.');const ext=(file.type.split('/')[1]||'jpeg').replace('jpeg','jpg').replace(/[^a-z0-9]/gi,'');const path=currentUser.id+'/'+kind+'-'+Date.now()+'.'+ext;const {error:uploadError}=await supabaseClient.storage.from('jenzy-profile-media').upload(path,file,{upsert:true,contentType:file.type,cacheControl:'3600'});if(uploadError)throw uploadError;const {data}=supabaseClient.storage.from('jenzy-profile-media').getPublicUrl(path);const url=data.publicUrl;const column=kind==='avatar'?'avatar_url':'cover_photo_url';const {error:saveError}=await supabaseClient.from('profiles').update({[column]:url}).eq('id',currentUser.id);if(saveError)throw saveError;localStorage.setItem(profileAccountKey(kind==='avatar'?PROFILE_PHOTO_KEY:PROFILE_COVER_KEY),url);renderProfileSummary();return url}
 function openProfilePhotoChoices(){const modal=document.getElementById('profilePhotoChoiceModal');if(modal)modal.hidden=false}function closeProfilePhotoChoices(){const modal=document.getElementById('profilePhotoChoiceModal');if(modal)modal.hidden=true}function takeProfilePhoto(){closeProfilePhotoChoices();const input=document.getElementById('profileCameraInput');if(input){input.value='';input.click()}}function chooseProfilePhoto(){closeProfilePhotoChoices();const input=document.getElementById('profilePhotoInput');if(input){input.value='';input.click()}}async function handleProfilePhotoChange(input){const f=input.files&&input.files[0];if(!f)return;if(!f.type.startsWith('image/')){setStatus('profileStatus','Please choose an image file.','error');input.value='';return}if(f.size>1500000){setStatus('profileStatus','Please choose a photo smaller than 1.5 MB.','error');input.value='';return}try{setStatus('profileStatus','Saving profile picture…');await uploadProfileMedia(f,'avatar');setStatus('profileStatus','Profile picture saved. It will appear in your profile and chat wherever the student avatar is shown.','success');if(document.getElementById('chats')?.classList.contains('active'))loadChatInbox()}catch(e){setStatus('profileStatus',e.message||'Could not save this profile picture.','error')}finally{input.value=''}}async function handleProfileCoverChange(input){const f=input.files&&input.files[0];if(!f)return;if(!f.type.startsWith('image/')){setStatus('profileStatus','Please choose an image file.','error');input.value='';return}if(f.size>1800000){setStatus('profileStatus','Please choose a background photo smaller than 1.8 MB.','error');input.value='';return}try{setStatus('profileStatus','Saving cover photo…');await uploadProfileMedia(f,'cover');setStatus('profileStatus','Cover photo saved to your account.','success')}catch(e){setStatus('profileStatus',e.message||'Could not save this cover photo.','error')}finally{input.value=''}}document.addEventListener('DOMContentLoaded',()=>{['profilePhotoInput','profileCameraInput'].forEach(id=>{const input=document.getElementById(id);if(input)input.addEventListener('change',()=>handleProfilePhotoChange(input))});const coverInput=document.getElementById('profileCoverInput');if(coverInput)coverInput.addEventListener('change',()=>handleProfileCoverChange(coverInput));const lvl=document.getElementById('schoolLevel'),sub=document.getElementById('eveningSubject');if(lvl)lvl.addEventListener('change',updateScienceOptions);if(sub)sub.addEventListener('change',updateScienceOptions);});
-async function activateUser(user){currentUser=user;resetCompetitionRegistrationForm();document.body.classList.add("signed-in");configureOptionalProfileEmail(user);await loadProfile(user);if(document.body.classList.contains("class-required")){toggleProfileEdit(true);return}subscribeUnreadMessages();refreshUnreadBadge();showPage("home")}
+async function activateUser(user){currentUser=user;resetCompetitionRegistrationForm();document.body.classList.add("signed-in");configureOptionalProfileEmail(user);await loadProfile(user);await initializeManualPayments();if(document.body.classList.contains("class-required")){toggleProfileEdit(true);return}subscribeUnreadMessages();refreshUnreadBadge();showPage("home")}
 async function loadProfile(user){
 const {data,error}=await supabaseClient.from("profiles").select("id, username, full_name, school_name, education_level, school_class, phone_number, avatar_url, cover_photo_url").eq("id",user.id).maybeSingle();
 if(error){setStatus("profileStatus","Signed in, but the profile could not be loaded. Check the profiles SELECT RLS policy for the user's own id. Details: "+error.message,"error");return}
@@ -618,7 +662,7 @@ async function openCompetitionRegistration(type){
  if(savedProfile){const nameFromProfile=String(savedProfile.full_name||'').trim(),nameInput=document.getElementById('studentName');if(nameFromProfile&&nameInput)nameInput.value=nameFromProfile;const classInput=document.getElementById('profileClass');if(savedProfile.school_class&&classInput){classInput.value=savedProfile.school_class;try{localStorage.setItem(PROFILE_CLASS_KEY,savedProfile.school_class)}catch(e){}}const schoolInput=document.getElementById('profileSchool');if(savedProfile.school_name&&schoolInput)schoolInput.value=savedProfile.school_name;}
  const registrantSchool=document.getElementById('competitionRegistrantSchool'),registrantClass=document.getElementById('competitionRegistrantClass'),registrantLevel=document.getElementById('competitionRegistrantLevel');const canonicalClass=String(savedProfile?.school_class||'').trim();if(registrantSchool)registrantSchool.value=String(savedProfile?.school_name||'').trim()||'Not added to profile yet';if(registrantClass)registrantClass.value=canonicalClass||'Class missing — update your profile first';if(registrantLevel)registrantLevel.value=canonicalClass?educationLevelForClass(canonicalClass,''):'Not available';updateCompetitionRegistrationSubjects();const form=document.getElementById('competitionRegistrationForm');const picker=document.querySelector('#competitionEntryHub > .competition-picker');if(form.parentElement&&form.parentElement.id==='competitionEntryHub'){document.body.appendChild(form);}form.hidden=false;form.classList.add('full-page-registration');if(!form.querySelector('.registration-back')){const back=document.createElement('button');back.type='button';back.className='small-btn registration-back';back.textContent='← Back to Compete';back.onclick=()=>{form.classList.remove('full-page-registration');form.hidden=true;const hub=document.getElementById('competitionEntryHub');const currentPicker=form.querySelector('.competition-picker');if(hub&&currentPicker)hub.insertBefore(currentPicker,hub.querySelector('.prize-split-panel'));};form.prepend(back);}if(picker&&!form.contains(picker)){form.insertBefore(picker,form.querySelector('#competitionRegistrationTitle'));}
  document.getElementById('competitionRegistrationTitle').textContent=type==='free'?'Free competition registration':'Paid competition registration';
- document.getElementById('competitionRegistrationDescription').textContent=type==='free'?'Check your signed-in profile details, choose the session and subject for your registered class, then confirm your free entry.':'Review your profile details and choose the session and subject for your registered class. Paid registration costs KSh 20, but payment is not connected yet and this form will not collect money.';if(!savedProfile?.school_class)document.getElementById('competitionRegistrationStatus').textContent='Your class is missing from your saved profile. Go to My Profile, save your class, then return to register.';else if(!savedProfile?.school_name)document.getElementById('competitionRegistrationStatus').textContent='Please add your school name in My Profile before registering.';
+ document.getElementById('competitionRegistrationDescription').textContent=type==='free'?'Check your signed-in profile details, choose the session and subject for your registered class, then confirm your free entry.':'Pay KSh 20 to the JENZY M-Pesa number, then submit the transaction code from your confirmation message. Your paid entry will be approved only after the code and amount are matched to the administrator’s imported M-Pesa records.';if(!savedProfile?.school_class)document.getElementById('competitionRegistrationStatus').textContent='Your class is missing from your saved profile. Go to My Profile, save your class, then return to register.';else if(!savedProfile?.school_name)document.getElementById('competitionRegistrationStatus').textContent='Please add your school name in My Profile before registering.';
  const profileName=document.getElementById('studentName')?.value.trim()||currentUser.user_metadata?.full_name||'';
  const nameField=document.getElementById('competitionRegistrantName');nameField.value=profileName;nameField.readOnly=true;nameField.setAttribute('aria-readonly','true');nameField.title='Your name comes from your saved JENZY profile. Edit it in Profile if it is incorrect.';
  document.getElementById('competitionRegistrantPhone').value='';document.getElementById('competitionRegistrantPhoneField').hidden=type!=='paid';
@@ -626,10 +670,117 @@ async function openCompetitionRegistration(type){
  document.getElementById('competitionRegistrationStatus').textContent='';
  document.getElementById('competitionRegisterSubmit').hidden=type!=='free';
  document.getElementById('competitionRegisterSubmit').disabled=type==='free';
- const paidPendingButton=document.getElementById('competitionPaidPendingButton');paidPendingButton.hidden=type!=='paid';paidPendingButton.disabled=true;paidPendingButton.textContent='Payments disabled for now';document.getElementById('competitionPaidPendingNote').hidden=type!=='paid';if(type==='paid')document.getElementById('competitionRegistrationStatus').textContent='Paid registration is disabled. No payment can be made or recorded at this time.';
+ const paidPendingButton=document.getElementById('competitionPaidPendingButton');paidPendingButton.hidden=type!=='paid';paidPendingButton.disabled=!JENZY_MPESA_NUMBER;paidPendingButton.textContent='Submit M-Pesa code for verification';document.getElementById('competitionPaidPendingNote').hidden=type!=='paid';document.getElementById('manualMpesaInstructions').hidden=type!=='paid';document.getElementById('competitionPaymentCode').value='';document.getElementById('jenzyMpesaNumberDisplay').textContent=JENZY_MPESA_NUMBER||'Not configured yet';document.getElementById('copyJenzyMpesaNumberButton').disabled=!JENZY_MPESA_NUMBER;if(type==='paid'){document.getElementById('competitionRegistrationStatus').textContent=JENZY_MPESA_NUMBER?'Enter the M-Pesa transaction code after paying KSh 20.':'The receiving M-Pesa number must be added before students can pay. No payment will be accepted until it is configured.';await loadMyManualPaymentStatus();}
  form.scrollIntoView({behavior:'smooth',block:'start'});
  if(type==='free'){updateCompetitionRegistrationWindow();await loadMyCompetitionRegistration(true);}
 }
+
+async function copyJenzyMpesaNumber(){
+ if(!JENZY_MPESA_NUMBER){setStatus('competitionRegistrationStatus','The receiving M-Pesa number has not been configured yet.','error');return}
+ try{await navigator.clipboard.writeText(JENZY_MPESA_NUMBER);setStatus('competitionRegistrationStatus','M-Pesa number copied. Send exactly KSh 20, then submit the confirmation code.','success')}
+ catch(e){const t=document.createElement('textarea');t.value=JENZY_MPESA_NUMBER;document.body.appendChild(t);t.select();const ok=document.execCommand('copy');t.remove();setStatus('competitionRegistrationStatus',ok?'M-Pesa number copied.':'Could not copy automatically. Select and copy the displayed number.',ok?'success':'error')}
+}
+async function loadMyManualPaymentStatus(){
+ if(!currentUser)return;
+ const slot=document.getElementById('competitionRegistrationSlot')?.value,subject=document.getElementById('competitionRegistrationSubject')?.value;
+ if(!slot||!subject)return;
+ const date=competitionDateForSlot(slot);
+ try{
+  const {data,error}=await supabaseClient.from('jenzy_manual_payment_submissions').select('transaction_code,amount_kes,status,created_at').eq('student_id',currentUser.id).eq('competition_date',date).eq('session_slot',slot).maybeSingle();
+  if(error)throw error;
+  if(data){
+   document.getElementById('competitionEntryNumber').textContent=data.status==='approved'?'Payment verified · '+data.transaction_code:'Payment pending · '+data.transaction_code;
+   document.getElementById('competitionPaymentCode').value=data.transaction_code;
+   document.getElementById('competitionPaidPendingButton').disabled=true;
+   document.getElementById('competitionPaidPendingButton').textContent=data.status==='approved'?'Payment verified':'Code already submitted';
+   setStatus('competitionRegistrationStatus',data.status==='approved'?'Your KSh '+data.amount_kes+' payment is verified. Your paid entry is confirmed.':'Your code has been submitted. JENZY will unlock access after it matches a genuine KSh '+data.amount_kes+' M-Pesa transaction. Do not pay again.',data.status==='approved'?'success':'');
+  }
+ }catch(e){console.warn('Could not load manual payment status:',e.message)}
+}
+async function submitManualPayment(){
+ if(!currentUser){setStatus('competitionRegistrationStatus','Please sign in first.','error');return}
+ if(!JENZY_MPESA_NUMBER){setStatus('competitionRegistrationStatus','The receiving M-Pesa number has not been configured yet. No payment can be submitted.','error');return}
+ const code=document.getElementById('competitionPaymentCode').value.trim().toUpperCase();
+ const phone=document.getElementById('competitionRegistrantPhone').value.trim();
+ const slot=document.getElementById('competitionRegistrationSlot').value;
+ const subject=document.getElementById('competitionRegistrationSubject').value;
+ const date=competitionDateForSlot(slot);
+ const button=document.getElementById('competitionPaidPendingButton');
+ if(!/^[A-Z0-9]{10}$/.test(code)){setStatus('competitionRegistrationStatus','Enter the 10-character M-Pesa transaction code from your confirmation SMS.','error');return}
+ button.disabled=true;setStatus('competitionRegistrationStatus','Submitting your payment code securely…');
+ try{
+  const {data,error}=await supabaseClient.rpc('jenzy_submit_manual_payment',{p_competition_date:date,p_session_slot:slot,p_subject:subject,p_transaction_code:code,p_phone:phone||null});
+  if(error)throw error;
+  document.getElementById('competitionEntryNumber').textContent='Payment pending · '+code;
+  document.getElementById('competitionPaymentCode').value=code;
+  button.textContent='Code submitted';
+  setStatus('competitionRegistrationStatus',data?.message||'Payment code submitted. Waiting for verification. Do not pay again.', 'success');
+  await refreshCompetitionCounts();
+ }catch(e){setStatus('competitionRegistrationStatus',e.message||'Could not submit the payment code. Please check your entry and try again.','error');button.disabled=false}
+}
+let manualPaymentParsedTransactions=[];
+function parseManualPaymentImport(text){
+ const lines=String(text||'').split(/\r?\n/).map(x=>x.trim()).filter(Boolean),byCode=new Map();
+ for(const line of lines){
+  const codeMatch=line.match(/\b[A-Z0-9]{10}\b/i);
+  if(!codeMatch)continue;
+  const code=codeMatch[0].toUpperCase();
+  let amountMatch=line.match(/\b(?:Kshs?|KES)\.?\s*([\d,]+(?:\.\d{1,2})?)/i),amount=null;
+  if(amountMatch)amount=Math.round(Number(amountMatch[1].replace(/,/g,'')));
+  else{
+   const fields=line.split(/[,\t;|]/).map(x=>x.trim());
+   const codeIndex=fields.findIndex(x=>x.toUpperCase()===code);
+   const other=fields[codeIndex===0?1:0];
+   if(other&&/^\d+(?:\.\d{1,2})?$/.test(other))amount=Math.round(Number(other));
+  }
+  byCode.set(code,{transaction_code:code,amount_kes:amount});
+ }
+ return Array.from(byCode.values());
+}
+async function previewManualPaymentImport(){
+ const text=document.getElementById('manualPaymentImportText').value;
+ manualPaymentParsedTransactions=parseManualPaymentImport(text);
+ const valid=manualPaymentParsedTransactions.filter(x=>x.amount_kes===20).length;
+ const missing=manualPaymentParsedTransactions.filter(x=>x.amount_kes===null).length;
+ const other=manualPaymentParsedTransactions.length-valid-missing;
+ document.getElementById('manualPaymentImportPreview').textContent=manualPaymentParsedTransactions.length+' unique transaction codes found · '+valid+' show KSh 20 · '+missing+' have no readable amount · '+other+' show a different amount. Only exact KSh 20 matches can be approved.';
+ document.getElementById('manualPaymentVerifyButton').disabled=manualPaymentParsedTransactions.length===0;
+}
+async function verifyManualPaymentImport(){
+ if(!manualPaymentParsedTransactions.length){await previewManualPaymentImport();if(!manualPaymentParsedTransactions.length)return}
+ const btn=document.getElementById('manualPaymentVerifyButton');btn.disabled=true;
+ setStatus('manualPaymentImportResult','Matching imported transactions to pending student submissions…');
+ try{
+  const {data,error}=await supabaseClient.rpc('jenzy_bulk_verify_manual_payments',{p_transactions:manualPaymentParsedTransactions});
+  if(error)throw error;
+  const d=data||{};
+  setStatus('manualPaymentImportResult','Finished: '+(d.approved||0)+' newly approved · '+(d.already_approved||0)+' already approved · '+(d.invalid_or_wrong_amount||0)+' missing/invalid/wrong-amount records · '+(d.registration_conflicts||0)+' registration conflicts. Unmatched codes remain pending.', 'success');
+  await loadManualPaymentClaims();await refreshCompetitionCounts();
+ }catch(e){setStatus('manualPaymentImportResult',e.message||'Bulk verification failed. Check the imported records and try again.','error')}
+ finally{btn.disabled=manualPaymentParsedTransactions.length===0}
+}
+async function loadManualPaymentClaims(){
+ const list=document.getElementById('manualPaymentClaimsList');if(!list||!currentUser)return;
+ try{
+  const {data,error}=await supabaseClient.from('jenzy_manual_payment_submissions').select('id,full_name,competition_date,session_slot,school_class,subject,amount_kes,transaction_code,status,created_at').eq('status','pending').order('created_at',{ascending:false}).limit(500);
+  if(error)throw error;
+  list.innerHTML=(data||[]).length?(data||[]).map(x=>'<div class="manual-payment-claim"><strong>'+escapeCompetitionText(x.full_name)+' · KSh '+Number(x.amount_kes)+'</strong><div>'+escapeCompetitionText(x.school_class)+' · '+escapeCompetitionText(x.subject)+' · '+escapeCompetitionText(x.session_slot)+' · '+escapeCompetitionText(x.competition_date)+'</div><div>Code: <b>'+escapeCompetitionText(x.transaction_code)+'</b></div><div class="muted">Submitted '+escapeCompetitionText(new Date(x.created_at).toLocaleString())+'</div></div>').join(''):'<p class="muted">No pending payment submissions.</p>';
+ }catch(e){list.innerHTML='<p class="status error">Could not load pending submissions: '+escapeCompetitionText(e.message)+'</p>'}
+}
+async function initializeManualPayments(){
+ const panel=document.getElementById('jenzyPaymentAdminPanel');if(!panel||!currentUser)return;
+ try{
+  const {data,error}=await supabaseClient.rpc('jenzy_is_payment_admin');
+  if(error)throw error;
+  panel.hidden=data!==true;
+  if(data===true){
+   await loadManualPaymentClaims();
+   const file=document.getElementById('manualPaymentImportFile');
+   if(file&&!file.dataset.bound){file.dataset.bound='1';file.addEventListener('change',async()=>{const f=file.files&&file.files[0];if(!f)return;if(f.size>5000000){setStatus('manualPaymentImportResult','Please choose a statement file smaller than 5 MB.','error');file.value='';return}try{document.getElementById('manualPaymentImportText').value=await f.text();await previewManualPaymentImport()}catch(e){setStatus('manualPaymentImportResult','Could not read that file. Paste its text instead.','error')}})}
+  }
+ }catch(e){panel.hidden=true;console.warn('Payment admin panel remains hidden:',e.message)}
+}
+
 async function registerFreeCompetition(){
  if(!currentUser){setStatus('authStatus','Please sign in before registering.','error');return;}
  if(competitionRegistrationType!=='free')return;
@@ -690,9 +841,9 @@ async function startScheduledCompetition(slot,registeredSubject=null,registeredC
  if(!currentUser){setStatus('authStatus','Please sign in first.','error');return;}
  const testerOverride=!!window.jenzyTesterOverrideActive&&await jenzyIsActiveTester();if(!currentSlotIsActive(slot)&&!testerOverride){alert('This competition opens only at its scheduled time in Kenya. Please return during the active competition window.');return;}
  const schoolClass=registeredClass||selectedCompetitionClass(),subject=registeredSubject||selectedCompetitionSubject(slot),expected=slot==='morning'?10:slot==='afternoon'?25:20,date=competitionDateNairobi();
- const {data:registration,error:registrationError}=await supabaseClient.from('jenzy_competition_registrations').select('entry_number').eq('student_id',currentUser.id).eq('competition_date',date).eq('session_slot',slot).eq('school_class',schoolClass).eq('subject',subject).eq('entry_type','free').eq('status','confirmed').maybeSingle();
+ const {data:registration,error:registrationError}=await supabaseClient.from('jenzy_competition_registrations').select('entry_number').eq('student_id',currentUser.id).eq('competition_date',date).eq('session_slot',slot).eq('school_class',schoolClass).eq('subject',subject).in('entry_type',['free','paid']).eq('status','confirmed').maybeSingle();
  if(registrationError){alert('JENZY could not verify your competition registration. Please try again.');return;}
- if(!registration){alert('Please register using the Join Free button before the competition starts. Registration closes when the session begins.');return;}
+ if(!registration){alert('You need a confirmed free or paid registration for this session before the competition starts.');return;}
  const area=document.getElementById('competitionPlayArea');area.hidden=false;
  document.getElementById('competitionPlayTitle').textContent=subject+' · '+schoolClass;
  document.getElementById('competitionPlayStatus').textContent='Loading published questions…';
