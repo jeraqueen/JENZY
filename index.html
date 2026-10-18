@@ -726,12 +726,12 @@ function parseManualPaymentImport(text){
   if(!codeMatch)continue;
   const code=codeMatch[0].toUpperCase();
   let amountMatch=line.match(/\b(?:Kshs?|KES)\.?\s*([\d,]+(?:\.\d{1,2})?)/i),amount=null;
-  if(amountMatch)amount=Math.round(Number(amountMatch[1].replace(/,/g,'')));
+  if(amountMatch)amount=Number(amountMatch[1].replace(/,/g,''));
   else{
    const fields=line.split(/[,\t;|]/).map(x=>x.trim());
    const codeIndex=fields.findIndex(x=>x.toUpperCase()===code);
    const other=fields[codeIndex===0?1:0];
-   if(other&&/^\d+(?:\.\d{1,2})?$/.test(other))amount=Math.round(Number(other));
+   if(other&&/^\d+(?:\.\d{1,2})?$/.test(other))amount=Number(other);
   }
   byCode.set(code,{transaction_code:code,amount_kes:amount});
  }
