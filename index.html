@@ -181,6 +181,29 @@ body.theme-dark .manual-payment-box,body.theme-dark .manual-payment-claim{backgr
 body.theme-dark .jenzy-test-modal{background:#0b141a;color:#e9edef;border-color:#34434b}
 body.theme-dark .jenzy-test-option{background:#202c33;color:#e9edef;border-color:#34434b}
 
+
+/* Full-screen, phone-friendly competition experience */
+#competitionPlayArea.jenzy-test-fullscreen{
+ position:fixed!important;inset:0!important;z-index:99999!important;
+ width:100vw!important;height:100dvh!important;max-height:100dvh!important;
+ overflow-y:auto!important;overflow-x:hidden!important;box-sizing:border-box!important;
+ margin:0!important;padding:calc(18px + env(safe-area-inset-top)) 16px calc(24px + env(safe-area-inset-bottom))!important;
+ border:0!important;border-radius:0!important;background:var(--bg,#f7f8fc)!important;
+ color:var(--text,#172033)!important;display:block!important;
+}
+#competitionPlayArea.jenzy-test-fullscreen[hidden]{display:none!important}
+#competitionPlayArea.jenzy-test-fullscreen #competitionPlayTitle{font-size:clamp(24px,6vw,34px);margin:0 0 10px}
+#competitionPlayArea.jenzy-test-fullscreen #competitionPlayStatus{position:sticky;top:0;z-index:2;padding:12px;border-radius:12px;background:var(--card,#fff);font-size:16px;font-weight:700}
+#competitionPlayArea.jenzy-test-fullscreen #competitionQuestionBox>.card{max-width:760px;margin:14px auto;padding:clamp(18px,4vw,30px);border-radius:20px}
+#competitionPlayArea.jenzy-test-fullscreen #competitionQuestionBox h3{font-size:clamp(22px,5.5vw,32px);line-height:1.45;margin:18px 0 24px}
+#competitionPlayArea.jenzy-test-fullscreen #competitionQuestionBox label{min-height:58px;align-items:center!important;font-size:clamp(17px,4vw,21px);line-height:1.35;cursor:pointer;padding:16px!important;border-width:2px!important;background:var(--card,#fff)}
+#competitionPlayArea.jenzy-test-fullscreen #competitionQuestionBox label input{width:23px;height:23px;flex:0 0 23px;margin:2px 4px 0 0}
+#competitionPlayArea.jenzy-test-fullscreen #competitionNextBtn,#competitionPlayArea.jenzy-test-fullscreen #competitionSubmitBtn{width:100%;max-width:760px;min-height:56px;display:block;margin:14px auto;font-size:18px;font-weight:800}
+#competitionPlayArea.jenzy-test-fullscreen #competitionResult{max-width:760px;margin:16px auto}
+#competitionPlayArea.jenzy-test-fullscreen .jenzy-test-return{width:100%;min-height:52px;margin-top:16px;font-size:17px}
+body.jenzy-test-open{overflow:hidden!important}
+@media(min-width:700px){#competitionPlayArea.jenzy-test-fullscreen{padding-left:clamp(28px,8vw,120px)!important;padding-right:clamp(28px,8vw,120px)!important}}
+
 </style>
 </head>
 <body>
@@ -930,7 +953,7 @@ async function startScheduledCompetition(slot,registeredSubject=null,registeredC
  if(!currentSlotIsActive(slot)&&!testerOverride&&!jamesTestOverride){alert('This competition opens only at its scheduled time in Kenya. Please return during the active competition window.');return;}
  const schoolClass=registeredClass||selectedCompetitionClass(),subject=registeredSubject||selectedCompetitionSubject(slot),expected=slot==='morning'?10:slot==='afternoon'?25:20,date=competitionDateNairobi();
  if(jamesTestOverride){showPage('competitions');const launchStatus=document.getElementById('jamesTestLaunchStatus');if(launchStatus)launchStatus.textContent='Countdown finished. Your Mathematics questions are opening below.';}
- const area=document.getElementById('competitionPlayArea');area.hidden=false;
+ const area=document.getElementById('competitionPlayArea');area.hidden=false;area.classList.add('jenzy-test-fullscreen');document.body.classList.add('jenzy-test-open');
  document.getElementById('competitionPlayTitle').textContent=subject+' · '+schoolClass+(jamesTestOverride?' · JAMES TEST ONLY':'');
  document.getElementById('competitionPlayStatus').textContent=jamesTestOverride?'Opening temporary test questions…':'Loading published questions…';
  document.getElementById('competitionQuestionBox').innerHTML='';document.getElementById('competitionResult').textContent='';
@@ -969,6 +992,7 @@ async function startScheduledCompetition(slot,registeredSubject=null,registeredC
   competitionTimer=setInterval(()=>{if(!activeCompetition)return;const remain=activeCompetition.deadline-Date.now();document.getElementById('competitionPlayStatus').textContent=subject+' · '+schoolClass+' · Time left '+fmtCountdown(remain);if(remain<=2000){clearInterval(competitionTimer);submitCompetitionAnswers(true);}},500);
  }catch(e){document.getElementById('competitionPlayStatus').textContent=e.message||'Could not load the published question set.';}
 }
+function closeCompetitionFullscreen(){const area=document.getElementById('competitionPlayArea');if(area)area.classList.remove('jenzy-test-fullscreen');document.body.classList.remove('jenzy-test-open');showPage('home');}
 function renderCompetitionQuestion(){if(!activeCompetition)return;const c=activeCompetition,q=c.questions[c.index],opts=[q.option_a,q.option_b,q.option_c,q.option_d];
  document.getElementById('competitionPlayStatus').textContent=c.subject+' · '+c.schoolClass+' · Question '+(c.index+1)+' of '+c.questions.length+' · Time left '+fmtCountdown(c.deadline-Date.now());
  document.getElementById('competitionQuestionBox').innerHTML='<div class="card"><div class="muted">'+escapeCompetitionText(q.topic)+' · '+escapeCompetitionText(q.subtopic)+'</div><h3>'+escapeCompetitionText(q.question_text)+'</h3>'+opts.map((o,i)=>'<label style="display:flex;gap:10px;align-items:flex-start;padding:12px;border:1px solid var(--line);border-radius:12px;margin:8px 0"><input type="radio" name="competitionAnswer" value="'+i+'" '+(String(c.answers[q.id])===String(i)?'checked':'')+' onchange="recordCompetitionAnswer(this.value)"><span>'+String.fromCharCode(65+i)+'. '+escapeCompetitionText(o)+'</span></label>').join('')+'</div>';
@@ -982,11 +1006,11 @@ async function submitCompetitionAnswers(auto=false){const c=activeCompetition;if
   if(c.testOnly){
    const correct=c.questions.reduce((sum,q)=>sum+(Number(c.answers[q.id])===Number(q.correct_option)?1:0),0),pct=Number((correct/c.questions.length*100).toFixed(2));
    document.getElementById('competitionQuestionBox').innerHTML='';document.getElementById('competitionNextBtn').hidden=true;document.getElementById('competitionSubmitBtn').hidden=true;document.getElementById('competitionPlayStatus').textContent='Temporary test completed. No official result was saved.';
-   document.getElementById('competitionResult').innerHTML='<div class="card"><h3>James-only Mathematics test result</h3><p>Score: <b>'+correct+' / '+c.questions.length+'</b> ('+pct+'%)</p><p class="muted">Temporary test only · Not saved to official JENZY results.</p></div>';activeCompetition=null;return;
+   document.getElementById('competitionResult').innerHTML='<div class="card"><h3>James-only Mathematics test result</h3><p>Score: <b>'+correct+' / '+c.questions.length+'</b> ('+pct+'%)</p><p class="muted">Temporary test only · Not saved to official JENZY results.</p><button class="primary jenzy-test-return" onclick="closeCompetitionFullscreen()">Return to JENZY</button></div>';activeCompetition=null;return;
   }
   document.getElementById('competitionPlayStatus').textContent='Submitting answers for secure server-side scoring…';
   const {data,error}=await supabaseClient.rpc('jenzy_submit_competition',{p_session_slot:c.slot,p_school_class:c.schoolClass,p_subject:c.subject,p_answers:c.answers});if(error)throw error;
-  document.getElementById('competitionQuestionBox').innerHTML='';document.getElementById('competitionNextBtn').hidden=true;document.getElementById('competitionSubmitBtn').hidden=true;document.getElementById('competitionPlayStatus').textContent='Competition submitted.';document.getElementById('competitionResult').innerHTML='<div class="card"><h3>Verified competition result</h3><p>Score: <b>'+data.correct_count+' / '+data.question_count+'</b> ('+data.score_percent+'%)</p><p class="muted">Free entry · '+escapeCompetitionText(data.competition_date)+'</p></div>';activeCompetition=null;
+  document.getElementById('competitionQuestionBox').innerHTML='';document.getElementById('competitionNextBtn').hidden=true;document.getElementById('competitionSubmitBtn').hidden=true;document.getElementById('competitionPlayStatus').textContent='Competition submitted.';document.getElementById('competitionResult').innerHTML='<div class="card"><h3>Verified competition result</h3><p>Score: <b>'+data.correct_count+' / '+data.question_count+'</b> ('+data.score_percent+'%)</p><p class="muted">Free entry · '+escapeCompetitionText(data.competition_date)+'</p><button class="primary jenzy-test-return" onclick="closeCompetitionFullscreen()">Return to JENZY</button></div>';activeCompetition=null;
  }catch(e){c.submitting=false;document.getElementById('competitionSubmitBtn').disabled=false;document.getElementById('competitionNextBtn').disabled=false;document.getElementById('competitionPlayStatus').textContent=(auto?'Time ended. ':'')+(e.message||'The result could not be saved.');}
 }
 
