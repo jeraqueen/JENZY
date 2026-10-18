@@ -424,7 +424,7 @@ const JENZY_BUILD_VERSION = '20261018-2';
    const response=await fetch(url.toString(),{cache:'no-store',credentials:'same-origin'});
    if(!response.ok)return;
    const html=await response.text();
-   const match=html.match(/const JENZY_BUILD_VERSION\\s*=\\s*['\"]([^'\"]+)['\"]/);
+   const match=html.match(/const JENZY_BUILD_VERSION\s*=\s*['\"]([^'\"]+)['\"]/);
    if(match&&match[1]!==JENZY_BUILD_VERSION)updateFound=true;
    if(updateFound&&pageIsSafeToReload())location.reload();
   }catch(e){/* Offline or host unavailable: try again at the next check. */}
