@@ -383,9 +383,9 @@ if (!window.supabase) {
 }
 </script>
 <script>
-const JENZY_BUILD_VERSION = '20261018-15';
+const JENZY_BUILD_VERSION = '20261018-16';
 (function enableAutomaticJenzyUpdates(){
- const checkEveryMs=30000;
+ const checkEveryMs=10000;
  let updateFound=false,checking=false;
  function pageIsSafeToReload(){
   if(typeof activeCompetition!=='undefined'&&activeCompetition)return false;
