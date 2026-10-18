@@ -780,8 +780,10 @@ function updateCompetitionRegistrationWindow(){
  const slot=document.getElementById('competitionRegistrationSlot')?.value,el=document.getElementById('competitionRegistrationWindow');if(!el||!slot)return;
  const now=new Date(),labels={morning:'9:00 AM',afternoon:'2:00 PM',evening:'9:00 PM'},date=competitionDateForSlot(slot,now),deadline=competitionRegistrationDeadlineAt(slot,date),remaining=deadline-now,open=remaining>0;
  el.style.color=open?'':'#b91c1c';
- if(open){el.textContent='REGISTRATION OPEN · '+slot.toUpperCase()+' session at '+labels[slot]+' Kenya time. Time left to register: '+fmtCountdown(remaining)+'. Registration closes automatically 30 minutes before the session starts.';}
- else{el.textContent='REGISTRATION CLOSED for this session. The 30-minute deadline has passed. You can register for the next occurrence when its registration window opens.';}
+ // Keep the page clean while registration is available; only show a notice when this session is closed.
+ el.hidden=open;
+ if(open){el.textContent='';}
+ else{el.textContent='Registration is closed for this session because the 30-minute deadline has passed. Choose another session that is still open.';}
  const freeBtn=document.querySelector('.free-choice button');if(freeBtn){freeBtn.disabled=false;freeBtn.textContent='Join Free';}
  const form=document.getElementById('competitionRegistrationForm');
  if(form&&!form.hidden){const free=document.getElementById('competitionRegisterSubmit'),paid=document.getElementById('competitionPaidPendingButton');if(free&&competitionRegistrationType==='free')free.disabled=!open;if(paid&&competitionRegistrationType==='paid')paid.disabled=!open||!JENZY_MPESA_NUMBER;}
