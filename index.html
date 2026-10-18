@@ -102,6 +102,30 @@ body.theme-dark{--bg:#0b141a;--card:#202c33;--text:#e9edef;--muted:#aab7bf;--lin
 @media(max-width:520px){.competition-registration-grid,.competition-fields{grid-template-columns:1fr}.competition-choice{padding:13px}.competition-picker,.prize-split-panel{padding:12px}}
 
  .jenzy-readiness-overlay{position:fixed;inset:0;z-index:99999;background:radial-gradient(circle at 50% 43%,#260707 0%,#100607 42%,#030303 78%);color:#fff;display:flex;align-items:center;justify-content:center;text-align:center;padding:18px;box-sizing:border-box;overflow:auto}.jenzy-readiness-inner{width:min(100%,720px);display:flex;flex-direction:column;align-items:center;justify-content:center;min-height:100%;gap:10px}.jenzy-readiness-brand{font-size:clamp(22px,6vw,38px);letter-spacing:.12em;font-weight:950;margin-bottom:8px}.jenzy-readiness-brand span{color:#ff2525}.jenzy-readiness-kicker{font-size:clamp(12px,3.4vw,16px);letter-spacing:.2em;font-weight:850;color:#ff5555;text-transform:uppercase}.jenzy-readiness-circle{width:min(76vw,56vh,430px);height:min(76vw,56vh,430px);min-width:230px;min-height:230px;border-radius:50%;display:flex;flex-direction:column;align-items:center;justify-content:center;position:relative;background:radial-gradient(circle,#080808 58%,#170606 60%,#080303 70%);border:clamp(8px,2.5vw,15px) solid #ff1717;box-shadow:0 0 16px #ff1717,0 0 45px #f00a, inset 0 0 28px #ff161633;margin:12px auto}.jenzy-readiness-circle:before{content:"";position:absolute;inset:-17px;border-radius:50%;border:2px solid #ff3838;box-shadow:0 0 24px #ff202088}.jenzy-readiness-number{font-size:clamp(110px,28vw,220px);line-height:.9;font-weight:1000;letter-spacing:-.07em;text-shadow:0 0 22px #fff5;margin:0;font-variant-numeric:tabular-nums}.jenzy-readiness-caption{font-size:clamp(17px,5vw,25px);font-weight:900;letter-spacing:.22em;color:#ff3333;margin-top:12px}.jenzy-readiness-sub{color:#e7dada;font-size:clamp(13px,3.6vw,16px);line-height:1.5;max-width:440px;margin-top:8px}.jenzy-readiness-warning{color:#ff3434;font-weight:950;letter-spacing:.18em;font-size:clamp(16px,4.4vw,23px);margin-top:6px}.jenzy-readiness-ring-label{color:#a9a9a9;font-size:11px;letter-spacing:.2em;margin-top:16px}
+
+/* Class competition results */
+.class-results-hub{margin:0 0 22px;padding:18px}
+.class-results-hub h2{margin:8px 0}
+.class-results-buttons{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px;margin:16px 0}
+.class-result-button{min-height:54px;border:1px solid #d8dcf0;border-radius:14px;background:#f5f6ff;color:#25224e;font-weight:850;font-size:16px;padding:12px;cursor:pointer}
+.class-result-button:last-child{grid-column:1/-1}
+.class-result-button:focus-visible,.class-result-button:hover{outline:2px solid #6d63f5;outline-offset:2px;background:#ebeaff}
+.class-result-button.active{background:#4338ca;color:#fff;border-color:#4338ca}
+.class-competition-results{margin-top:12px}
+.class-results-toolbar{display:grid;gap:8px;margin:12px 0}
+.class-results-toolbar label{font-weight:750}
+.class-results-toolbar select{width:100%;padding:12px;border:1px solid var(--line);border-radius:12px;background:var(--card);color:var(--text);font:inherit}
+.class-results-summary{background:#f5f6ff;border-radius:12px;padding:12px;margin:10px 0;color:#292653}
+.class-winner-row,.class-personal-row{display:flex;align-items:center;gap:10px;padding:12px 8px;border-bottom:1px solid var(--line)}
+.class-winner-row:last-child{border-bottom:0}
+.class-rank-medal{font-size:23px;min-width:30px;text-align:center}
+.class-winner-details{min-width:0;flex:1}
+.class-winner-details strong{display:block;overflow-wrap:anywhere}
+.class-score{font-weight:850;text-align:right;white-space:nowrap}
+.class-personal-row{margin-top:12px;border:1px solid #c7d2fe;border-radius:12px;background:#eef2ff}
+.class-personal-row .class-winner-details small{display:block;color:#555b73}
+@media(min-width:560px){.class-results-buttons{grid-template-columns:repeat(5,minmax(0,1fr))}.class-result-button:last-child{grid-column:auto}.class-result-button{padding:12px 6px}}
+
 </style>
 </head>
 <body>
@@ -142,7 +166,22 @@ body.theme-dark{--bg:#0b141a;--card:#202c33;--text:#e9edef;--muted:#aab7bf;--lin
 <section class="page" id="quiz"><button type="button" onclick="showPage('home')">← Home</button><h1>🧠 Practice Quiz</h1><p class="muted">These are sample questions; scores are not official competition results.</p>
   <div class="card"><div class="row"><span class="chip" id="qProgress">Question 1 of 5</span><span class="grow"></span><b id="qScore">Score: 0</b></div><h2 id="qText"></h2><div id="qOptions"></div><p id="qFeedback" aria-live="polite"></p><button class="primary" id="nextBtn" onclick="nextQuestion()" style="display:none">Next question →</button></div>
 </section>
-<section class="page" id="competitions"><div class="compete-top-actions"><button type="button" class="free-top-button" onclick="openCompetitionRegistration('free')">FREE</button><button type="button" class="pay-top-button" onclick="openCompetitionRegistration('paid')">PAY · KSh 20</button></div><h1>🏆 Compete</h1><p class="muted">All times use Kenya time (EAT).</p>
+<section class="page" id="competitions"><div class="compete-top-actions"><button type="button" class="free-top-button" onclick="openCompetitionRegistration('free')">FREE</button><button type="button" class="pay-top-button" onclick="openCompetitionRegistration('paid')">PAY · KSh 20</button></div>
+<section class="class-results-hub card" aria-labelledby="classResultsHeading">
+  <span class="chip">CLASS RESULTS</span>
+  <h2 id="classResultsHeading">🏆 View your class competition</h2>
+  <p class="muted">Choose your class to see the top three competitors and your own position in a competition you completed.</p>
+  <div class="class-results-buttons" role="group" aria-label="Choose a class">
+    <button type="button" class="class-result-button" onclick="loadClassCompetitionResults('Grade 6')">Grade 6</button>
+    <button type="button" class="class-result-button" onclick="loadClassCompetitionResults('Grade 7')">Grade 7</button>
+    <button type="button" class="class-result-button" onclick="loadClassCompetitionResults('Grade 8')">Grade 8</button>
+    <button type="button" class="class-result-button" onclick="loadClassCompetitionResults('Grade 10')">Grade 10</button>
+    <button type="button" class="class-result-button" onclick="loadClassCompetitionResults('Form 3')">Form 3</button>
+  </div>
+  <div id="classCompetitionResults" class="class-competition-results" aria-live="polite">
+    <div class="empty-state">Select a class above to view its published competition results.</div>
+  </div>
+</section><h1>🏆 Compete</h1><p class="muted">All times use Kenya time (EAT).</p>
 <div class="card competition-entry-hub registration-options-lower" id="competitionEntryHub">
   <span class="chip">REGISTRATION</span><h2>Choose how you want to register</h2>
   <p class="muted">Choose a session and subject, then select FREE or PAY above. Times are shown in Kenya time.</p>
@@ -761,6 +800,54 @@ setInterval(checkJenzyAutomaticCompetition,5000);
 setInterval(updateCompetitionRegistrationWindow,1000);
 
 updateJenzySchedule();setInterval(updateJenzySchedule,1000);
+
+/* Class results: the database RPC returns only each competition's top three and the signed-in student's own row. */
+let classCompetitionResultsRows = [];
+let classCompetitionResultsClass = "";
+function competitionSlotLabel(slot){return slot==="morning"?"Morning":slot==="afternoon"?"Afternoon":slot==="evening"?"Evening":String(slot||"Session");}
+function competitionResultKey(row){return [row.competition_date,row.session_slot,row.subject].join("|");}
+function formatCompetitionDate(value){if(!value)return "Date not set";const d=new Date(value+"T12:00:00");return Number.isNaN(d.getTime())?value:d.toLocaleDateString("en-KE",{day:"numeric",month:"short",year:"numeric"});}
+async function loadClassCompetitionResults(schoolClass){
+ const box=document.getElementById("classCompetitionResults");
+ if(!box)return;
+ document.querySelectorAll(".class-result-button").forEach(btn=>btn.classList.toggle("active",btn.textContent.trim()===schoolClass));
+ classCompetitionResultsClass=schoolClass;
+ if(!currentUser){box.innerHTML='<div class="empty-state"><b>Please sign in first.</b><p class="muted">Sign in to view competition results and your personal position.</p></div>';return;}
+ box.innerHTML='<div class="empty-state">Loading '+safeText(schoolClass)+' results…</div>';
+ try{
+  const {data,error}=await supabaseClient.rpc("jenzy_get_class_competition_results",{p_school_class:schoolClass});
+  if(error)throw error;
+  classCompetitionResultsRows=Array.isArray(data)?data:[];
+  if(!classCompetitionResultsRows.length){
+   box.innerHTML='<div class="empty-state"><div class="icon">🏅</div><b>No published results yet for '+safeText(schoolClass)+'.</b><p class="muted">The winners and participant rankings will appear here after competitors complete an official competition and results are saved.</p></div>';
+   return;
+  }
+  const groups=new Map();
+  classCompetitionResultsRows.forEach(row=>{const key=competitionResultKey(row);if(!groups.has(key))groups.set(key,[]);groups.get(key).push(row)});
+  const options=[...groups.entries()].sort((a,b)=>String(b[1][0].competition_date).localeCompare(String(a[1][0].competition_date))||String(a[1][0].session_slot).localeCompare(String(b[1][0].session_slot))||String(a[1][0].subject).localeCompare(String(b[1][0].subject)));
+  const opts=options.map(([key,rows])=>{const r=rows[0];return '<option value="'+safeText(key)+'">'+safeText(formatCompetitionDate(r.competition_date)+' · '+competitionSlotLabel(r.session_slot)+' · '+r.subject)+'</option>'}).join("");
+  box.innerHTML='<div class="class-results-toolbar"><label for="classCompetitionSelect">Choose the competition you took part in</label><select id="classCompetitionSelect" onchange="renderSelectedClassCompetitionResults(this.value)">'+opts+'</select></div><div id="selectedClassCompetitionResults"></div>';
+  renderSelectedClassCompetitionResults(options[0][0]);
+ }catch(e){
+  console.error("Could not load JENZY class competition results:",e);
+  box.innerHTML='<div class="empty-state"><b>Results could not be loaded.</b><p class="muted">Please try again. If this continues, JENZY may need to refresh the results service.</p><button type="button" class="small-btn" onclick="loadClassCompetitionResults('+JSON.stringify(schoolClass)+')">Try again</button></div>';
+ }
+}
+function renderSelectedClassCompetitionResults(key){
+ const box=document.getElementById("selectedClassCompetitionResults");if(!box)return;
+ const rows=classCompetitionResultsRows.filter(row=>competitionResultKey(row)===key);
+ if(!rows.length){box.innerHTML='<p class="muted">No results are available for this competition yet.</p>';return;}
+ const first=rows[0],top=rows.filter(r=>Number(r.rank_position)<=3).sort((a,b)=>Number(a.rank_position)-Number(b.rank_position));
+ const medals={1:"🥇",2:"🥈",3:"🥉"};
+ let html='<div class="class-results-summary"><b>'+safeText(formatCompetitionDate(first.competition_date)+' · '+competitionSlotLabel(first.session_slot)+' · '+first.subject)+'</b><br><span>'+Number(first.participant_count||0).toLocaleString("en-KE")+' competitor(s) with an official result</span></div>';
+ if(!top.length)html+='<p class="muted">The top three have not been published yet.</p>';
+ else html+='<h3>Top three winners</h3>'+top.map(r=>'<div class="class-winner-row"><span class="class-rank-medal">'+(medals[Number(r.rank_position)]||"🏅")+'</span><div class="class-winner-details"><strong>'+safeText(r.display_name||"JENZY Student")+'</strong><span class="muted">Position '+Number(r.rank_position)+' · '+Number(r.correct_count||0)+'/'+Number(r.question_count||0)+' correct</span></div><div class="class-score">'+Number(r.score_percent||0).toLocaleString("en-KE",{maximumFractionDigits:2})+'%</div></div>').join("");
+ const me=rows.find(r=>r.is_current_user===true);
+ if(me){html+='<div class="class-personal-row"><span class="class-rank-medal">👤</span><div class="class-winner-details"><strong>Your position: #'+Number(me.rank_position)+' of '+Number(me.participant_count)+'</strong><small>'+Number(me.correct_count||0)+'/'+Number(me.question_count||0)+' correct · '+Number(me.score_percent||0).toLocaleString("en-KE",{maximumFractionDigits:2})+'%</small></div></div>';}
+ else{html+='<div class="class-personal-row"><span class="class-rank-medal">👤</span><div class="class-winner-details"><strong>Your position is not available yet</strong><small>Complete this exact competition and submit your answers to receive a position out of '+Number(first.participant_count||0)+' competitors with official results.</small></div></div>';}
+ box.innerHTML=html;
+}
+
 </script>
 </body>
 </html>
