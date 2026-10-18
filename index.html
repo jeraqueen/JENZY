@@ -4,6 +4,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <meta name="theme-color" content="#4f46e5">
+<meta name="jenzy-build" content="a97ea9958dca6ad958acb8c03301abd87bf5b4b1">
 <title>JENZY — Learn. Play. Compete.</title>
 <style>
 :root{--bg:#f5f7ff;--card:#fff;--text:#19213b;--muted:#69738c;--primary:#4f46e5;--line:#e7e9f3}
@@ -1145,6 +1146,38 @@ function openClassResultsPage(schoolClass){
 
 </script>
 
+
+
+<script>
+// Check for a newly deployed JENZY build every 10 seconds.
+(function(){
+ const tag=document.querySelector('meta[name="jenzy-build"]');
+ if(!tag||window.__jenzyAutoUpdateStarted)return;
+ window.__jenzyAutoUpdateStarted=true;
+ const currentBuild=tag.content;
+ let checking=false;
+ function safeToReload(){
+  const active=document.activeElement;
+  if(active&&(/^(INPUT|TEXTAREA|SELECT)$/.test(active.tagName)||active.isContentEditable))return false;
+  const play=document.getElementById('competitionPlayArea');
+  if(play&&!play.hidden)return false;
+  return true;
+ }
+ async function checkForUpdate(){
+  if(checking||document.visibilityState==='hidden')return;
+  checking=true;
+  try{
+   const url=location.pathname+location.search+(location.search?'&':'?')+'jenzy_update_check='+Date.now();
+   const response=await fetch(url,{cache:'no-store',credentials:'same-origin'});
+   if(!response.ok)return;
+   const html=await response.text();
+   const match=html.match(/<meta[^>]*name=["']jenzy-build["'][^>]*content=["']([^"']+)["']/i);
+   if(match&&match[1]!==currentBuild&&safeToReload())location.reload();
+  }catch(e){}finally{checking=false;}
+ }
+ setInterval(checkForUpdate,10000);
+})();
+</script>
 
 </body>
 </html>
