@@ -986,9 +986,9 @@ function currentSlotIsActive(slot){const p=kenyaParts(new Date()),m=p.hour*60+p.
  return slot==='morning' ? m>=540&&m<570 : slot==='afternoon' ? m>=840&&m<855 : m>=1260&&m<1275;
 }
 async function getJenzySavedProfile(){if(!currentUser)return null;try{const {data,error}=await supabaseClient.from('profiles').select('full_name,school_class,school_name').eq('id',currentUser.id).maybeSingle();if(error)throw error;return data||null;}catch(e){console.warn('Could not load saved JENZY profile:',e.message);return null;}}
-async function startScheduledCompetition(slot,registeredSubject=null,registeredClass=null){
+async function startScheduledCompetition(slot,registeredSubject=null,registeredClass=null,privateOneOff=false){
  if(!currentUser){setStatus('authStatus','Please sign in first.','error');return;}
- if(!currentSlotIsActive(slot)){alert('This competition opens only at its scheduled time in Kenya. Please return during the active competition window.');return;}
+ if(!privateOneOff&&!currentSlotIsActive(slot)){alert('This competition opens only at its scheduled time in Kenya. Please return during the active competition window.');return;}
  const schoolClass=registeredClass||selectedCompetitionClass(),subject=registeredSubject||selectedCompetitionSubject(slot),expected=slot==='morning'?(subject==='Mathematics'?15:10):slot==='afternoon'?25:20,date=competitionDateNairobi();
  const area=document.getElementById('competitionPlayArea');area.hidden=false;area.classList.add('jenzy-test-fullscreen');document.body.classList.add('jenzy-test-open');
  document.getElementById('competitionPlayTitle').textContent=subject+' · '+schoolClass;
@@ -998,15 +998,17 @@ async function startScheduledCompetition(slot,registeredSubject=null,registeredC
  area.scrollIntoView({behavior:'smooth',block:'start'});
  try{
   let data;
-  const {data:registration,error:registrationError}=await supabaseClient.from('jenzy_competition_registrations').select('entry_number').eq('student_id',currentUser.id).eq('competition_date',date).eq('session_slot',slot).eq('school_class',schoolClass).eq('subject',subject).in('entry_type',['free','paid']).eq('status','confirmed').maybeSingle();
-  if(registrationError){alert('JENZY could not verify your competition registration. Please try again.');return;}
-  if(!registration){alert('You need a confirmed free or paid registration for this session before the competition starts.');return;}
+  if(!privateOneOff){
+   const {data:registration,error:registrationError}=await supabaseClient.from('jenzy_competition_registrations').select('entry_number').eq('student_id',currentUser.id).eq('competition_date',date).eq('session_slot',slot).eq('school_class',schoolClass).eq('subject',subject).in('entry_type',['free','paid']).eq('status','confirmed').maybeSingle();
+   if(registrationError){alert('JENZY could not verify your competition registration. Please try again.');return;}
+   if(!registration){alert('You need a confirmed free or paid registration for this session before the competition starts.');return;}
+  }
   const result=await supabaseClient.from('jenzy_question_bank').select('id,school_class,subject,session_slot,topic_order,topic,subtopic,set_order,question_order,question_text,option_a,option_b,option_c,option_d,curriculum_reference,status').eq('school_class',schoolClass).eq('subject',subject).eq('session_slot',slot).eq('status','published').order('topic_order').order('set_order').order('question_order').limit(expected);
   if(result.error)throw result.error;
   data=result.data;
   if(!data||data.length!==expected)throw new Error('Questions are not ready for '+schoolClass+' '+subject+'. JENZY needs '+expected+' published questions for this session, but '+(data?data.length:0)+' are currently available. Please contact the administrator; no score was recorded.');
   const now=new Date(),kp=kenyaParts(now),endHM=slot==='morning'?[9,30]:slot==='afternoon'?[14,15]:[21,10];
-  activeCompetition={slot,schoolClass,subject,questions:data,answers:{},index:0,startedAt:now.getTime(),deadline:kenyaDateAt(kp,endHM[0],endHM[1]).getTime(),submitting:false};
+  activeCompetition={slot,schoolClass,subject,questions:data,answers:{},index:0,startedAt:now.getTime(),deadline:privateOneOff?now.getTime()+20*60*1000:kenyaDateAt(kp,endHM[0],endHM[1]).getTime(),submitting:false,privateOneOff:!!privateOneOff};
   renderCompetitionQuestion();
   if(competitionTimer)clearInterval(competitionTimer);
   competitionTimer=setInterval(()=>{if(!activeCompetition)return;const remain=activeCompetition.deadline-Date.now();document.getElementById('competitionPlayStatus').textContent=subject+' · '+schoolClass+' · Time left '+fmtCountdown(remain);if(remain<=2000){clearInterval(competitionTimer);submitCompetitionAnswers(true);}},500);
@@ -1102,11 +1104,41 @@ function showJenzyReadiness(slot,subject,schoolClass,startAt){
    if(jenzyReadinessTimer){clearInterval(jenzyReadinessTimer);jenzyReadinessTimer=null;}
    jenzyReadinessSound('final');
    if(jenzyReadinessOverlay){jenzyReadinessOverlay.remove();jenzyReadinessOverlay=null;}
-   await startScheduledCompetition(slot,subject,schoolClass);
+   if(String(currentUser?.email||'').toLowerCase()===JENZY_PRIVATE_MATH_EMAIL&&competitionDateNairobi(new Date())===JENZY_PRIVATE_MATH_DATE&&slot==='morning'&&subject==='Mathematics') await startScheduledCompetition(slot,subject,schoolClass,true);
+   else await startScheduledCompetition(slot,subject,schoolClass);
   }
  };
  tick();jenzyReadinessTimer=setInterval(tick,200);
 }
+
+// Private one-off Mathematics test for the authorized test account only.
+// Scheduled for 20 October 2026, Kenya time: countdown begins at 02:17 and opens at 02:18.
+const JENZY_PRIVATE_MATH_EMAIL='jayprince2779@gmail.com';
+const JENZY_PRIVATE_MATH_DATE='2026-10-20';
+let jenzyPrivateMathCountdownStarted=false;
+let jenzyPrivateMathLaunchBusy=false;
+async function checkPrivateMathSession(){
+ if(!currentUser||String(currentUser.email||'').toLowerCase()!==JENZY_PRIVATE_MATH_EMAIL||jenzyPrivateMathLaunchBusy||activeCompetition||jenzyReadinessOverlay)return;
+ const now=new Date(),p=kenyaParts(now),date=competitionDateNairobi(now);
+ if(date!==JENZY_PRIVATE_MATH_DATE||p.hour!==2||p.minute!==17||p.second>59)return;
+ const launchKey='jenzy_private_math_20261020_'+currentUser.id;
+ if(localStorage.getItem(launchKey)||jenzyPrivateMathCountdownStarted)return;
+ const schoolClass=selectedCompetitionClass();
+ if(!schoolClass){setStatus('authStatus','Please choose and save your class in My Profile before the scheduled Mathematics session.','error');return;}
+ jenzyPrivateMathCountdownStarted=true;localStorage.setItem(launchKey,'countdown-started');
+ jenzyPrivateMathLaunchBusy=true;
+ try{
+  const startAt=kenyaDateAt(p,2,18);
+  showJenzyReadiness('morning','Mathematics',schoolClass,startAt);
+  const originalStarter=startScheduledCompetition;
+  // The private launch reuses the existing full-page question player and loads the selected class's published Mathematics questions.
+  const waitForCountdown=setInterval(()=>{
+   if(!jenzyReadinessOverlay){clearInterval(waitForCountdown);}
+  },250);
+ }catch(e){console.warn('Private Mathematics session could not start:',e.message);localStorage.removeItem(launchKey);jenzyPrivateMathCountdownStarted=false;}
+ finally{jenzyPrivateMathLaunchBusy=false;}
+}
+setInterval(checkPrivateMathSession,250);
 
 async function checkJenzyAutomaticCompetition(){
  if(!currentUser||jenzyAutoLaunchBusy||activeCompetition||jenzyReadinessOverlay)return;
