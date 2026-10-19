@@ -4,7 +4,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <meta name="theme-color" content="#4f46e5">
-<meta name="jenzy-build" content="jenzy-build-20261019-status-watchdog-final">
+<meta name="jenzy-build" content="jenzy-build-20261019-registration-status-visible">
 <title>JENZY — Learn. Play. Compete.</title>
 <style>
 :root{--bg:#f5f7ff;--card:#fff;--text:#19213b;--muted:#69738c;--primary:#4f46e5;--line:#e7e9f3}
@@ -1091,7 +1091,7 @@ async function refreshHomepageCompetitionRegistration(){
  const isCurrent=()=>checkId===homepageRegistrationCheckId && details.isConnected;
  const showFailure=(title,message)=>{if(!isCurrent())return;homepageRegistrationCheckInProgress=false;details.innerHTML='<div class="homepage-registration-status not-registered"><div class="homepage-registration-status-icon" aria-hidden="true">!</div><div class="homepage-registration-status-copy"><strong><span class="status-kicker">STATUS CHECK</span><span class="status-title">'+title+'</span></strong><span>'+escapeHtml(message)+'</span><small>Your saved registration has not been changed. Tap Retry to check again.</small><button type="button" class="primary" onclick="refreshHomepageCompetitionRegistration()">Retry status check</button></div></div>';};
  details.innerHTML='<p class="muted">Checking your registration…</p>';
- const watchdog=setTimeout(()=>{if(isCurrent()&&details.textContent.includes('Checking your registration')){homepageRegistrationCheckInProgress=false;showFailure('COULD NOT LOAD STATUS','The registration lookup did not finish within 10 seconds. Tap Retry to start one fresh check.');}},10000);
+ const watchdog=setTimeout(()=>{if(details.isConnected&&details.textContent.includes('Checking your registration')){homepageRegistrationCheckInProgress=false;details.innerHTML='<div class="homepage-registration-status not-registered"><div class="homepage-registration-status-icon" aria-hidden="true">!</div><div class="homepage-registration-status-copy"><strong><span class="status-kicker">STATUS CHECK</span><span class="status-title">COULD NOT LOAD STATUS</span></strong><span>The registration lookup did not finish within 10 seconds.</span><small>Your saved registration has not been changed. Tap Retry to check again.</small><button type="button" class="primary" onclick="refreshHomepageCompetitionRegistration()">Retry status check</button></div></div>'; }},10000);
  try{
   const today=competitionDateNairobi();
   // Include confirmed entries of BOTH types. Do not limit the home card to free entries.
