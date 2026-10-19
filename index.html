@@ -1406,7 +1406,7 @@ function startCompetitionResultsReleaseCountdown(schoolClass){
   else if(mins>=14*60&&mins<21*60)end=kenyaDateAt(p,14,15);
   else end=kenyaDateAt(mins<9*60?{...p,day:p.day-1}:p,21,10);
   const releaseKey=p.year+'-'+p.month+'-'+p.day+'-'+(mins>=21*60||mins<9*60?'evening':mins>=14*60?'afternoon':'morning');
-  if(competitionResultsReleaseReachedKey===releaseKey)return;
+  if(competitionResultsReleaseReachedKey===releaseKey){el.textContent='The release time has passed, but no official results are available yet.';return;}
   const ms=now.getTime(),endMs=end.getTime(),waitEnd=endMs+60000,releaseAt=endMs+120000;
   if(ms<endMs)el.textContent='Competition session remaining: '+fmtCountdown(endMs-ms);
   else if(ms<waitEnd)el.textContent='Results preparation wait: '+fmtCountdown(waitEnd-ms);
