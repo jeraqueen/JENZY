@@ -1168,6 +1168,57 @@ function renderCompetitionQuestion(){if(!activeCompetition)return;const c=active
 function escapeCompetitionText(value){return String(value??'').replace(/[&<>"']/g,ch=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[ch]));}
 function recordCompetitionAnswer(value){if(!activeCompetition)return;activeCompetition.answers[activeCompetition.questions[activeCompetition.index].id]=Number(value);}
 function nextCompetitionQuestion(){if(!activeCompetition||activeCompetition.submitting)return;if(activeCompetition.index<activeCompetition.questions.length-1){activeCompetition.index++;renderCompetitionQuestion();document.getElementById('competitionPlayArea').scrollIntoView({behavior:'smooth',block:'start'});}}
+
+function jenzyNeedsWorkingEvidence(slot,schoolClass,subject){
+ return (slot==='morning'&&['Mathematics','Core Mathematics','Essential Mathematics'].includes(String(subject||'')))
+   || (slot==='evening'&&String(schoolClass)==='Form 3'&&['Physics','Chemistry'].includes(String(subject||'')));
+}
+function renderJenzyWorkingEvidenceUpload(resultId,slot,schoolClass,subject){
+ if(!resultId||!jenzyNeedsWorkingEvidence(slot,schoolClass,subject))return '';
+ const rid=String(resultId).replace(/[^a-zA-Z0-9_-]/g,'');
+ const meta='data-result-id="'+rid+'" data-slot="'+escapeCompetitionText(slot)+'" data-school-class="'+escapeCompetitionText(schoolClass)+'" data-subject="'+escapeCompetitionText(subject)+'"';
+ return '<section class="card" style="margin:18px 0;border:2px solid #6d5bd0"><h3>📸 Upload Your Working-Out Photo</h3><p><b>Show us how you worked out your answers!</b></p><p>Please take a clear photograph of the pages in your exercise book or on paper where you did your calculations and worked out the competition answers.</p><ul><li>Make sure your handwritten calculations, formulas and working steps are visible.</li><li>Keep the whole page in the picture and make sure the writing is readable.</li><li>Photograph your actual working, not only the final answers.</li><li>Avoid blurry, dark, blank or cut-off pages.</li></ul><p class="muted">Your completion time was recorded when your answers were submitted. Uploading this photo will not change your score, completion time or ranking. This private photo is automatically deleted three hours after upload.</p><div style="display:flex;gap:10px;flex-wrap:wrap"><button type="button" class="primary" onclick="document.getElementById(\'jenzyEvidenceCamera-'+rid+'\').click()">📷 Take photo</button><button type="button" class="secondary" onclick="document.getElementById(\'jenzyEvidenceGallery-'+rid+'\').click()">🖼️ Choose from gallery</button></div><input id="jenzyEvidenceCamera-'+rid+'" '+meta+' type="file" accept="image/*" capture="environment" style="display:none" onchange="uploadJenzyWorkingEvidence(this)"><input id="jenzyEvidenceGallery-'+rid+'" '+meta+' type="file" accept="image/*" style="display:none" onchange="uploadJenzyWorkingEvidence(this)"><p id="jenzyEvidenceStatus-'+rid+'" role="status" style="margin-top:12px;font-weight:700">Working photo required · Your result has already been saved.</p></section>';
+}
+async function jenzyCompressWorkingPhoto(file){
+ if(!file||!file.type||!file.type.startsWith('image/'))throw new Error('Please choose a photo image.');
+ const bitmap=await createImageBitmap(file);
+ const scale=Math.min(1,1600/Math.max(bitmap.width,bitmap.height));
+ const canvas=document.createElement('canvas');canvas.width=Math.max(1,Math.round(bitmap.width*scale));canvas.height=Math.max(1,Math.round(bitmap.height*scale));
+ const ctx=canvas.getContext('2d');if(!ctx)throw new Error('This browser could not prepare the photo. Please try another image.');
+ ctx.fillStyle='#fff';ctx.fillRect(0,0,canvas.width,canvas.height);ctx.drawImage(bitmap,0,0,canvas.width,canvas.height);bitmap.close?.();
+ let quality=.78,blob=await new Promise(resolve=>canvas.toBlob(resolve,'image/jpeg',quality));
+ while(blob&&blob.size>1400000&&quality>.42){quality-=.1;blob=await new Promise(resolve=>canvas.toBlob(resolve,'image/jpeg',quality));}
+ if(!blob)throw new Error('Could not compress this photo. Please try another image.');
+ if(blob.size>1450000)throw new Error('This photo is still too large. Please take a clearer, closer photo and try again.');
+ return blob;
+}
+async function uploadJenzyWorkingEvidence(input){
+ const file=input?.files?.[0];if(!file)return;
+ const resultId=input.dataset.resultId,slot=input.dataset.slot,schoolClass=input.dataset.schoolClass,subject=input.dataset.subject;
+ const status=document.getElementById('jenzyEvidenceStatus-'+resultId);
+ const camera=document.getElementById('jenzyEvidenceCamera-'+resultId),gallery=document.getElementById('jenzyEvidenceGallery-'+resultId);
+ if(!currentUser){if(status)status.textContent='Please sign in again before uploading your working photo.';input.value='';return;}
+ if(!resultId||!jenzyNeedsWorkingEvidence(slot,schoolClass,subject)){if(status)status.textContent='This competition does not require a working photo.';input.value='';return;}
+ if(camera)camera.disabled=true;if(gallery)gallery.disabled=true;
+ let objectPath='';
+ try{
+  if(status)status.textContent='Preparing and compressing your photo…';
+  const blob=await jenzyCompressWorkingPhoto(file);
+  objectPath=currentUser.id+'/'+resultId+'/'+Date.now()+'.jpg';
+  if(status)status.textContent='Uploading your private working photo…';
+  const {error:uploadError}=await supabaseClient.storage.from('jenzy-working-evidence').upload(objectPath,blob,{contentType:'image/jpeg',upsert:false,cacheControl:'0'});
+  if(uploadError)throw uploadError;
+  const {error:recordError}=await supabaseClient.from('jenzy_working_evidence').insert({result_id:resultId,student_id:currentUser.id,school_class:schoolClass,session_slot:slot,subject:subject,object_path:objectPath,expires_at:new Date(Date.now()+3*60*60*1000).toISOString()});
+  if(recordError){await supabaseClient.storage.from('jenzy-working-evidence').remove([objectPath]);objectPath='';throw recordError;}
+  if(status)status.textContent='✅ Working photo uploaded successfully. It will be automatically deleted three hours after upload.';
+  if(camera)camera.remove();if(gallery)gallery.remove();
+ }catch(error){
+  if(status)status.textContent='Upload did not finish: '+(error?.message||'Please check your connection and try again. Your result and submission time are saved.');
+ }finally{
+  if(camera)camera.disabled=false;if(gallery)gallery.disabled=false;
+  if(input?.isConnected)input.value='';
+ }
+}
 async function submitCompetitionAnswers(auto=false){const c=activeCompetition;if(!c||c.submitting)return;c.submitting=true;if(competitionTimer)clearInterval(competitionTimer);document.getElementById('competitionSubmitBtn').disabled=true;document.getElementById('competitionNextBtn').disabled=true;
  if(c.privateOneOff){const total=c.questions.length;let correct=0,unanswered=0;for(const q of c.questions){const chosen=c.answers[q.id];if(chosen===undefined||chosen===null)unanswered++;else if(Number(chosen)===Number(q.correct_option))correct++;}const percent=total?Math.round((correct/total)*10000)/100:0;document.getElementById('competitionQuestionBox').innerHTML='';document.getElementById('competitionPrevBtn').hidden=true;document.getElementById('competitionNextBtn').hidden=true;document.getElementById('competitionSubmitBtn').hidden=true;document.getElementById('competitionPlayStatus').textContent='Private Mathematics test completed.';document.getElementById('competitionResult').innerHTML='<div class="card"><h3>📊 Your test results</h3><p style="font-size:30px;font-weight:900;margin:12px 0">'+correct+' / '+total+'</p><p style="font-size:22px;font-weight:850">Score: '+percent+'%</p><p>Correct answers: '+correct+'</p><p>Incorrect answers: '+(total-correct-unanswered)+'</p><p>Unanswered questions: '+unanswered+'</p><p class="muted">Private practice result only. It is not added to the official competition leaderboard.</p><button class="primary jenzy-test-return" onclick="closeCompetitionFullscreen()">← Back to previous page</button></div>';activeCompetition=null;return;}
  try{
@@ -1177,7 +1228,7 @@ async function submitCompetitionAnswers(auto=false){const c=activeCompetition;if
    let reviewQuestions=c.questions;
    try{const ids=c.questions.map(q=>q.id);const review=await supabaseClient.from('jenzy_question_bank').select('id,question_text,option_a,option_b,option_c,option_d,correct_option,explanation,topic,subtopic').in('id',ids);if(!review.error&&Array.isArray(review.data)){const byId=new Map(review.data.map(q=>[String(q.id),q]));reviewQuestions=c.questions.map(q=>({...q,...(byId.get(String(q.id))||{})}));}}catch(reviewError){console.warn('Could not load answer review:',reviewError);}
    const reviewHtml=reviewQuestions.map((q,i)=>{const chosen=c.answers[q.id];const hasAnswer=chosen!==undefined&&chosen!==null;const right=Number(q.correct_option);const isCorrect=hasAnswer&&Number(chosen)===right;const options=[q.option_a,q.option_b,q.option_c,q.option_d];const chosenLabel=hasAnswer?String.fromCharCode(65+Number(chosen)):'Not answered';const correctLabel=Number.isInteger(right)&&right>=0&&right<4?String.fromCharCode(65+right):'Unavailable';return '<div class="card" style="margin-top:12px"><h4>Question '+(i+1)+' · '+(isCorrect?'✅ Correct':hasAnswer?'❌ Incorrect':'⚪ Unanswered')+'</h4><p>'+escapeCompetitionText(q.question_text)+'</p>'+options.map((o,j)=>'<div style="padding:8px 10px;margin:5px 0;border-radius:8px;border:1px solid '+(j===right?'#16a34a':hasAnswer&&j===Number(chosen)?'#dc2626':'var(--line)')+';background:'+(j===right?'rgba(22,163,74,.12)':hasAnswer&&j===Number(chosen)?'rgba(220,38,38,.10)':'transparent')+'">'+String.fromCharCode(65+j)+'. '+escapeCompetitionText(o)+(j===right?' ✓ Correct answer':'')+(hasAnswer&&j===Number(chosen)&&j!==right?' · Your answer':'')+'</div>').join('')+'<p><b>Your answer:</b> '+chosenLabel+' · <b>Correct answer:</b> '+correctLabel+'</p>'+(q.explanation?'<p class="muted"><b>Explanation:</b> '+escapeCompetitionText(q.explanation)+'</p>':'')+'</div>';}).join('');
-   document.getElementById('competitionQuestionBox').innerHTML='';document.getElementById('competitionPrevBtn').hidden=true;document.getElementById('competitionNextBtn').hidden=true;document.getElementById('competitionSubmitBtn').hidden=true;document.getElementById('competitionPlayStatus').textContent='Competition submitted.';document.getElementById('competitionResult').innerHTML='<div class="card"><h3>🏆 Your competition results</h3><p style="font-size:30px;font-weight:900;margin:12px 0">'+correct+' / '+total+'</p><p style="font-size:23px;font-weight:850">Score: '+percent+'%</p><p>Correct answers: '+correct+'</p><p>Incorrect answers: '+Math.max(0,total-correct-unanswered)+'</p><p>Unanswered questions: '+unanswered+'</p><p class="muted">Free entry · '+escapeCompetitionText(data.competition_date||'')+'</p><h3 style="margin-top:24px">Review your answers</h3><p>Green marks the correct answer. Red marks your selected answer when it was incorrect.</p>'+(reviewHtml||'<p>Answer review could not be loaded. Your score was saved successfully.</p>')+'<button class="primary jenzy-test-return" onclick="closeCompetitionFullscreen()">← Back to previous page</button></div>';activeCompetition=null;
+   document.getElementById('competitionQuestionBox').innerHTML='';document.getElementById('competitionPrevBtn').hidden=true;document.getElementById('competitionNextBtn').hidden=true;document.getElementById('competitionSubmitBtn').hidden=true;document.getElementById('competitionPlayStatus').textContent='Competition submitted.';document.getElementById('competitionResult').innerHTML='<div class="card"><h3>🏆 Your competition results</h3><p style="font-size:30px;font-weight:900;margin:12px 0">'+correct+' / '+total+'</p><p style="font-size:23px;font-weight:850">Score: '+percent+'%</p><p>Correct answers: '+correct+'</p><p>Incorrect answers: '+Math.max(0,total-correct-unanswered)+'</p><p>Unanswered questions: '+unanswered+'</p><p class="muted">Free entry · '+escapeCompetitionText(data.competition_date||'')+'</p>'+renderJenzyWorkingEvidenceUpload(data.result_id,c.slot,c.schoolClass,c.subject)+'<h3 style="margin-top:24px">Review your answers</h3><p>Green marks the correct answer. Red marks your selected answer when it was incorrect.</p>'+(reviewHtml||'<p>Answer review could not be loaded. Your score was saved successfully.</p>')+'<button class="primary jenzy-test-return" onclick="closeCompetitionFullscreen()">← Back to previous page</button></div>';activeCompetition=null;
  }catch(e){c.submitting=false;document.getElementById('competitionSubmitBtn').disabled=false;document.getElementById('competitionNextBtn').disabled=c.index>=c.questions.length-1;document.getElementById('competitionPlayStatus').textContent=(auto?'Time ended. ':'')+(e.message||'The result could not be saved.');}
 }
 
