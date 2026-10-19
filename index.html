@@ -4,7 +4,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <meta name="theme-color" content="#4f46e5">
-<meta name="jenzy-build" content="jenzy-build-20261019-11">
+<meta name="jenzy-build" content="jenzy-build-20261019-12">
 <title>JENZY — Learn. Play. Compete.</title>
 <style>
 :root{--bg:#f5f7ff;--card:#fff;--text:#19213b;--muted:#69738c;--primary:#4f46e5;--line:#e7e9f3}
@@ -419,7 +419,7 @@ if (!window.supabase) {
 }
 </script>
 <script>
-const JENZY_BUILD_VERSION = '20261019-11';
+const JENZY_BUILD_VERSION = '20261019-12';
 (function enableAutomaticJenzyUpdates(){
  const checkEveryMs=5000;
  let updateFound=false,checking=false;
@@ -755,6 +755,21 @@ function toggleVoicePreview() {
 }
 function cancelVoiceRecording(){const recorder=voiceRecorder;if(recorder&&recorder.state!=='inactive'){recorder.ondataavailable=null;recorder.onstop=null;try{recorder.stop()}catch(e){}}voiceRecorder=null;voiceBlob=null;voiceChunks=[];if(voicePreviewAudio){voicePreviewAudio.pause();voicePreviewAudio=null}const previewBtn=document.getElementById('voicePreviewButton');if(previewBtn){previewBtn.hidden=true;previewBtn.textContent='▶'}voiceStartedAt=0;voiceDurationSeconds=0;stopVoiceTracks();const bar=document.getElementById('voiceRecordingBar'),timer=document.getElementById('voiceTimer'),wave=document.getElementById('voiceWave'),mic=document.getElementById('voiceRecordButton');if(bar)bar.hidden=true;if(timer)timer.textContent='0:00';if(wave)wave.innerHTML='';if(mic){mic.classList.remove('recording');mic.setAttribute('aria-label','Record voice message');mic.title='Record voice message'}chatSetStatus('Recording discarded. Ready to record again.')}
 async function sendVoiceMessage(){if(!currentUser||!chatPeer||!voiceBlob)return;const btn=document.querySelector('.send-voice');if(btn)btn.disabled=true;chatSetStatus('Uploading voice message…');let uploadedPath=null;try{const mime=(voiceBlob.type||'audio/webm').split(';')[0].toLowerCase(),ext=mime.includes('mp4')?'m4a':mime.includes('ogg')?'ogg':mime.includes('mpeg')?'mp3':mime.includes('wav')?'wav':mime.includes('aac')?'aac':'webm',path=`${currentUser.id}/${chatPeer}/${Date.now()}.${ext}`;const {error:uploadError}=await supabaseClient.storage.from('jenzy-voice-messages').upload(path,voiceBlob,{contentType:mime,upsert:false});if(uploadError)throw uploadError;uploadedPath=path;const {error}=await supabaseClient.from('jenzy_messages').insert({sender_id:currentUser.id,recipient_id:chatPeer,body:'[voice:'+Math.max(1,voiceDurationSeconds)+'] '+path});if(error)throw error;voiceBlob=null;voiceChunks=[];voiceDurationSeconds=0;document.getElementById('voiceRecordingBar').hidden=true;document.getElementById('voiceTimer').textContent='0:00';document.getElementById('voiceWave').innerHTML='';stopVoiceTracks();chatSetStatus('Voice message sent.');await loadConversationMessages()}catch(e){if(uploadedPath){try{await supabaseClient.storage.from('jenzy-voice-messages').remove([uploadedPath])}catch(cleanupError){console.warn('Voice upload cleanup failed:',cleanupError.message)}}chatSetStatus('Voice message could not be sent: '+e.message,true)}finally{if(btn)btn.disabled=false}}
+
+
+async function requireUniqueFullName(){
+ const gate=document.getElementById('uniqueNameGate'),form=document.getElementById('uniqueNameGateForm'),input=document.getElementById('uniqueNameGateInput'),status=document.getElementById('uniqueNameGateStatus'),save=document.getElementById('uniqueNameGateSave');
+ if(!currentUser||!gate||!form||!input)return false;
+ const p=await supabaseClient.from('profiles').select('full_name,name_change_required').eq('id',currentUser.id).maybeSingle();
+ if(p.error){setStatus('authStatus','Cannot verify required name change. Please sign in again. '+p.error.message,'error');return true;}
+ if(!p.data)return false;
+ const old=String(p.data.full_name||'').trim();
+ let dup=false;
+ if(old){const d=await supabaseClient.from('profiles').select('id').ilike('full_name',old).neq('id',currentUser.id).limit(1);if(d.error){setStatus('authStatus','Cannot verify name uniqueness. Please try again. '+d.error.message,'error');return true;}dup=!!d.data?.length;}
+ if(!p.data.name_change_required&&!dup)return false;
+ gate.hidden=false;gate.style.display='flex';document.body.style.overflow='hidden';input.value='';status.textContent='';
+ return await new Promise(resolve=>{form.onsubmit=async e=>{e.preventDefault();if(save.disabled)return;const name=input.value.trim().replace(/\s+/g,' ');if(name.split(' ').length<2||name.toLowerCase()===old.toLowerCase()){status.textContent='Enter a different full name using your first name and surname.';return;}save.disabled=true;status.textContent='Saving…';try{const d=await supabaseClient.from('profiles').select('id').ilike('full_name',name).neq('id',currentUser.id).limit(1);if(d.error)throw d.error;if(d.data?.length){status.textContent='That name is already used. Enter your own full name.';return;}const u=await supabaseClient.from('profiles').update({full_name:name,name_change_required:false}).eq('id',currentUser.id);if(u.error)throw u.error;gate.hidden=true;gate.style.display='none';document.body.style.overflow='';resolve(false);}catch(err){status.textContent='Could not save: '+err.message;}finally{save.disabled=false;}};});
+}
 
 initializeApp();
 refreshProgress();
