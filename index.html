@@ -4,7 +4,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <meta name="theme-color" content="#4f46e5">
-<meta name="jenzy-build" content="jenzy-build-20261019-13">
+<meta name="jenzy-build" content="jenzy-build-20261019-14">
 <title>JENZY — Learn. Play. Compete.</title>
 <style>
 :root{--bg:#f5f7ff;--card:#fff;--text:#19213b;--muted:#69738c;--primary:#4f46e5;--line:#e7e9f3}
@@ -419,7 +419,7 @@ if (!window.supabase) {
 }
 </script>
 <script>
-const JENZY_BUILD_VERSION = '20261019-13';
+const JENZY_BUILD_VERSION = '20261019-14';
 (function enableAutomaticJenzyUpdates(){
  const checkEveryMs=5000;
  let updateFound=false,checking=false;
@@ -841,19 +841,18 @@ function updateHomepageCountdowns(now=new Date()){
  }
  const deadlineMs=next.deadline-now,startMs=next.start-now;
  const deadlineStillOpen=deadlineMs>0;
- const remaining=deadlineStillOpen?deadlineMs:startMs;
  const countdownVisible=startMs<=2*60*60*1000;
  if(!countdownVisible){box.innerHTML='<div class="homepage-countdown-row"><div class="countdown-label">'+next.label+'</div><div class="countdown-time">Starts later</div><div class="countdown-sub">The session countdown appears 2 hours before '+next.startLabel+' Kenya time. Registration closes 10 minutes before the session.</div></div>';if(heading)heading.textContent='⏳ Upcoming competition';if(description)description.textContent='The homepage countdown begins 2 hours before each session.';warning.hidden=true;warning.textContent='';return;}
+ const remaining=startMs;
  const isDanger=remaining<=600000;
- const stage=deadlineStillOpen?'deadline':'session';
- const cls=isDanger?' countdown-danger':(stage==='session'?' countdown-session':'');
- if(heading)heading.textContent=deadlineStillOpen?'⏳ Registration deadline':'🟢 Session countdown';
+ const cls=isDanger?' countdown-danger':' countdown-session';
+ if(heading)heading.textContent=isDanger?'🚨 Session starts soon':'🟢 Session countdown';
  if(description)description.textContent=deadlineStillOpen
-  ?'Register before this timer reaches zero. It turns red during the final 10 minutes.'
-  :'Registration is closed for this session. The session countdown is green and turns red during the final 10 minutes.';
- const label=deadlineStillOpen?'Time left to register':'Time until session begins';
+  ?'The countdown ends at session time. Registration closes 10 minutes before the session.'
+  :'Registration is closed. The countdown shows time until the session begins.';
+ const label='Time until session begins';
  const detail=deadlineStillOpen
-  ?'Registration closes at '+next.startLabel+' minus 10 minutes · '+next.startLabel+' session'
+  ?'Registration closes in '+fmtCountdown(deadlineMs)+' · Session begins at '+next.startLabel+' Kenya time'
   :'Registration is closed · Session begins at '+next.startLabel+' Kenya time';
  box.innerHTML='<div class="homepage-countdown-row'+cls+'"><div class="countdown-label">'+(isDanger?'🚨 ':'')+next.label+'</div><div class="countdown-time">'+fmtCountdown(remaining)+'</div><div class="countdown-sub"><b>'+label+'</b><br>'+detail+(isDanger?' · LESS THAN 10 MINUTES — ACT NOW!':'')+'</div></div>';
  warning.hidden=true;warning.textContent='';
@@ -1209,12 +1208,7 @@ function updateJamespesaRegisteredLaunchButton(){
   document.body.appendChild(btn);
  }
 }
-function updatePrivateMathLaunchButton(){
- const id='jenzyPrivateMathLaunchButton';let btn=document.getElementById(id);
- const allowed=!!currentUser&&String(currentUser.email||'').toLowerCase()===JENZY_PRIVATE_MATH_EMAIL;
- if(!allowed){if(btn)btn.remove();return;}
- if(!btn){btn=document.createElement('button');btn.id=id;btn.type='button';btn.style.cssText='position:fixed;left:12px;right:12px;bottom:calc(76px + env(safe-area-inset-bottom));z-index:9998;width:calc(100% - 24px);max-width:560px;margin:auto;padding:16px;border:0;border-radius:16px;background:#6d28d9;color:white;font-size:16px;font-weight:900;box-shadow:0 8px 28px #0005';btn.textContent='▶ START PRIVATE MATHEMATICS TEST · 60 SECONDS';btn.addEventListener('click',()=>{if(!currentUser||String(currentUser.email||'').toLowerCase()!==JENZY_PRIVATE_MATH_EMAIL)return;const schoolClass=selectedCompetitionClass();if(!schoolClass){alert('Please choose and save your class in My Profile first.');return;}if(activeCompetition){alert('A test is already open.');return;}jenzyPrivateMathCountdownStarted=true;showJenzyReadiness('morning',schoolClass==='Grade 10'?'Core Mathematics':'Mathematics',schoolClass,new Date(Date.now()+60000),true);});document.body.appendChild(btn);}
-}
+function updatePrivateMathLaunchButton(){const btn=document.getElementById('jenzyPrivateMathLaunchButton');if(btn)btn.remove();}
 function showJenzyReadiness(slot,subject,schoolClass,startAt,privateOneOff=false,adminScheduleOverride=false){
  if(jenzyReadinessOverlay)jenzyReadinessOverlay.remove();if(jenzyReadinessTimer)clearInterval(jenzyReadinessTimer);
  const targetMs=startAt instanceof Date?startAt.getTime():Number(startAt);
@@ -1245,27 +1239,7 @@ const JENZY_PRIVATE_MATH_EMAIL='jayprince2779@gmail.com';
 const JENZY_PRIVATE_MATH_DATE='2026-10-20';
 let jenzyPrivateMathCountdownStarted=false;
 let jenzyPrivateMathLaunchBusy=false;
-async function checkPrivateMathSession(){
- if(!currentUser||String(currentUser.email||'').toLowerCase()!==JENZY_PRIVATE_MATH_EMAIL||jenzyPrivateMathLaunchBusy||activeCompetition||jenzyReadinessOverlay)return;
- const now=new Date(),p=kenyaParts(now),date=competitionDateNairobi(now);
- if(date!==JENZY_PRIVATE_MATH_DATE||p.hour!==2||p.minute!==17||p.second>59)return;
- const launchKey='jenzy_private_math_20261020_'+currentUser.id;
- if(localStorage.getItem(launchKey)||jenzyPrivateMathCountdownStarted)return;
- const schoolClass=selectedCompetitionClass();
- if(!schoolClass){setStatus('authStatus','Please choose and save your class in My Profile before the scheduled Mathematics session.','error');return;}
- jenzyPrivateMathCountdownStarted=true;localStorage.setItem(launchKey,'countdown-started');
- jenzyPrivateMathLaunchBusy=true;
- try{
-  const startAt=kenyaDateAt(p,2,18);
-  showJenzyReadiness('morning',schoolClass==='Grade 10'?'Core Mathematics':'Mathematics',schoolClass,startAt,true);
-  const originalStarter=startScheduledCompetition;
-  // The private launch reuses the existing full-page question player and loads the selected class's published Mathematics questions.
-  const waitForCountdown=setInterval(()=>{
-   if(!jenzyReadinessOverlay){clearInterval(waitForCountdown);}
-  },250);
- }catch(e){console.warn('Private Mathematics session could not start:',e.message);localStorage.removeItem(launchKey);jenzyPrivateMathCountdownStarted=false;}
- finally{jenzyPrivateMathLaunchBusy=false;}
-}
+async function checkPrivateMathSession(){return;}
 setInterval(checkPrivateMathSession,250);
 
 async function checkJenzyAutomaticCompetition(){
