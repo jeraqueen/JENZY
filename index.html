@@ -1098,21 +1098,20 @@ async function refreshHomepageCompetitionRegistration(){
  details.className='homepage-registration-status not-registered homepage-registration-status-simple';details.innerHTML='<span class="homepage-registration-status-icon" aria-hidden="true">…</span><strong>CHECKING</strong>';
  const watchdog=setTimeout(()=>{if(details.isConnected&&details.textContent.includes('CHECKING')){homepageRegistrationCheckInProgress=false;details.className='homepage-registration-status not-registered homepage-registration-status-simple';details.innerHTML='<span class="homepage-registration-status-icon" aria-hidden="true">☐</span><strong>NOT REGISTERED</strong>'; }},10000);
  try{
-  const today=competitionDateNairobi();
-  // Include confirmed entries of BOTH types. Do not limit the home card to free entries.
+  const nextSession=nextRegistrableCompetitionSession(new Date());
+  // Show status only for the next session the student can register for, including free and paid entries.
    const request=supabaseClient.from('jenzy_competition_registrations')
-    .select('id,entry_number,student_id,competition_date,session_slot,school_class,subject,entry_type,status,created_at')
+    .select('id,student_id,competition_date,session_slot,entry_type,status')
     .eq('student_id',currentUser.id)
+    .eq('competition_date',nextSession.date)
+    .eq('session_slot',nextSession.slot)
     .in('entry_type',['free','paid'])
     .eq('status','confirmed');
   const timeout=new Promise((_,reject)=>setTimeout(()=>reject(new Error('The database did not respond within 9 seconds.')),9000));
   const {data,error}=await Promise.race([request,timeout]);
   if(!isCurrent())return;
   if(error)throw error;
-  const rows=(data||[])
-   .filter(row=>String(row.status||'').toLowerCase()==='confirmed' && (!row.competition_date || String(row.competition_date)>=today))
-   .sort((x,y)=>String(x.competition_date||'').localeCompare(String(y.competition_date||''))||String(x.session_slot||'').localeCompare(String(y.session_slot||'')));
-  const slotLabels={morning:'Morning · 9:00 AM',afternoon:'Afternoon · 2:00 PM',evening:'Evening · 9:00 PM'};
+  const rows=(data||[]).filter(row=>String(row.status||'').toLowerCase()==='confirmed');
   if(!rows.length){
    details.className='homepage-registration-status not-registered homepage-registration-status-simple';details.innerHTML='<span class="homepage-registration-status-icon" aria-hidden="true">☐</span><strong>NOT REGISTERED</strong>';
    return;
