@@ -4,7 +4,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <meta name="theme-color" content="#4f46e5">
-<meta name="jenzy-build" content="jenzy-build-20261019-23">
+<meta name="jenzy-build" content="jenzy-build-20261019-24">
 <title>JENZY — Learn. Play. Compete.</title>
 <style>
 :root{--bg:#f5f7ff;--card:#fff;--text:#19213b;--muted:#69738c;--primary:#4f46e5;--line:#e7e9f3}
@@ -1280,7 +1280,7 @@ setInterval(updateCompetitionRegistrationWindow,1000);
 updateJenzySchedule();setInterval(updateJenzySchedule,1000);
 updateHomepageCountdowns();setInterval(updateHomepageCountdowns,1000);
 
-/* Class results: the database RPC returns only each competition's top three and the signed-in student's own row. */
+/* Class results: show only the top three publicly plus the signed-in registered student's own result row. */
 let classCompetitionResultsRows = [];
 let classCompetitionResultsClass = "";
 let classCompetitionHasConfirmedRegistration = false;
@@ -1330,7 +1330,7 @@ function renderClassCompetitionGroup(key,rows){
  const savedUserClass=getSavedUserSchoolClass();
  const showPersonalPosition=!!classCompetitionHasConfirmedRegistration&&!!savedUserClass&&savedUserClass===String(classCompetitionResultsClass||"").trim();
  const me=showPersonalPosition?rows.find(r=>r.is_current_user===true):null;
- if(showPersonalPosition&&me){html+='<div class="class-personal-row"><span class="class-rank-medal">👤</span><div class="class-winner-details"><strong>Your position: #'+Number(me.rank_position)+' of '+Number(me.participant_count)+'</strong><small>'+Number(me.correct_count||0)+'/'+Number(me.question_count||0)+' correct · '+Number(me.score_percent||0).toLocaleString("en-KE",{maximumFractionDigits:2})+'%</small></div></div>';}
+ if(showPersonalPosition&&me){html+='<div class="class-personal-row"><span class="class-rank-medal">👤</span><div class="class-winner-details"><strong>YOUR RESULT · FINISHED #'+Number(me.rank_position)+'</strong><small>'+Number(me.correct_count||0)+'/'+Number(me.question_count||0)+' correct · '+Number(me.score_percent||0).toLocaleString("en-KE",{maximumFractionDigits:2})+'% accuracy · '+Number(me.participant_count).toLocaleString("en-KE")+' competitors</small></div></div>';}
  return html+'</section>';
 }
 function showGrade6SampleResults(){
