@@ -4,7 +4,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <meta name="theme-color" content="#4f46e5">
-<meta name="jenzy-build" content="jenzy-build-20261019-12">
+<meta name="jenzy-build" content="jenzy-build-20261019-13">
 <title>JENZY — Learn. Play. Compete.</title>
 <style>
 :root{--bg:#f5f7ff;--card:#fff;--text:#19213b;--muted:#69738c;--primary:#4f46e5;--line:#e7e9f3}
@@ -18,7 +18,7 @@ main{max-width:900px;margin:auto;padding:18px 15px 100px}.welcome{margin:12px 0 
 h1{font-size:25px;margin:0 0 6px}h2{font-size:19px;margin:25px 0 12px}
 p{line-height:1.5}.muted{color:var(--muted);font-size:14px}
 .hero{background:linear-gradient(120deg,#312e81,#6366f1);color:white;padding:22px;border-radius:20px;margin:16px 0}
-.homepage-countdown-rows{display:grid;gap:10px}
+.homepage-countdown-rows{display:grid;gap:10px} .homepage-registration-status{display:flex;align-items:center;gap:12px;padding:14px;margin:10px 0;border:1px solid var(--line);border-radius:16px;background:var(--card)} .homepage-registration-status-icon{width:42px;height:42px;flex:0 0 42px;border-radius:50%;display:grid;place-items:center;font-size:24px;font-weight:950} .homepage-registration-status-copy{display:flex;flex-direction:column;gap:4px;min-width:0} .homepage-registration-status-copy strong{font-size:16px;font-weight:900} .homepage-registration-status-copy span,.homepage-registration-status-copy small{font-size:13px;line-height:1.4;color:var(--muted);overflow-wrap:anywhere} .homepage-registration-status-copy small{font-weight:850;color:var(--text)} .homepage-registration-status.registered{border-color:#86efac;background:linear-gradient(120deg,#f0fdf4,#ffffff)} .homepage-registration-status.registered .homepage-registration-status-icon{background:#dcfce7;color:#15803d} .homepage-registration-status.not-registered{border-color:#fca5a5;background:linear-gradient(120deg,#fff1f2,#ffffff)} .homepage-registration-status.not-registered .homepage-registration-status-icon{background:#fee2e2;color:#b91c1c}
 .homepage-countdown-row{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:8px 12px;align-items:center;padding:12px;border:1px solid var(--line);border-radius:13px;background:var(--card)}
 .homepage-countdown-row .countdown-label{font-size:13px;font-weight:800}
 .homepage-countdown-row .countdown-time{font-size:17px;font-weight:900;font-variant-numeric:tabular-nums;text-align:right}
@@ -319,7 +319,7 @@ body.jenzy-test-open{overflow:hidden!important}
       <div><label for="competitionRegistrationSlot">Session</label><select id="competitionRegistrationSlot" onchange="updateCompetitionRegistrationSubjects();refreshCompetitionCounts()"><option value="morning">Morning · 9:00 AM</option><option value="afternoon">Afternoon · 2:00 PM</option><option value="evening">Evening · 9:00 PM</option></select></div>
       <div><label for="competitionRegistrationSubject">Subject</label><select id="competitionRegistrationSubject" onchange="updateCompetitionRegistrationSubjects();refreshCompetitionCounts()"><option value="Mathematics">Mathematics</option></select></div>
     </div>
-    <p id="competitionRegistrationWindow" class="notice" aria-live="polite">Choose a session to see the 30-minute registration deadline and countdown.</p>
+    <p id="competitionRegistrationWindow" class="notice" aria-live="polite">Choose a session to see the 10-minute registration deadline and countdown.</p>
   </div>
   <div id="competitionRegistrationForm" class="competition-picker" hidden>
     <h3 id="competitionRegistrationTitle">Free competition registration</h3>
@@ -419,7 +419,7 @@ if (!window.supabase) {
 }
 </script>
 <script>
-const JENZY_BUILD_VERSION = '20261019-12';
+const JENZY_BUILD_VERSION = '20261019-13';
 (function enableAutomaticJenzyUpdates(){
  const checkEveryMs=5000;
  let updateFound=false,checking=false;
@@ -794,10 +794,10 @@ let competitionRegistrationType='free';
 // One-user exception: Jamespesa may register for today's morning session only, even after the deadline.
 let jenzyJamespesaMorningExceptionDate='';
 function competitionDateNairobi(date=new Date()){const p=kenyaParts(date);return p.year+'-'+String(p.month).padStart(2,'0')+'-'+String(p.day).padStart(2,'0')}
-function competitionDateForSlot(slot,now=new Date()){const p=kenyaParts(now),m=p.hour*60+p.minute,deadline=slot==='morning'?510:slot==='afternoon'?810:1230;const target=new Date(Date.UTC(p.year,p.month-1,p.day+(m>=deadline?1:0)));return competitionDateNairobi(target)}
+function competitionDateForSlot(slot,now=new Date()){const p=kenyaParts(now),m=p.hour*60+p.minute,deadline=slot==='morning'?530:slot==='afternoon'?830:1250;const target=new Date(Date.UTC(p.year,p.month-1,p.day+(m>=deadline?1:0)));return competitionDateNairobi(target)}
 function nextRegistrableCompetitionSession(now=new Date()){const p=kenyaParts(now),today=competitionDateNairobi(now),slots=[{slot:'morning',minute:540},{slot:'afternoon',minute:840},{slot:'evening',minute:1260}];for(let day=0;day<3;day++){const targetDate=new Date(Date.UTC(p.year,p.month-1,p.day+day)),date=competitionDateNairobi(targetDate);for(const item of slots){const start=competitionStartAt(item.slot,date),deadline=competitionRegistrationDeadlineAt(item.slot,date);if(now<deadline&&now<start)return {slot:item.slot,date,start,deadline};}}return {slot:'morning',date:competitionDateForSlot('morning',now)};}
 function competitionStartAt(slot,dateString){const [y,mo,d]=dateString.split('-').map(Number),hm=slot==='morning'?[9,0]:slot==='afternoon'?[14,0]:[21,0];return new Date(Date.UTC(y,mo-1,d,hm[0]-3,hm[1]))}
-function competitionRegistrationDeadlineAt(slot,dateString){return new Date(competitionStartAt(slot,dateString).getTime()-30*60*1000)}
+function competitionRegistrationDeadlineAt(slot,dateString){return new Date(competitionStartAt(slot,dateString).getTime()-10*60*1000)}
 function competitionRegistrationIsOpen(slot,dateString,now=new Date()){return now<competitionRegistrationDeadlineAt(slot,dateString)}
 function updateCompetitionRegistrationSubjects(){
  const slot=document.getElementById('competitionRegistrationSlot'),subject=document.getElementById('competitionRegistrationSubject');if(!slot||!subject)return;
@@ -842,6 +842,8 @@ function updateHomepageCountdowns(now=new Date()){
  const deadlineMs=next.deadline-now,startMs=next.start-now;
  const deadlineStillOpen=deadlineMs>0;
  const remaining=deadlineStillOpen?deadlineMs:startMs;
+ const countdownVisible=startMs<=2*60*60*1000;
+ if(!countdownVisible){box.innerHTML='<div class="homepage-countdown-row"><div class="countdown-label">'+next.label+'</div><div class="countdown-time">Starts later</div><div class="countdown-sub">The session countdown appears 2 hours before '+next.startLabel+' Kenya time. Registration closes 10 minutes before the session.</div></div>';if(heading)heading.textContent='⏳ Upcoming competition';if(description)description.textContent='The homepage countdown begins 2 hours before each session.';warning.hidden=true;warning.textContent='';return;}
  const isDanger=remaining<=600000;
  const stage=deadlineStillOpen?'deadline':'session';
  const cls=isDanger?' countdown-danger':(stage==='session'?' countdown-session':'');
@@ -851,7 +853,7 @@ function updateHomepageCountdowns(now=new Date()){
   :'Registration is closed for this session. The session countdown is green and turns red during the final 10 minutes.';
  const label=deadlineStillOpen?'Time left to register':'Time until session begins';
  const detail=deadlineStillOpen
-  ?'Registration closes at '+next.startLabel+' minus 30 minutes · '+next.startLabel+' session'
+  ?'Registration closes at '+next.startLabel+' minus 10 minutes · '+next.startLabel+' session'
   :'Registration is closed · Session begins at '+next.startLabel+' Kenya time';
  box.innerHTML='<div class="homepage-countdown-row'+cls+'"><div class="countdown-label">'+(isDanger?'🚨 ':'')+next.label+'</div><div class="countdown-time">'+fmtCountdown(remaining)+'</div><div class="countdown-sub"><b>'+label+'</b><br>'+detail+(isDanger?' · LESS THAN 10 MINUTES — ACT NOW!':'')+'</div></div>';
  warning.hidden=true;warning.textContent='';
@@ -865,7 +867,7 @@ function updateCompetitionRegistrationWindow(){
  // Keep the page clean while registration is available; only show a notice when this session is closed.
  el.hidden=open;
  if(open){el.textContent='';}
- else{el.textContent='Registration is closed for this session because the 30-minute deadline has passed. Choose another session that is still open.';}
+ else{el.textContent='Registration is closed for this session because the 10-minute deadline has passed. Choose another session that is still open.';}
  const freeBtn=document.querySelector('.free-choice button');if(freeBtn){freeBtn.disabled=false;freeBtn.textContent='Join Free';}
  const form=document.getElementById('competitionRegistrationForm');
  if(form&&!form.hidden){const free=document.getElementById('competitionRegisterSubmit'),paid=document.getElementById('competitionPaidPendingButton');if(free&&competitionRegistrationType==='free')free.disabled=!open;if(paid&&competitionRegistrationType==='paid')paid.disabled=!open||!JENZY_MPESA_NUMBER;}
@@ -1038,10 +1040,10 @@ async function refreshHomepageCompetitionRegistration(){
   const rows=(data||[]).filter(row=>String(row.status||'').toLowerCase()==='confirmed');
   const slotLabels={morning:'Morning · 9:00 AM',afternoon:'Afternoon · 2:00 PM',evening:'Evening · 9:00 PM'};
   if(!rows.length){
-   details.innerHTML='<p class="muted">You have not registered for today’s competition yet. Register on the Compete page to reserve your place.</p>';
+   details.innerHTML='<div class="homepage-registration-status not-registered"><div class="homepage-registration-status-icon" aria-hidden="true">✕</div><div class="homepage-registration-status-copy"><strong>Not registered</strong><span>You do not have a confirmed entry for today yet.</span><small>No entry number assigned</small></div></div><p class="muted" style="margin:10px 0 0">You can register on the Compete page until 10 minutes before the session starts.</p>';
    return;
   }
-  details.innerHTML=rows.map(row=>'<div style="padding:10px 0;border-top:1px solid var(--line)"><strong>✅ '+escapeHtml(String(row.subject||'Competition'))+' — Registered</strong><div class="muted">'+escapeHtml(String(row.school_class||''))+' · '+escapeHtml(slotLabels[row.session_slot]||String(row.session_slot||''))+'</div>'+(row.entry_number!=null?'<div style="margin-top:4px;font-weight:800">Entry number: #'+escapeHtml(String(row.entry_number))+'</div>':'')+'</div>').join('');
+  details.innerHTML=rows.map(row=>'<div class="homepage-registration-status registered"><div class="homepage-registration-status-icon" aria-hidden="true">✓</div><div class="homepage-registration-status-copy"><strong>Registered</strong><span>'+escapeHtml(String(row.subject||'Competition'))+' · '+escapeHtml(String(row.school_class||''))+' · '+escapeHtml(slotLabels[row.session_slot]||String(row.session_slot||''))+'</span>'+(row.entry_number!=null?'<small>Entry number: #'+escapeHtml(String(row.entry_number))+'</small>':'<small>Entry number not available</small>')+'</div></div>').join('');
  }catch(e){
   console.warn('Could not load homepage competition registration status:',e.message);
   details.innerHTML='<p class="muted">We could not check your registration right now. Open the Compete page to check your entry.</p>';
@@ -1076,7 +1078,7 @@ function currentSlotIsActive(slot){const p=kenyaParts(new Date()),m=p.hour*60+p.
 async function getJenzySavedProfile(){if(!currentUser)return null;try{const {data,error}=await supabaseClient.from('profiles').select('username,full_name,school_class,school_name').eq('id',currentUser.id).maybeSingle();if(error)throw error;return data||null;}catch(e){console.warn('Could not load saved JENZY profile:',e.message);return null;}}
 async function startScheduledCompetition(slot,registeredSubject=null,registeredClass=null,privateOneOff=false,adminScheduleOverride=false){
  if(!currentUser){setStatus('authStatus','Please sign in first.','error');return;}
- if(!privateOneOff&&!adminScheduleOverride&&!currentSlotIsActive(slot)){alert('This competition opens only at its scheduled time in Kenya. Please return during the active competition window.');return;}
+ if(!currentSlotIsActive(slot)){alert('This competition opens only at its scheduled time in Kenya. Please return during the active competition window.');return;}
  const schoolClass=registeredClass||selectedCompetitionClass(),subject=registeredSubject||selectedCompetitionSubject(slot),expected=slot==='morning'?(['Mathematics','Core Mathematics','Essential Mathematics'].includes(subject)?15:10):slot==='afternoon'?25:20,date=competitionDateNairobi();
  const visiblePage=document.querySelector('.page.active');competitionPreviousPage=visiblePage?visiblePage.id:'competitions';const area=document.getElementById('competitionPlayArea');area.hidden=false;area.classList.add('jenzy-test-fullscreen');document.body.classList.add('jenzy-test-open');
  document.getElementById('competitionPlayTitle').textContent=subject+' · '+schoolClass;
@@ -1270,7 +1272,7 @@ async function checkJenzyAutomaticCompetition(){
  if(!currentUser||jenzyAutoLaunchBusy||activeCompetition||jenzyReadinessOverlay)return;
  const now=new Date(),p=kenyaParts(now),date=competitionDateNairobi(now),schoolClass=selectedCompetitionClass();
  const slots=[{slot:'morning',start:competitionStartAt('morning',date),end:kenyaDateAt(p,9,20)},{slot:'afternoon',start:competitionStartAt('afternoon',date),end:kenyaDateAt(p,14,10)},{slot:'evening',start:competitionStartAt('evening',date),end:kenyaDateAt(p,21,10)}];
- const session=slots.find(x=>now>=new Date(x.start.getTime()-60000)&&now<x.end);
+ const session=slots.find(x=>now>=x.start&&now<x.end);
  if(!session)return;
  const startDelta=session.start.getTime()-now.getTime();
  const testKey=[currentUser.id,date,session.slot,schoolClass].join('|');
@@ -1284,8 +1286,7 @@ async function checkJenzyAutomaticCompetition(){
   const subject=registration.subject,registeredClass=registration.school_class||schoolClass,key=[currentUser.id,date,session.slot,registeredClass,subject].join('|');
   if(jenzyAutoLaunchedKeys.has(key))return;
   jenzyAutoLaunchedKeys.add(testKey);jenzyAutoLaunchedKeys.add(key);
-  if(startDelta>0)showJenzyReadiness(session.slot,subject,registeredClass,session.start);
-  else await startScheduledCompetition(session.slot,subject,registeredClass);
+  await startScheduledCompetition(session.slot,subject,registeredClass);
  }catch(e){console.warn('Could not check automatic competition entry:',e.message)}finally{jenzyAutoLaunchBusy=false}
 }
 setInterval(checkJenzyAutomaticCompetition,1000);
@@ -1345,7 +1346,7 @@ function renderClassCompetitionGroup(key,rows){
  const showPersonalPosition=!!savedUserClass&&savedUserClass===String(classCompetitionResultsClass||"").trim();
  const me=showPersonalPosition?rows.find(r=>r.is_current_user===true):null;
  if(me){html+='<div class="class-personal-row"><span class="class-rank-medal">👤</span><div class="class-winner-details"><strong>Your position: #'+Number(me.rank_position)+' of '+Number(me.participant_count)+'</strong><small>'+Number(me.correct_count||0)+'/'+Number(me.question_count||0)+' correct · '+Number(me.score_percent||0).toLocaleString("en-KE",{maximumFractionDigits:2})+'%</small></div></div>';}
- else{html+='<div class="class-personal-row"><span class="class-rank-medal">👤</span><div class="class-winner-details"><strong>Your position will appear if you competed in this subject</strong><small>Your personal position is shown only for the competition you actually completed.</small></div></div>';}
+ }
  return html+'</section>';
 }
 function showGrade6SampleResults(){
