@@ -4,7 +4,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <meta name="theme-color" content="#4f46e5">
-<meta name="jenzy-build" content="jenzy-build-20261019-09">
+<meta name="jenzy-build" content="jenzy-build-20261019-10">
 <title>JENZY — Learn. Play. Compete.</title>
 <style>
 :root{--bg:#f5f7ff;--card:#fff;--text:#19213b;--muted:#69738c;--primary:#4f46e5;--line:#e7e9f3}
@@ -272,13 +272,7 @@ body.jenzy-test-open{overflow:hidden!important}
 <main>
 <section class="page active" id="home">
   <div class="welcome"><h1 id="welcomeHeading">Welcome to JENZY! 👋</h1><div class="muted">Learn. Play. Compete. — Kenya time (EAT).</div></div>
-  <div class="card" id="homepageCompetitionRegistrationCard" hidden style="border:2px solid var(--primary);margin:0 0 16px">
-    <span class="chip">YOUR COMPETITION STATUS</span>
-    <h2 style="margin-top:8px">✅ You’re registered!</h2>
-    <p class="muted">Your confirmed competition registration for today:</p>
-    <div id="homepageCompetitionRegistrationDetails" aria-live="polite"></div>
-    <button class="primary" type="button" onclick="showPage('competitions')">View my competition →</button>
-  </div>
+
   <div class="hero"><span class="chip">DAILY CHALLENGES</span><h2 id="scheduleStatusTitle">Next session</h2><p id="scheduleStatusText">Session times are fixed for everyone. Choose the subject before each session.</p><div id="scheduleClock" style="font-size:28px;font-weight:850;margin:12px 0">Loading Kenya time…</div>
   <div class="card homepage-countdown-card" id="homepageCountdownCard">
     <h3 id="homepageCountdownHeading">⏳ Next registration deadline</h3>
@@ -286,7 +280,13 @@ body.jenzy-test-open{overflow:hidden!important}
     <div id="homepageRegistrationWarning" class="homepage-countdown-warning" role="status" aria-live="polite" hidden></div>
     <div id="homepageCountdownRows" class="homepage-countdown-rows"><div class="homepage-countdown-row"><b>Loading the next countdown…</b></div></div>
   </div><button class="primary" onclick="showPage('competitions')">Register →</button></div>
-  <div class="card"><h3>Today's schedule · Tap a session for details</h3><button class="schedule-link" onclick="openSchedule('math')"><div class="feature-icon">➗</div><div class="grow"><b>9:00–9:20 AM · Mathematics</b><div class="muted">10 questions · 20 minutes</div></div><span>›</span></button><button class="schedule-link" onclick="openSchedule('afternoon')"><div class="feature-icon">📚</div><div class="grow"><b>2:00–2:10 PM · English or Kiswahili</b><div class="muted">Choose one · 25 questions · 10 minutes</div></div><span>›</span></button><button class="schedule-link" onclick="openSchedule('evening')"><div class="feature-icon">🔬</div><div class="grow"><b>9:00–9:10 PM · Class-specific evening subject</b><div class="muted">Choose one · 20 questions · 10 minutes</div></div><span>›</span></button><p class="notice">Reminder alarms appear only from 8:55–9:00 AM, 1:55–2:00 PM, and 8:55–9:00 PM. No other scheduled alarms.</p></div>
+  <div class="card" id="homepageCompetitionRegistrationCard" style="border:2px solid var(--primary);margin:0 0 16px">
+    <span class="chip">YOUR COMPETITION STATUS</span>
+    <h2 style="margin-top:8px">✅ You’re registered!</h2>
+    <p class="muted">Your confirmed competition registration for today:</p>
+    <div id="homepageCompetitionRegistrationDetails" aria-live="polite"></div>
+    <button class="primary" type="button" onclick="showPage('competitions')">View my competition →</button>
+  </div>
   <div class="card"><h3>How JENZY competitions work</h3><p class="muted">Choose your class and the available subject. Questions should match your class and move through topics in order, combining about three subtopics before progressing. Official class-specific question sets and verified scoring still need to be published before live competition play can be enabled.</p></div>
 </section>
 <section class="page" id="quiz"><button type="button" onclick="showPage('home')">← Home</button><h1>🧠 Practice Quiz</h1><p class="muted">Questions are loaded from your class's published JENZY question bank. Practice scores are not official competition results.</p>
@@ -1010,8 +1010,9 @@ async function refreshHomepageCompetitionRegistration(){
  const card=document.getElementById('homepageCompetitionRegistrationCard');
  const details=document.getElementById('homepageCompetitionRegistrationDetails');
  if(!card||!details)return;
- card.hidden=true;details.innerHTML='';
- if(!currentUser)return;
+ card.hidden=false;
+ details.innerHTML='<p class="muted">Checking your registration…</p>';
+ if(!currentUser){details.innerHTML='<p class="muted">Sign in to see your competition registration status.</p>';return;}
  try{
   const today=competitionDateNairobi();
   const {data,error}=await supabaseClient.from('jenzy_competition_registrations')
@@ -1020,11 +1021,16 @@ async function refreshHomepageCompetitionRegistration(){
    .neq('status','cancelled').order('session_slot',{ascending:true});
   if(error)throw error;
   const rows=(data||[]).filter(row=>String(row.status||'').toLowerCase()!=='cancelled');
-  if(!rows.length)return;
   const slotLabels={morning:'Morning · 9:00 AM',afternoon:'Afternoon · 2:00 PM',evening:'Evening · 9:00 PM'};
-  details.innerHTML=rows.map(row=>'<div style="padding:10px 0;border-top:1px solid var(--line)"><strong>'+escapeHtml(String(row.subject||'Competition'))+'</strong><div class="muted">'+escapeHtml(String(row.school_class||''))+' · '+escapeHtml(slotLabels[row.session_slot]||String(row.session_slot||''))+'</div>'+(row.entry_number!=null?'<div style="margin-top:4px;font-weight:800">Entry number: #'+escapeHtml(String(row.entry_number))+'</div>':'')+'</div>').join('');
-  card.hidden=false;
- }catch(e){console.warn('Could not load homepage competition registration status:',e.message)}
+  if(!rows.length){
+   details.innerHTML='<p class="muted">You have not registered for today’s competition yet. Register on the Compete page to reserve your place.</p>';
+   return;
+  }
+  details.innerHTML=rows.map(row=>'<div style="padding:10px 0;border-top:1px solid var(--line)"><strong>✅ '+escapeHtml(String(row.subject||'Competition'))+' — Registered</strong><div class="muted">'+escapeHtml(String(row.school_class||''))+' · '+escapeHtml(slotLabels[row.session_slot]||String(row.session_slot||''))+'</div>'+(row.entry_number!=null?'<div style="margin-top:4px;font-weight:800">Entry number: #'+escapeHtml(String(row.entry_number))+'</div>':'')+'</div>').join('');
+ }catch(e){
+  console.warn('Could not load homepage competition registration status:',e.message);
+  details.innerHTML='<p class="muted">We could not check your registration right now. Open the Compete page to check your entry.</p>';
+ }
 }
 async function refreshCompetitionCounts(){
  if(!currentUser)return;updateCompetitionRegistrationWindow();
