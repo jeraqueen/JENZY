@@ -4,7 +4,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <meta name="theme-color" content="#4f46e5">
-<meta name="jenzy-build" content="jenzy-build-20261019-27">
+<meta name="jenzy-build" content="jenzy-build-20261019-28">
 <title>JENZY — Learn. Play. Compete.</title>
 <style>
 :root{--bg:#f5f7ff;--card:#fff;--text:#19213b;--muted:#69738c;--primary:#4f46e5;--line:#e7e9f3}
@@ -25,7 +25,7 @@ p{line-height:1.5}.muted{color:var(--muted);font-size:14px}
 .homepage-countdown-row .countdown-sub{font-size:12px;color:var(--muted);grid-column:1/-1}
 .homepage-countdown-row.countdown-session{border:2px solid #16a34a;background:#f0fdf4;color:#166534}
 .homepage-countdown-row.countdown-session .countdown-sub{color:#166534}
-.homepage-countdown-row.countdown-danger{border:2px solid #dc2626;background:#fff0f0;color:#991b1b;animation:jenzyDangerPulse 1.2s ease-in-out infinite}
+.homepage-countdown-row.countdown-blue{border:2px solid #2563eb;background:#eff6ff;color:#1d4ed8}.homepage-countdown-row.countdown-blue .countdown-sub{color:#1d4ed8} body.theme-dark .homepage-countdown-row.countdown-blue{background:#172554;color:#bfdbfe;border-color:#3b82f6} body.theme-dark .homepage-countdown-row.countdown-blue .countdown-sub{color:#bfdbfe} .homepage-countdown-row.countdown-danger{border:2px solid #dc2626;background:#fff0f0;color:#991b1b;animation:jenzyDangerPulse 1.2s ease-in-out infinite}
 .homepage-countdown-row.countdown-danger .countdown-sub{color:#991b1b}
 body.theme-dark .homepage-countdown-row.countdown-session{background:#10291c;color:#86efac;border-color:#16a34a}
 body.theme-dark .homepage-countdown-row.countdown-session .countdown-sub{color:#86efac}
@@ -868,7 +868,7 @@ function updateHomepageCountdowns(now=new Date()){
  const box=document.getElementById('homepageCountdownRows'),warning=document.getElementById('homepageRegistrationWarning');
  const heading=document.getElementById('homepageCountdownHeading'),description=document.getElementById('homepageCountdownDescription');
  if(!box||!warning)return;
- const p=kenyaParts(now),today=competitionDateNairobi(now),slots=[
+ const p=kenyaParts(now),slots=[
   {slot:'morning',label:'Morning Mathematics',startLabel:'9:00 AM'},
   {slot:'afternoon',label:'Afternoon English / Kiswahili',startLabel:'2:00 PM'},
   {slot:'evening',label:'Evening class subject',startLabel:'9:00 PM'}
@@ -885,25 +885,27 @@ function updateHomepageCountdowns(now=new Date()){
   box.innerHTML='<div class="homepage-countdown-row"><div class="countdown-label">Next session</div><div class="countdown-time">—</div><div class="countdown-sub">The next session time is not available yet.</div></div>';
   if(heading)heading.textContent='⏳ Next session countdown';
   if(description)description.textContent='All times use Kenya time.';
-  warning.hidden=true;warning.textContent='';
-  return;
+  warning.hidden=true;warning.textContent='';return;
  }
  const deadlineMs=next.deadline-now,startMs=next.start-now;
- const deadlineStillOpen=deadlineMs>0;
  const countdownVisible=startMs<=2*60*60*1000;
- if(!countdownVisible){box.innerHTML='<div class="homepage-countdown-row"><div class="countdown-label">'+next.label+'</div><div class="countdown-time">Starts later</div><div class="countdown-sub">The session countdown appears 2 hours before '+next.startLabel+' Kenya time. Registration closes 10 minutes before the session.</div></div>';if(heading)heading.textContent='⏳ Upcoming competition';if(description)description.textContent='The homepage countdown begins 2 hours before each session.';warning.hidden=true;warning.textContent='';return;}
- const remaining=startMs;
- const isDanger=remaining<=600000;
- const cls=isDanger?' countdown-danger':' countdown-session';
- if(heading)heading.textContent=isDanger?'🚨 Session starts soon':'🟢 Session countdown';
- if(description)description.textContent=deadlineStillOpen
-  ?'The countdown ends at session time. Registration closes 10 minutes before the session.'
-  :'Registration is closed. The countdown shows time until the session begins.';
- const label='Time until session begins';
- const detail=deadlineStillOpen
-  ?'Registration closes in '+fmtCountdown(deadlineMs)+' · Session begins at '+next.startLabel+' Kenya time'
-  :'Registration is closed · Session begins at '+next.startLabel+' Kenya time';
- box.innerHTML='<div class="homepage-countdown-row'+cls+'"><div class="countdown-label">'+(isDanger?'🚨 ':'')+next.label+'</div><div class="countdown-time">'+fmtCountdown(remaining)+'</div><div class="countdown-sub"><b>'+label+'</b><br>'+detail+(isDanger?' · LESS THAN 10 MINUTES — ACT NOW!':'')+'</div></div>';
+ if(!countdownVisible){
+  box.innerHTML='<div class="homepage-countdown-row"><div class="countdown-label">'+next.label+'</div><div class="countdown-time">Starts later</div><div class="countdown-sub">Both countdowns appear 2 hours before the session. Registration closes 10 minutes before it begins.</div></div>';
+  if(heading)heading.textContent='⏳ Upcoming competition';
+  if(description)description.textContent='Two countdowns: time remaining to register and time remaining until the session.';
+  warning.hidden=true;warning.textContent='';return;
+ }
+ // Both countdowns share one urgency colour so they change together.
+ const urgencyClass=startMs<=600000?'countdown-danger':startMs<=3600000?'countdown-blue':'countdown-session';
+ const urgencyLabel=startMs<=600000?'🚨 Less than 10 minutes':startMs<=3600000?'🔵 One hour or less':'🟢 2-hour countdown';
+ if(heading)heading.textContent=urgencyLabel;
+ if(description)description.textContent='Both countdowns use Kenya time and change colour together: green, blue, then red in the final 10 minutes.';
+ const deadlineText=deadlineMs>0?fmtCountdown(deadlineMs):'CLOSED';
+ const sessionText=fmtCountdown(startMs);
+ const registrationDetail=deadlineMs>0?'Registration closes before the session begins.':'Registration deadline has passed.';
+ box.innerHTML=
+  '<div class="homepage-countdown-row '+urgencyClass+'"><div class="countdown-label">⏳ Registration deadline</div><div class="countdown-time">'+deadlineText+'</div><div class="countdown-sub">'+registrationDetail+'</div></div>'+
+  '<div class="homepage-countdown-row '+urgencyClass+'"><div class="countdown-label">🏁 Session begins</div><div class="countdown-time">'+sessionText+'</div><div class="countdown-sub">'+next.label+' · '+next.startLabel+' Kenya time'+(startMs<=600000?' · LESS THAN 10 MINUTES — ACT NOW!':'')+'</div></div>';
  warning.hidden=true;warning.textContent='';
  const heroClock=document.getElementById('scheduleClock');
  if(heroClock)heroClock.classList.toggle('schedule-countdown-danger',startMs>0&&startMs<=600000);
