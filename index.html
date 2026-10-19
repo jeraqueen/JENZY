@@ -4,7 +4,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <meta name="theme-color" content="#4f46e5">
-<meta name="jenzy-build" content="jenzy-build-20261019-single-status-check">
+<meta name="jenzy-build" content="jenzy-build-20261019-status-retry-racefix">
 <title>JENZY — Learn. Play. Compete.</title>
 <style>
 :root{--bg:#f5f7ff;--card:#fff;--text:#19213b;--muted:#69738c;--primary:#4f46e5;--line:#e7e9f3}
@@ -333,7 +333,7 @@ body.theme-dark .homepage-registration-status-copy small{background:#ffffff16;co
     <span class="chip">YOUR COMPETITION STATUS</span>
     <h2 style="margin-top:8px">Your competition status</h2>
     <p class="muted">Your confirmed entries for today and upcoming sessions will appear here.</p>
-    <div id="homepageCompetitionRegistrationDetails" aria-live="polite"></div>
+    <div id="homepageCompetitionRegistrationDetails" aria-live="polite"><p class="muted">Your registration status will load when Home opens. If it does not, use Retry status check.</p><button type="button" class="primary" onclick="refreshHomepageCompetitionRegistration()">Retry status check</button></div>
     <button class="primary" type="button" onclick="showPage('competitions')">View my competition →</button>
   </div>
   <div class="card"><h3>How JENZY competitions work</h3><p class="muted">Choose your class and the available subject. Questions should match your class and move through topics in order, combining about three subtopics before progressing. Official class-specific question sets and verified scoring still need to be published before live competition play can be enabled.</p></div>
@@ -1081,7 +1081,7 @@ async function refreshHomepageCompetitionRegistration(){
  const card=document.getElementById('homepageCompetitionRegistrationCard');
  const details=document.getElementById('homepageCompetitionRegistrationDetails');
  if(!card||!details)return;
- if(homepageRegistrationCheckInProgress)return;
+ // Do not let an older pending request block a fresh status check.
  card.hidden=false;
  if(!currentUser){details.innerHTML='<p class="muted">Sign in to see your competition registration status.</p>';return;}
  homepageRegistrationCheckInProgress=true;
