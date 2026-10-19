@@ -1094,10 +1094,12 @@ async function refreshHomepageCompetitionRegistration(){
  const watchdog=setTimeout(()=>{if(isCurrent()&&details.textContent.includes('Checking your registration')){homepageRegistrationCheckInProgress=false;showFailure('COULD NOT LOAD STATUS','The registration lookup did not finish within 10 seconds. Tap Retry to start one fresh check.');}},10000);
  try{
   const today=competitionDateNairobi();
-  const request=supabaseClient.from('jenzy_competition_registrations')
-   .select('id,entry_number,student_id,competition_date,session_slot,school_class,subject,entry_type,status,created_at')
-   .eq('student_id',currentUser.id)
-   .eq('status','confirmed');
+  // Include confirmed entries of BOTH types. Do not limit the home card to free entries.
+   const request=supabaseClient.from('jenzy_competition_registrations')
+    .select('id,entry_number,student_id,competition_date,session_slot,school_class,subject,entry_type,status,created_at')
+    .eq('student_id',currentUser.id)
+    .in('entry_type',['free','paid'])
+    .eq('status','confirmed');
   const timeout=new Promise((_,reject)=>setTimeout(()=>reject(new Error('The database did not respond within 9 seconds.')),9000));
   const {data,error}=await Promise.race([request,timeout]);
   if(!isCurrent())return;
@@ -1110,7 +1112,7 @@ async function refreshHomepageCompetitionRegistration(){
    details.innerHTML='<div class="homepage-registration-status not-registered"><div class="homepage-registration-status-icon" aria-hidden="true">×</div><div class="homepage-registration-status-copy"><strong><span class="status-kicker">YOUR ENTRY STATUS</span><span class="status-title">NOT REGISTERED</span></strong><span>No confirmed competition entry was found for today or an upcoming session.</span><small>Ready when you are · Register on the Compete page</small></div></div><p class="muted" style="margin:10px 0 0">Choose your class and session, then register before the session deadline.</p>';
    return;
   }
-  details.innerHTML=rows.map(row=>'<div class="homepage-registration-status registered"><div class="homepage-registration-status-icon" aria-hidden="true">✓</div><div class="homepage-registration-status-copy"><strong><span class="status-kicker">YOUR ENTRY STATUS</span><span class="status-title">REGISTERED ✓</span></strong><span>'+escapeHtml(String(row.subject||'Competition'))+' · '+escapeHtml(String(row.school_class||''))+' · '+escapeHtml(slotLabels[row.session_slot]||String(row.session_slot||''))+' · '+escapeHtml(row.competition_date?formatCompetitionDate(row.competition_date):'Upcoming session')+'</span><small>✦ YOUR ENTRY NUMBER: #'+escapeHtml(String(row.entry_number??'—'))+'</small></div><div class="status-checkmark" aria-hidden="true">✓</div></div>').join('');
+  details.innerHTML=rows.map(row=>{const entryType=String(row.entry_type||'').toLowerCase();const entryLabel=entryType==='paid'?'PAID ENTRY':'FREE ENTRY';return '<div class="homepage-registration-status registered"><div class="homepage-registration-status-icon" aria-hidden="true">✓</div><div class="homepage-registration-status-copy"><strong><span class="status-kicker">'+entryLabel+'</span><span class="status-title">REGISTERED ✓</span></strong><span>'+escapeHtml(String(row.subject||'Competition'))+' · '+escapeHtml(String(row.school_class||''))+' · '+escapeHtml(slotLabels[row.session_slot]||String(row.session_slot||''))+' · '+escapeHtml(row.competition_date?formatCompetitionDate(row.competition_date):'Upcoming session')+'</span><small>✦ YOUR ENTRY NUMBER: #'+escapeHtml(String(row.entry_number??'—'))+'</small></div><div class="status-checkmark" aria-hidden="true">✓</div></div>';}).join('');
  }catch(e){
   console.warn('Could not load homepage competition registration status:',e);
   showFailure('STATUS CHECK FAILED',String(e?.message||e||'Unknown error').slice(0,240));
