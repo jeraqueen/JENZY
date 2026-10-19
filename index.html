@@ -888,7 +888,7 @@ async function loadMyCompetitionRegistration(clearFields=false){
 async function openCompetitionRegistration(type){
  competitionRegistrationType=type;
  const savedProfile=await getJenzySavedProfile();
- const isJamespesa=currentUser?.id==='09744f3e-b8b7-4279-8ee6-384a9f87af00'||String(savedProfile?.username||currentUser?.user_metadata?.username||currentUser?.email||'').trim().toLowerCase().split('@')[0]==='jamespesa';
+ const isJamespesa=false; // No non-admin account receives special testing or late-registration privileges.
  jenzyJamespesaMorningExceptionDate=(type==='free'&&isJamespesa)?competitionDateNairobi(new Date()):'';
  // Normally select the next open session. Jamespesa's exception is limited to this morning session today.
  const nextSession=nextRegistrableCompetitionSession(new Date()),sessionSelect=document.getElementById('competitionRegistrationSlot');
@@ -1018,9 +1018,9 @@ async function refreshHomepageCompetitionRegistration(){
   const {data,error}=await supabaseClient.from('jenzy_competition_registrations')
    .select('session_slot,subject,school_class,entry_number,entry_type,status')
    .eq('student_id',currentUser.id).eq('competition_date',today)
-   .neq('status','cancelled').order('session_slot',{ascending:true});
+   .eq('status','confirmed').order('session_slot',{ascending:true});
   if(error)throw error;
-  const rows=(data||[]).filter(row=>String(row.status||'').toLowerCase()!=='cancelled');
+  const rows=(data||[]).filter(row=>String(row.status||'').toLowerCase()==='confirmed');
   const slotLabels={morning:'Morning · 9:00 AM',afternoon:'Afternoon · 2:00 PM',evening:'Evening · 9:00 PM'};
   if(!rows.length){
    details.innerHTML='<p class="muted">You have not registered for today’s competition yet. Register on the Compete page to reserve your place.</p>';
@@ -1397,6 +1397,11 @@ function openClassResultsPage(schoolClass){
  checkForUpdate();
  setInterval(checkForUpdate,10000);
 })();
+
+// Security cleanup: only the admin account keeps admin-only testing controls.
+function updatePrivateMathLaunchButton(){const b=document.getElementById('jenzyPrivateMathLaunchButton');if(b)b.remove();}
+function updateJamespesaRegisteredLaunchButton(){const b=document.getElementById('jenzyJamespesaRegisteredLaunchButton');if(b)b.remove();}
+function checkPrivateMathSession(){return;}
 </script>
 
 </body>
