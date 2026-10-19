@@ -4,7 +4,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <meta name="theme-color" content="#4f46e5">
-<meta name="jenzy-build" content="jenzy-build-20261019-31">
+<meta name="jenzy-build" content="jenzy-build-20261019-32">
 <title>JENZY — Learn. Play. Compete.</title>
 <style>
 :root{--bg:#f5f7ff;--card:#fff;--text:#19213b;--muted:#69738c;--primary:#4f46e5;--line:#e7e9f3}
@@ -322,7 +322,7 @@ body.theme-dark .homepage-registration-status-copy small{background:#ffffff16;co
 <section class="page active" id="home">
   <div class="welcome"><h1 id="welcomeHeading">Welcome to JENZY! 👋</h1><div class="muted">Learn. Play. Compete. — Kenya time (EAT).</div></div>
 
-  <div class="hero"><span class="chip">DAILY CHALLENGES</span><h2 id="scheduleStatusTitle">Next session</h2><p id="scheduleStatusText">Session times are fixed for everyone. Choose the subject before each session.</p><div id="scheduleClock" style="font-size:28px;font-weight:850;margin:12px 0">Loading Kenya time…</div>
+  <div class="hero"><span class="chip">DAILY CHALLENGES</span><h2 id="scheduleStatusTitle">Next session</h2><p id="scheduleStatusText">Session times are fixed for everyone. Choose the subject before each session.</p>
   <div class="card homepage-countdown-card" id="homepageCountdownCard">
     <h3 id="homepageCountdownHeading">⏳ Next registration deadline</h3>
     <p id="homepageCountdownDescription" class="muted">One clear countdown at a time. All times use Kenya time.</p>
@@ -1084,7 +1084,7 @@ async function refreshHomepageCompetitionRegistration(){
  try{
   const today=competitionDateNairobi();
   const {data,error}=await supabaseClient.from('jenzy_competition_registrations')
-   .select('*')
+   .select('id,entry_number,student_id,competition_date,session_slot,school_class,subject,entry_type,status,created_at')
    .eq('student_id',currentUser.id)
    .eq('status','confirmed');
   if(error)throw error;
@@ -1096,7 +1096,7 @@ async function refreshHomepageCompetitionRegistration(){
    details.innerHTML='<div class="homepage-registration-status not-registered"><div class="homepage-registration-status-icon" aria-hidden="true">×</div><div class="homepage-registration-status-copy"><strong><span class="status-kicker">YOUR ENTRY STATUS</span><span class="status-title">NOT REGISTERED</span></strong><span>No confirmed competition entry was found for today or an upcoming session.</span><small>Ready when you are · Register on the Compete page</small></div></div><p class="muted" style="margin:10px 0 0">Choose your class and session, then register before the session deadline.</p>';
    return;
   }
-  details.innerHTML=rows.map(row=>'<div class="homepage-registration-status registered"><div class="homepage-registration-status-icon" aria-hidden="true">✓</div><div class="homepage-registration-status-copy"><strong><span class="status-kicker">YOUR ENTRY STATUS</span><span class="status-title">REGISTERED</span></strong><span>'+escapeHtml(String(row.subject||'Competition'))+' · '+escapeHtml(String(row.school_class||''))+' · '+escapeHtml(slotLabels[row.session_slot]||String(row.session_slot||''))+' · '+escapeHtml(row.competition_date?formatCompetitionDate(row.competition_date):'Upcoming session')+'</span>'+(row.entry_number!=null?'<small>✦ YOUR ENTRY NUMBER: #'+escapeHtml(String(row.entry_number))+'</small>':'<small>Entry confirmed · Number not available</small>')+'</div><div class="status-checkmark" aria-hidden="true">✓</div></div>').join('');
+  details.innerHTML=rows.map(row=>'<div class="homepage-registration-status registered"><div class="homepage-registration-status-icon" aria-hidden="true">✓</div><div class="homepage-registration-status-copy"><strong><span class="status-kicker">YOUR ENTRY STATUS</span><span class="status-title">REGISTERED ✓</span></strong><span>'+escapeHtml(String(row.subject||'Competition'))+' · '+escapeHtml(String(row.school_class||''))+' · '+escapeHtml(slotLabels[row.session_slot]||String(row.session_slot||''))+' · '+escapeHtml(row.competition_date?formatCompetitionDate(row.competition_date):'Upcoming session')+'</span><small>✦ YOUR ENTRY NUMBER: #'+escapeHtml(String(row.entry_number??'—'))+'</small></div><div class="status-checkmark" aria-hidden="true">✓</div></div>').join('');
  }catch(e){
   console.warn('Could not load homepage competition registration status:',e);
   details.innerHTML='<div class="homepage-registration-status not-registered"><div class="homepage-registration-status-icon" aria-hidden="true">!</div><div class="homepage-registration-status-copy"><strong><span class="status-kicker">STATUS CHECK</span><span class="status-title">TEMPORARILY UNAVAILABLE</span></strong><span>JENZY could not read your saved entry. Your registration may still be saved.</span><small>Use “View my competition” to check your entry, then return Home.</small></div></div>';
