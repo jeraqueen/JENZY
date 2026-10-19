@@ -4,7 +4,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <meta name="theme-color" content="#4f46e5">
-<meta name="jenzy-build" content="jenzy-build-20261019-07">
+<meta name="jenzy-build" content="jenzy-build-20261019-08">
 <title>JENZY — Learn. Play. Compete.</title>
 <style>
 :root{--bg:#f5f7ff;--card:#fff;--text:#19213b;--muted:#69738c;--primary:#4f46e5;--line:#e7e9f3}
@@ -317,6 +317,9 @@ body.jenzy-test-open{overflow:hidden!important}
   <div id="competitionRegistrationForm" class="competition-picker" hidden>
     <h3 id="competitionRegistrationTitle">Free competition registration</h3>
     <p id="competitionRegistrationDescription" class="muted">Enter your details to reserve your place.</p>
+    <button id="competitionRegisterSubmit" class="primary" type="button" onclick="registerFreeCompetition()">Confirm Free Registration</button>
+    <div class="entry-number-panel" id="competitionEntryNumberPanel" role="status" aria-live="polite"><span>Registration entry number</span><strong id="competitionEntryNumber">Your entry number will appear here after registration.</strong></div>
+    <p id="competitionRegistrationStatus" class="status" aria-live="polite"></p>
     <div class="competition-fields">
       <div><label for="competitionRegistrantName">Full name</label><input id="competitionRegistrantName" maxlength="80" autocomplete="name" placeholder="Your full name" readonly aria-readonly="true"><p class="muted small-note">Taken from your signed-in JENZY profile.</p></div>
       <div><label for="competitionRegistrantSchool">School name</label><input id="competitionRegistrantSchool" readonly aria-readonly="true" placeholder="School saved in your profile"></div>
@@ -332,9 +335,6 @@ body.jenzy-test-open{overflow:hidden!important}
       <input id="competitionPaymentCode" maxlength="16" autocomplete="off" autocapitalize="characters" placeholder="e.g. QWE123ABC4" aria-describedby="manualMpesaCodeHelp">
       <p id="manualMpesaCodeHelp" class="manual-payment-help">Do not enter your M-Pesa PIN. Never pay twice because a page is waiting for verification.</p>
     </div>
-    <button id="competitionRegisterSubmit" class="primary" type="button" onclick="registerFreeCompetition()">Confirm Free Registration</button>
-    <div class="entry-number-panel" id="competitionEntryNumberPanel" role="status" aria-live="polite"><span>Registration entry number</span><strong id="competitionEntryNumber">Your entry number will appear here after registration.</strong></div>
-    <p id="competitionRegistrationStatus" class="status" aria-live="polite"></p>
     <button id="competitionPaidPendingButton" class="primary" type="button" onclick="submitManualPayment()" hidden>Submit M-Pesa code for verification</button>
     <p id="competitionPaidPendingNote" class="notice" hidden>After you submit your code, JENZY will wait until the code and KSh 20 amount match a genuine transaction record imported by the administrator. Access is not unlocked by code entry alone.</p>
   </div>
