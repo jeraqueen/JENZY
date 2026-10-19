@@ -4,7 +4,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <meta name="theme-color" content="#4f46e5">
-<meta name="jenzy-build" content="jenzy-build-20261019-17">
+<meta name="jenzy-build" content="jenzy-build-20261019-18">
 <title>JENZY — Learn. Play. Compete.</title>
 <style>
 :root{--bg:#f5f7ff;--card:#fff;--text:#19213b;--muted:#69738c;--primary:#4f46e5;--line:#e7e9f3}
@@ -18,7 +18,7 @@ main{max-width:900px;margin:auto;padding:18px 15px 100px}.welcome{margin:12px 0 
 h1{font-size:25px;margin:0 0 6px}h2{font-size:19px;margin:25px 0 12px}
 p{line-height:1.5}.muted{color:var(--muted);font-size:14px}
 .hero{background:linear-gradient(120deg,#312e81,#6366f1);color:white;padding:22px;border-radius:20px;margin:16px 0}
-.homepage-countdown-rows{display:grid;gap:10px} .homepage-registration-status{display:flex;align-items:center;gap:12px;padding:14px;margin:10px 0;border:1px solid var(--line);border-radius:16px;background:var(--card)} .homepage-registration-status-icon{width:42px;height:42px;flex:0 0 42px;border-radius:50%;display:grid;place-items:center;font-size:24px;font-weight:950} .homepage-registration-status-copy{display:flex;flex-direction:column;gap:4px;min-width:0} .homepage-registration-status-copy strong{font-size:16px;font-weight:900} .homepage-registration-status-copy span,.homepage-registration-status-copy small{font-size:13px;line-height:1.4;color:var(--muted);overflow-wrap:anywhere} .homepage-registration-status-copy small{font-weight:850;color:var(--text)} .homepage-registration-status.registered{border-color:#86efac;background:linear-gradient(120deg,#f0fdf4,#ffffff)} .homepage-registration-status.registered .homepage-registration-status-icon{background:#dcfce7;color:#15803d} .homepage-registration-status.not-registered{border-color:#fca5a5;background:linear-gradient(120deg,#fff1f2,#ffffff)} .homepage-registration-status.not-registered .homepage-registration-status-icon{background:#fee2e2;color:#b91c1c}
+.homepage-countdown-rows{display:grid;gap:10px} .homepage-registration-status{display:flex;align-items:center;gap:12px;padding:14px;margin:10px 0;border:1px solid var(--line);border-radius:16px;background:var(--card)} .homepage-registration-status-icon{width:42px;height:42px;flex:0 0 42px;border-radius:50%;display:grid;place-items:center;font-size:24px;font-weight:950} .homepage-registration-status-copy{display:flex;flex-direction:column;gap:4px;min-width:0} .homepage-registration-status-copy strong{font-size:16px;font-weight:900} .homepage-registration-status-copy span,.homepage-registration-status-copy small{font-size:13px;line-height:1.4;color:var(--muted);overflow-wrap:anywhere} .homepage-registration-status-copy small{font-weight:850;color:var(--text)} .homepage-registration-status.registered{border:2px solid #16a34a!important;background:linear-gradient(120deg,#dcfce7,#fff)!important;color:#166534!important}.homepage-registration-status.registered .homepage-registration-status-icon{background:#16a34a!important;color:#fff!important}.homepage-registration-status.registered .homepage-registration-status-copy strong{color:#15803d!important;font-size:19px!important;font-weight:1000!important;text-transform:uppercase;letter-spacing:.25px}.homepage-registration-status.registered .homepage-registration-status-copy small{color:#166534!important;font-weight:900!important}.homepage-registration-status.not-registered{border:2px solid #dc2626!important;background:linear-gradient(120deg,#fee2e2,#fff)!important;color:#991b1b!important}.homepage-registration-status.not-registered .homepage-registration-status-icon{background:#dc2626!important;color:#fff!important}.homepage-registration-status.not-registered .homepage-registration-status-copy strong{color:#b91c1c!important;font-size:19px!important;font-weight:1000!important;text-transform:uppercase;letter-spacing:.25px}.homepage-registration-status.not-registered .homepage-registration-status-copy small{color:#991b1b!important;font-weight:900!important}
 .homepage-countdown-row{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:8px 12px;align-items:center;padding:12px;border:1px solid var(--line);border-radius:13px;background:var(--card)}
 .homepage-countdown-row .countdown-label{font-size:13px;font-weight:800}
 .homepage-countdown-row .countdown-time{font-size:17px;font-weight:900;font-variant-numeric:tabular-nums;text-align:right}
@@ -239,6 +239,24 @@ body.theme-dark .jenzy-test-option{background:#202c33;color:#e9edef;border-color
 body.jenzy-test-open{overflow:hidden!important}
 @media(min-width:700px){#competitionPlayArea.jenzy-test-fullscreen{padding-left:clamp(28px,8vw,120px)!important;padding-right:clamp(28px,8vw,120px)!important}}
 
+
+/* Clear registration badges and consistent compact trophy leaderboard rows. */
+.homepage-registration-status{border-radius:16px!important;box-shadow:0 5px 16px rgba(15,23,42,.07)}
+.homepage-registration-status-copy strong{display:block!important;line-height:1.2!important}
+.class-winner-list{display:grid;gap:0;margin:14px 0 22px;border:1px solid var(--line);border-radius:18px;padding:4px 14px;background:var(--card)}
+.class-results-fullpage .class-winner-row{display:flex;align-items:center;gap:12px;padding:16px 4px;border-bottom:1px solid var(--line);min-width:0}
+.class-results-fullpage .class-winner-row:last-child{border-bottom:0}
+.class-results-fullpage .class-winner-row .class-rank-medal{font-size:clamp(30px,6vw,42px);min-width:44px;flex:0 0 44px}
+.class-results-fullpage .class-winner-row .class-winner-details{flex:1;min-width:0}
+.class-results-fullpage .class-winner-row .class-winner-details strong{font-size:clamp(16px,3.5vw,20px);font-weight:950;color:var(--text);line-height:1.25}
+.class-results-fullpage .class-winner-row .class-winner-details span{display:block;font-size:12px;color:var(--muted);margin-top:4px}
+.class-results-fullpage .class-winner-row .class-score{font-size:clamp(21px,4.8vw,28px);font-weight:1000;color:#6d28d9;text-align:right;white-space:nowrap}
+.class-results-fullpage .class-winner-row.rank-1 .class-rank-medal{filter:drop-shadow(0 2px 3px #eab30855)}
+.class-results-empty{text-align:center;padding:26px 18px;border:1px solid var(--line);border-radius:18px;background:var(--card);color:var(--text)}
+.class-results-empty-cup{font-size:48px;margin-bottom:8px}
+.class-results-empty h2{margin:0 0 8px!important;font-size:22px!important}
+.class-results-empty p{color:var(--muted);margin:0}
+@media(max-width:420px){.class-results-fullpage .class-winner-row{gap:8px;padding:14px 0}.class-results-fullpage .class-winner-row .class-rank-medal{min-width:36px;flex-basis:36px}.class-results-fullpage .class-winner-row .class-score{font-size:20px}}
 </style>
 </head>
 <body>
@@ -419,7 +437,7 @@ if (!window.supabase) {
 }
 </script>
 <script>
-const JENZY_BUILD_VERSION = '20261019-17';
+const JENZY_BUILD_VERSION = '20261019-18';
 (function enableAutomaticJenzyUpdates(){
  const checkEveryMs=5000;
  let updateFound=false,checking=false;
@@ -1249,6 +1267,7 @@ updateHomepageCountdowns();setInterval(updateHomepageCountdowns,1000);
 /* Class results: the database RPC returns only each competition's top three and the signed-in student's own row. */
 let classCompetitionResultsRows = [];
 let classCompetitionResultsClass = "";
+let classCompetitionHasConfirmedRegistration = false;
 function competitionSlotLabel(slot){return slot==="morning"?"Morning":slot==="afternoon"?"Afternoon":slot==="evening"?"Evening":String(slot||"Session");}
 function competitionResultKey(row){return [row.competition_date,row.session_slot,row.subject].join("|");}
 function formatCompetitionDate(value){if(!value)return "Date not set";const d=new Date(value+"T12:00:00");return Number.isNaN(d.getTime())?value:d.toLocaleDateString("en-KE",{day:"numeric",month:"short",year:"numeric"});}
@@ -1262,14 +1281,11 @@ async function loadClassCompetitionResults(schoolClass){
   const {data,error}=await supabaseClient.rpc("jenzy_get_class_competition_results_public",{p_school_class:schoolClass});
   if(error)throw error;
   classCompetitionResultsRows=Array.isArray(data)?data:[];
+  const registrationCheck=await supabaseClient.from('jenzy_competition_registrations').select('id').eq('student_id',currentUser.id).eq('school_class',schoolClass).eq('status','confirmed').limit(1);
+  if(registrationCheck.error)throw registrationCheck.error;
+  classCompetitionHasConfirmedRegistration=Array.isArray(registrationCheck.data)&&registrationCheck.data.length>0;
   if(!classCompetitionResultsRows.length){
-   const trophyImages=[
-    "https://images.openai.com/static-rsc-4/JZuJFHTG4_jnog9PCmMcGItCyMsPgwgfZ34djmrUHZ7uwQ32JpKisq30ZrMvhvayVlbU0yOUKr-vh81kt2Mie1ixNv-LAONNxzl4hNqAvejYnUtg5hkNMihwBIcy_-Zchd8KGhLc2Lk33OWQGJCgQn0PEchV5F-A0ycpLSjPDfz-oJb3RDeyVW3YxSqR7aQo?purpose=fullsize",
-    "https://images.openai.com/static-rsc-4/vKSN6yuY0dpfe57U6A_cBUJiAps-wgVqlMC-yh_4QpFKDTXtKp9CBYMXufaVCiZU5scuZ3FkC19YFKrwGv-CjHAQB4H5r4oXrOtsSYz2gxYHHiuwlknDCmGYHvqtTdvLlS3UUZUPrDXFUCjbtWJAOP3yy4RhUB7G5-tBJZiF4Th6R9CaOrF55nF-VBLSKaa6?purpose=fullsize",
-    "https://images.openai.com/static-rsc-4/YSdv7G0KZwK7ULja7t71MfK68j4YmbMOnNrGyp9L3EJOPw0WfpUYcKXcg6_BqU1HarOHGu9WYpxNX01i9xc9sHtuYVEN5ooDk37NEMIKAG_oHUg7lBd-SOvgPf4uCOPn6FMVxSStsemgmaUePoiBSn7mbIhsHSo3IxdWEAHyEtSDeO-Mz1gOHouiabtWcdMh?purpose=fullsize"
-   ];
-   const podium=[1,2,3].map(rank=>'<div style="display:flex;align-items:center;gap:16px;padding:22px 0;border-bottom:1px solid #242424;min-width:0"><img src="'+trophyImages[rank-1]+'" alt="Position '+rank+' trophy" loading="lazy" style="width:80px;height:80px;flex:0 0 80px;object-fit:contain;background:#fff;border-radius:22px;padding:4px" onerror="this.style.display=\'none\'"><div style="flex:1;min-width:0"><strong style="display:block;font-size:clamp(17px,4vw,21px);font-weight:900;color:#f5f5f5;margin-bottom:12px">'+rank+'. <span style="display:inline-block;width:135px;max-width:70%;height:16px;vertical-align:middle;border-radius:5px;background:#242424"></span></strong><span style="font-size:16px;color:#a3a3a3">'+safeText(schoolClass)+' · Results pending</span></div><div style="text-align:right;flex:0 0 auto"><strong style="display:block;font-size:clamp(24px,5vw,30px);font-weight:950;color:'+(rank===1?'#eab308':'#f8fafc')+';margin-bottom:12px">—</strong><span style="font-size:13px;color:#737373;white-space:nowrap">— marks</span></div></div>').join("");
-   box.innerHTML='<div style="background:#050505;color:#f8fafc;border:1px solid #242424;border-radius:26px;padding:22px;margin:8px 0 24px;box-shadow:0 12px 36px #0005;box-sizing:border-box;width:100%;min-height:100vh;overflow:visible"><div style="display:flex;align-items:center;gap:14px;padding:8px 2px 24px;border-bottom:1px solid #242424"><div style="font-size:30px;color:#eab308">🏆</div><div style="flex:1;min-width:0"><h2 style="font-size:clamp(22px,5vw,30px);font-weight:1000;color:#f8fafc;margin:0 0 10px">JENZY — '+safeText(schoolClass)+' Results</h2><p style="font-size:16px;color:#a3a3a3;margin:0">Competition leaderboard · Current session</p></div><span style="white-space:nowrap;background:#242424;color:#d4d4d4;border-radius:999px;padding:8px 12px;font-size:12px;font-weight:800">PENDING</span></div><div style="padding-top:4px">'+podium+'</div><div style="display:flex;align-items:center;gap:14px;padding:22px 0;border-bottom:1px solid #242424"><div style="width:64px;height:64px;flex:0 0 64px;border-radius:18px;background:#242424;display:flex;align-items:center;justify-content:center;font-size:28px">👤</div><div style="flex:1"><strong style="display:block;font-size:17px;color:#f5f5f5">Your position: —</strong><span style="font-size:14px;color:#a3a3a3">If you participated, your position will appear here after results are released.</span></div></div><div style="display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:10px;margin-top:28px"><div style="padding:18px 6px;text-align:center;border-radius:18px;background:#242424"><strong style="display:block;font-size:28px;font-weight:950;color:#f8fafc">—</strong><span style="font-size:13px;color:#a3a3a3">Students</span></div><div style="padding:18px 6px;text-align:center;border-radius:18px;background:#242424"><strong style="display:block;font-size:28px;font-weight:950;color:#f8fafc">—</strong><span style="font-size:13px;color:#a3a3a3">Total marks</span></div><div style="padding:18px 6px;text-align:center;border-radius:18px;background:#242424"><strong style="display:block;font-size:28px;font-weight:950;color:#f8fafc">—</strong><span style="font-size:13px;color:#a3a3a3">Average</span></div></div><p style="font-size:13px;line-height:1.5;color:#737373;text-align:center;margin:18px 0 0">Names, scores and personal positions will be filled in from official results. Scroll down to see the full leaderboard.</p></div>';
+   box.innerHTML='<div class="class-results-empty"><div class="class-results-empty-cup">🏆</div><h2>'+safeText(schoolClass)+' results</h2><p>Official results have not been published for this class yet.</p></div>';
    return;
   }
   const groups=new Map();
@@ -1292,9 +1308,9 @@ function renderClassCompetitionGroup(key,rows){
  const medals={1:"🥇",2:"🥈",3:"🥉"};
  let html='<section class="class-results-subject-section"><h2>'+safeText(first.subject)+'</h2><div class="class-results-summary"><b>'+safeText(formatCompetitionDate(first.competition_date)+' · '+competitionSlotLabel(first.session_slot)+' · '+first.subject)+'</b><br><span>'+Number(first.participant_count||0).toLocaleString("en-KE")+' competitor(s) with an official result</span></div>';
  if(!top.length)html+='<p class="muted">The top three have not been published yet.</p>';
- else html+='<h3 style="font-size:24px;font-weight:950;margin:24px 0 12px">🏆 Top three winners</h3><div class="class-winner-grid">'+top.map(r=>'<div class="class-winner-card rank-'+Number(r.rank_position)+'"><span class="class-rank-medal">'+(medals[Number(r.rank_position)]||"🏅")+'</span><div class="class-winner-details"><strong>'+safeText(r.display_name||"JENZY Student")+'</strong><span>POSITION #'+Number(r.rank_position)+' · '+Number(r.correct_count||0)+'/'+Number(r.question_count||0)+' CORRECT</span></div><div class="class-score">'+Number(r.score_percent||0).toLocaleString("en-KE",{maximumFractionDigits:2})+'%</div></div>').join("")+'</div>';
+ else html+='<h3 style="font-size:21px;font-weight:950;margin:20px 0 12px">🏆 Top three winners</h3><div class="class-winner-list">'+top.map(r=>'<div class="class-winner-row rank-'+Number(r.rank_position)+'"><span class="class-rank-medal">'+(medals[Number(r.rank_position)]||"🏆")+'</span><div class="class-winner-details"><strong>'+safeText(r.display_name||"JENZY Student")+'</strong><span>POSITION #'+Number(r.rank_position)+' · '+Number(r.correct_count||0)+'/'+Number(r.question_count||0)+' CORRECT</span></div><div class="class-score">'+Number(r.score_percent||0).toLocaleString("en-KE",{maximumFractionDigits:2})+'%</div></div>').join("")+'</div>';
  const savedUserClass=getSavedUserSchoolClass();
- const showPersonalPosition=!!savedUserClass&&savedUserClass===String(classCompetitionResultsClass||"").trim();
+ const showPersonalPosition=!!classCompetitionHasConfirmedRegistration&&!!savedUserClass&&savedUserClass===String(classCompetitionResultsClass||"").trim();
  const me=showPersonalPosition?rows.find(r=>r.is_current_user===true):null;
  if(me){html+='<div class="class-personal-row"><span class="class-rank-medal">👤</span><div class="class-winner-details"><strong>Your position: #'+Number(me.rank_position)+' of '+Number(me.participant_count)+'</strong><small>'+Number(me.correct_count||0)+'/'+Number(me.question_count||0)+' correct · '+Number(me.score_percent||0).toLocaleString("en-KE",{maximumFractionDigits:2})+'%</small></div></div>';}
  return html+'</section>';
