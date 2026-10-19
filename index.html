@@ -844,7 +844,7 @@ let competitionRegistrationType='free';
 let jenzyJamespesaMorningExceptionDate='';
 function competitionDateNairobi(date=new Date()){const p=kenyaParts(date);return p.year+'-'+String(p.month).padStart(2,'0')+'-'+String(p.day).padStart(2,'0')}
 function competitionDateForSlot(slot,now=new Date()){const p=kenyaParts(now),m=p.hour*60+p.minute,deadline=slot==='morning'?530:slot==='afternoon'?830:1250;const target=new Date(Date.UTC(p.year,p.month-1,p.day+(m>=deadline?1:0)));return competitionDateNairobi(target)}
-function nextRegistrableCompetitionSession(now=new Date()){const p=kenyaParts(now),today=competitionDateNairobi(now),slots=[{slot:'morning',minute:540},{slot:'afternoon',minute:840},{slot:'evening',minute:1260}];for(let day=0;day<3;day++){const targetDate=new Date(Date.UTC(p.year,p.month-1,p.day+day)),date=competitionDateNairobi(targetDate);for(const item of slots){const start=competitionStartAt(item.slot,date),deadline=competitionRegistrationDeadlineAt(item.slot,date);if(now<deadline&&now<start)return {slot:item.slot,date,start,deadline};}}return {slot:'morning',date:competitionDateForSlot('morning',now)};}
+function nextRegistrableCompetitionSession(now=new Date()){const p=kenyaParts(now),slots=[{slot:'morning'},{slot:'afternoon'},{slot:'evening'}];for(let day=0;day<4;day++){const targetDate=new Date(Date.UTC(p.year,p.month-1,p.day+day)),date=competitionDateNairobi(targetDate);for(const item of slots){const start=competitionStartAt(item.slot,date),deadline=competitionRegistrationDeadlineAt(item.slot,date);if(now<start&&now<deadline)return {slot:item.slot,date,start,deadline};}}const tomorrow=new Date(Date.UTC(p.year,p.month-1,p.day+1));const date=competitionDateNairobi(tomorrow),start=competitionStartAt('morning',date),deadline=competitionRegistrationDeadlineAt('morning',date);return {slot:'morning',date,start,deadline};}
 function competitionStartAt(slot,dateString){const [y,mo,d]=dateString.split('-').map(Number),hm=slot==='morning'?[9,0]:slot==='afternoon'?[14,0]:[21,0];return new Date(Date.UTC(y,mo-1,d,hm[0]-3,hm[1]))}
 function competitionRegistrationDeadlineAt(slot,dateString){return new Date(competitionStartAt(slot,dateString).getTime()-10*60*1000)}
 function competitionRegistrationIsOpen(slot,dateString,now=new Date()){return now<competitionRegistrationDeadlineAt(slot,dateString)}
@@ -921,7 +921,7 @@ function updateCompetitionRegistrationWindow(){
  // Keep registration entry points available if a later session is still open.
  // Opening the form selects the next registrable session even after the current one starts.
  const nextSession=nextRegistrableCompetitionSession(now);
- const hasUpcomingSession=!!(nextSession&&nextSession.start&&now<nextSession.deadline&&now<nextSession.start);
+ const hasUpcomingSession=!!(nextSession&&nextSession.start&&now<nextSession.start);
  const freeBtn=document.querySelector('.free-choice button');if(freeBtn){freeBtn.hidden=!hasUpcomingSession;freeBtn.disabled=!hasUpcomingSession;freeBtn.textContent='Join Free';}
  const paidChoiceBtn=document.querySelector('.paid-choice button');if(paidChoiceBtn){paidChoiceBtn.hidden=!hasUpcomingSession;paidChoiceBtn.disabled=!hasUpcomingSession;}
  const form=document.getElementById('competitionRegistrationForm');
@@ -965,7 +965,7 @@ async function openCompetitionRegistration(type){
  // Normally select the next open session. Jamespesa's exception is limited to this morning session today.
  const nextSession=nextRegistrableCompetitionSession(new Date()),sessionSelect=document.getElementById('competitionRegistrationSlot');
  if(sessionSelect)sessionSelect.value=jenzyJamespesaMorningExceptionDate?'morning':nextSession.slot;
- const slotNow=jenzyJamespesaMorningExceptionDate?'morning':nextSession.slot,dateNow=jenzyJamespesaMorningExceptionDate||nextSession.date,windowNow=Boolean(jenzyJamespesaMorningExceptionDate)||competitionRegistrationIsOpen(slotNow,dateNow);
+ const slotNow=jenzyJamespesaMorningExceptionDate?'morning':nextSession.slot,dateNow=jenzyJamespesaMorningExceptionDate||nextSession.date,windowNow=Boolean(jenzyJamespesaMorningExceptionDate)||(!!nextSession.start&&new Date()<nextSession.start&&new Date()<nextSession.deadline);
  updateCompetitionRegistrationSubjects();
  updateCompetitionRegistrationWindow();
  if(!windowNow){const msg='Registration is closed for all upcoming sessions at this moment. Please try again shortly.';document.getElementById('competitionRegistrationForm').hidden=false;document.getElementById('competitionRegistrationTitle').textContent='Registration temporarily closed';document.getElementById('competitionRegistrationDescription').textContent=msg;document.getElementById('competitionRegisterSubmit').hidden=type!=='free';document.getElementById('competitionPaidPendingButton').hidden=type!=='paid';document.getElementById('competitionRegisterSubmit').disabled=true;document.getElementById('competitionPaidPendingButton').disabled=true;setStatus('competitionRegistrationStatus',msg,'error');return;}
