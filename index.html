@@ -4,7 +4,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <meta name="theme-color" content="#4f46e5">
-<meta name="jenzy-build" content="jenzy-build-20261019-registration-status-visible">
+<meta name="jenzy-build" content="jenzy-build-20261019-next-session-registration-open">
 <title>JENZY — Learn. Play. Compete.</title>
 <style>
 :root{--bg:#f5f7ff;--card:#fff;--text:#19213b;--muted:#69738c;--primary:#4f46e5;--line:#e7e9f3}
@@ -918,7 +918,12 @@ function updateCompetitionRegistrationWindow(){
  el.hidden=open;
  if(open){el.textContent='';}
  else{el.textContent='Registration is closed for this session because the 10-minute deadline has passed. Choose another session that is still open.';}
- const freeBtn=document.querySelector('.free-choice button');if(freeBtn){freeBtn.hidden=!open;freeBtn.disabled=!open;freeBtn.textContent='Join Free';}const paidChoiceBtn=document.querySelector('.paid-choice button');if(paidChoiceBtn){paidChoiceBtn.hidden=!open;paidChoiceBtn.disabled=!open;}
+ // Keep registration entry points available if a later session is still open.
+ // Opening the form selects the next registrable session even after the current one starts.
+ const nextSession=nextRegistrableCompetitionSession(now);
+ const hasUpcomingSession=!!(nextSession&&nextSession.start&&now<nextSession.deadline&&now<nextSession.start);
+ const freeBtn=document.querySelector('.free-choice button');if(freeBtn){freeBtn.hidden=!hasUpcomingSession;freeBtn.disabled=!hasUpcomingSession;freeBtn.textContent='Join Free';}
+ const paidChoiceBtn=document.querySelector('.paid-choice button');if(paidChoiceBtn){paidChoiceBtn.hidden=!hasUpcomingSession;paidChoiceBtn.disabled=!hasUpcomingSession;}
  const form=document.getElementById('competitionRegistrationForm');
  if(form&&!form.hidden){const free=document.getElementById('competitionRegisterSubmit'),paid=document.getElementById('competitionPaidPendingButton');if(free&&competitionRegistrationType==='free')free.disabled=!open;if(paid&&competitionRegistrationType==='paid')paid.disabled=!open||!JENZY_MPESA_NUMBER;}
 }
