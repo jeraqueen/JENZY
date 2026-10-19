@@ -4,7 +4,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <meta name="theme-color" content="#4f46e5">
-<meta name="jenzy-build" content="jenzy-build-20261019-22">
+<meta name="jenzy-build" content="jenzy-build-20261019-23">
 <title>JENZY — Learn. Play. Compete.</title>
 <style>
 :root{--bg:#f5f7ff;--card:#fff;--text:#19213b;--muted:#69738c;--primary:#4f46e5;--line:#e7e9f3}
@@ -157,6 +157,27 @@ body.theme-dark{--bg:#0b141a;--card:#202c33;--text:#e9edef;--muted:#aab7bf;--lin
 .class-results-page-heading h1{margin:10px 0 6px}
 .class-results-fullpage{padding:16px;min-height:45vh}
 .class-results-fullpage .class-results-summary{font-size:15px}
+
+/* Pending results match the compact reference design; hide position unless registered in this class. */
+.class-results-pending{background:#050505;color:#f8fafc;border:1px solid #242424;border-radius:28px;padding:22px;margin:12px 0 20px}
+.class-results-pending .class-pending-heading{display:flex;align-items:center;gap:14px;padding:0 0 24px;border-bottom:1px solid #222}
+.class-results-pending .class-pending-heading .class-results-empty-cup{font-size:40px;flex-shrink:0}
+.class-results-pending .class-pending-heading h2{font-size:clamp(22px,5vw,30px);font-weight:900;margin:0 0 8px}
+.class-results-pending .class-pending-heading p{font-size:15px;color:#aaa;margin:0;line-height:1.5}
+.class-results-pending .class-pending-badge{margin-left:auto;background:#242424;color:#ccc;padding:10px 13px;border-radius:24px;font-size:12px;font-weight:900}
+.class-results-pending .class-pending-row{display:grid;grid-template-columns:76px minmax(0,1fr) auto;align-items:center;gap:14px;padding:24px 0;border-bottom:1px solid #222}
+.class-results-pending .class-pending-row>img{width:76px;height:76px;object-fit:contain;background:#fff;border-radius:18px;padding:4px}
+.class-results-pending .class-pending-person{min-width:0;display:flex;flex-direction:column;gap:8px}
+.class-results-pending .class-pending-person strong{font-size:18px;line-height:1.35;color:#f8fafc}
+.class-results-pending .class-pending-name{display:inline-block;width:min(190px,100%);height:22px;background:#242424;border-radius:7px;vertical-align:middle}
+.class-results-pending .class-pending-person>span{font-size:14px;line-height:1.4;color:#aaa}
+.class-results-pending .class-pending-score{font-size:28px;font-weight:900;text-align:right;white-space:nowrap}
+.class-results-pending .class-pending-score small{display:block;font-size:13px;color:#777;font-weight:500;margin-top:8px}
+.class-results-pending .class-pending-user{grid-template-columns:76px minmax(0,1fr);border-bottom:0}
+.class-results-pending .class-pending-user-icon{display:flex;align-items:center;justify-content:center;width:76px;height:76px;border-radius:18px;background:#222;font-size:36px}
+.class-results-pending .class-pending-note{color:#999;font-size:13px;margin:18px 0 0}
+@media(max-width:390px){.class-results-pending{padding:15px;border-radius:22px}.class-results-pending .class-pending-row{grid-template-columns:58px minmax(0,1fr) auto;gap:9px;padding:18px 0}.class-results-pending .class-pending-row>img{width:58px;height:58px;border-radius:14px}.class-results-pending .class-pending-person strong{font-size:15px}.class-results-pending .class-pending-person>span{font-size:12px}.class-results-pending .class-pending-score{font-size:22px}.class-results-pending .class-pending-user{grid-template-columns:58px minmax(0,1fr)}.class-results-pending .class-pending-user-icon{width:58px;height:58px}}
+
 /* Compact class results: horizontal winner rows, not oversized podium cards */
 .class-results-fullpage .class-results-subject-section h2{font-size:clamp(23px,4vw,30px);font-weight:900;letter-spacing:-.3px;margin:14px 0 12px}
 .class-results-fullpage .class-results-summary{font-size:15px;padding:12px;border-radius:14px}
@@ -1280,7 +1301,9 @@ async function loadClassCompetitionResults(schoolClass){
   if(registrationCheck.error)throw registrationCheck.error;
   classCompetitionHasConfirmedRegistration=Array.isArray(registrationCheck.data)&&registrationCheck.data.length>0;
   if(!classCompetitionResultsRows.length){
-   box.innerHTML='<div class="class-results-empty"><div class="class-results-empty-cup">🏆</div><h2>'+safeText(schoolClass)+' results</h2><p>Official results have not been published for this class yet.</p></div>';
+   const savedClass=getSavedUserSchoolClass();
+   const mayShowPosition=!!classCompetitionHasConfirmedRegistration&&!!savedClass&&savedClass===String(classCompetitionResultsClass||"").trim();
+   box.innerHTML='<section class="class-results-subject-section class-results-pending"><div class="class-pending-heading"><span class="class-results-empty-cup">🏆</span><div><h2>'+safeText(schoolClass)+' Results</h2><p>Competition leaderboard · Current session</p></div><span class="class-pending-badge">PENDING</span></div><div class="class-pending-list">'+[{rank:1,color:"#d4a017",image:"https://images.openai.com/static-rsc-4/JZuJFHTG4_jnog9PCmMcGItCyMsPgwgfZ34djmrUHZ7uwQ32JpKisq30ZrMvhvayVlbU0yOUKr-vh81kt2Mie1ixNv-LAONNxzl4hNqAvejYnUtg5hkNMihwBIcy_-Zchd8KGhLc2Lk33OWQGJCgQn0PEchV5F-A0ycpLSjPDfz-oJb3RDeyVW3YxSqR7aQo?purpose=fullsize"},{rank:2,color:"#c0c0c0",image:"https://images.openai.com/static-rsc-4/vKSN6yuY0dpfe57U6A_cBUJiAps-wgVqlMC-yh_4QpFKDTXtKp9CBYMXufaVCiZU5scuZ3FkC19YFKrwGv-CjHAQB4H5r4oXrOtsSYz2gxYHHiuwlknDCmGYHvqtTdvLlS3UUZUPrDXFUCjbtWJAOP3yy4RhUB7G5-tBJZiF4Th6R9CaOrF55nF-VBLSKaa6?purpose=fullsize"},{rank:3,color:"#cd7f32",image:"https://images.openai.com/static-rsc-4/"}].map(r=>'<div class="class-pending-row"><img src="'+r.image+'" alt="'+r.rank+' place trophy" onerror="this.style.display=\'none\'"><div class="class-pending-person"><strong>'+r.rank+'. <span class="class-pending-name"></span></strong><span>'+safeText(schoolClass)+' · Results pending</span></div><div class="class-pending-score" style="color:'+r.color+'">—<small>— marks</small></div></div>').join("")+(mayShowPosition?'<div class="class-pending-row class-pending-user"><span class="class-pending-user-icon">👤</span><div class="class-pending-person"><strong>Your position: —</strong><span>If you participated, your position will appear here after results are released.</span></div></div>':'')+'</div><p class="class-pending-note">Official results have not been published for this class yet.</p></section>';
    return;
   }
   const groups=new Map();
