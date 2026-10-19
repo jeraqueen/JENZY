@@ -4,7 +4,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <meta name="theme-color" content="#4f46e5">
-<meta name="jenzy-build" content="jenzy-build-20261019-14">
+<meta name="jenzy-build" content="jenzy-build-20261019-15">
 <title>JENZY — Learn. Play. Compete.</title>
 <style>
 :root{--bg:#f5f7ff;--card:#fff;--text:#19213b;--muted:#69738c;--primary:#4f46e5;--line:#e7e9f3}
@@ -419,7 +419,7 @@ if (!window.supabase) {
 }
 </script>
 <script>
-const JENZY_BUILD_VERSION = '20261019-14';
+const JENZY_BUILD_VERSION = '20261019-15';
 (function enableAutomaticJenzyUpdates(){
  const checkEveryMs=5000;
  let updateFound=false,checking=false;
@@ -983,7 +983,7 @@ async function submitManualPayment(){
  const subject=document.getElementById('competitionRegistrationSubject').value;
  const date=competitionDateForSlot(slot);
  const button=document.getElementById('competitionPaidPendingButton');
- if(!competitionRegistrationIsOpen(slot,date)){updateCompetitionRegistrationWindow();setStatus('competitionRegistrationStatus','Registration is closed. The deadline is 30 minutes before the session starts.','error');button.disabled=true;return;}
+ if(!competitionRegistrationIsOpen(slot,date)){updateCompetitionRegistrationWindow();setStatus('competitionRegistrationStatus','Registration is closed. The deadline is 10 minutes before the session starts.','error');button.disabled=true;return;}
  if(!/^[A-Z0-9]{10}$/.test(code)){setStatus('competitionRegistrationStatus','Enter the 10-character M-Pesa transaction code from your confirmation SMS.','error');return}
  button.disabled=true;setStatus('competitionRegistrationStatus','Submitting your payment code securely…');
  try{
@@ -1158,7 +1158,7 @@ function scheduleState(now=new Date()){
 }
 function scheduleBeep(){if(!jenzyAlertsEnabled)return;try{jenzyAudioContext=jenzyAudioContext||new (window.AudioContext||window.webkitAudioContext)();if(jenzyAudioContext.state==='suspended')jenzyAudioContext.resume();const osc=jenzyAudioContext.createOscillator(),gain=jenzyAudioContext.createGain();osc.type='sine';osc.frequency.value=880;gain.gain.value=0.0001;osc.connect(gain);gain.connect(jenzyAudioContext.destination);const t=jenzyAudioContext.currentTime;gain.gain.setValueAtTime(0.0001,t);gain.gain.exponentialRampToValueAtTime(0.18,t+0.03);gain.gain.exponentialRampToValueAtTime(0.0001,t+0.5);osc.start(t);osc.stop(t+0.52);}catch(e){}}
 function enableScheduleAlerts(){try{jenzyAudioContext=jenzyAudioContext||new (window.AudioContext||window.webkitAudioContext)();jenzyAudioContext.resume();jenzyAlertsEnabled=true;document.getElementById('enableAlarmBtn').textContent='Sound reminders enabled';document.getElementById('alarmMessage').textContent='Sound reminders enabled on this device. Keep JENZY open; browser and phone settings may still limit background alerts.';scheduleBeep();}catch(e){document.getElementById('alarmMessage').textContent='Sound is unavailable in this browser. Keep this page open to see visual reminders.';}}
-function updateJenzySchedule(){const s=scheduleState();const title=document.getElementById('scheduleStatusTitle'),txt=document.getElementById('scheduleStatusText'),clock=document.getElementById('scheduleClock');if(title)title.textContent=s.title;if(txt)txt.textContent=s.text;if(clock)clock.textContent=s.clock||'—';const t2=document.getElementById('scheduleStatusTitleCompetition'),x2=document.getElementById('scheduleStatusTextCompetition'),c2=document.getElementById('scheduleClockCompetition');if(t2)t2.textContent=s.title;if(x2)x2.textContent=s.text;if(c2)c2.textContent=s.clock||'—';const alarm=document.getElementById('alarmMessage');if(alarm&&s.alarm){alarm.textContent=s.alarmLabel;const key=s.p.year+'-'+s.p.month+'-'+s.p.day+'-'+s.p.hour+'-'+s.p.minute;if(key!==lastAlarmKey){lastAlarmKey=key;scheduleBeep();}}else if(alarm)alarm.textContent='No alarm right now. Shared competition countdowns end at 9:00 AM, 2:00 PM and 9:00 PM Kenya time.';}
+function updateJenzySchedule(){const s=scheduleState(),mins=s.mins;const inTwoHourWindow=(mins>=420&&mins<540)||(mins>=720&&mins<840)||(mins>=1140&&mins<1260);const clockText=inTwoHourWindow?(s.clock||'—'):'Countdown opens 2 hours before the next session';const title=document.getElementById('scheduleStatusTitle'),txt=document.getElementById('scheduleStatusText'),clock=document.getElementById('scheduleClock');if(title)title.textContent=s.title;if(txt)txt.textContent=s.text;if(clock)clock.textContent=clockText;const t2=document.getElementById('scheduleStatusTitleCompetition'),x2=document.getElementById('scheduleStatusTextCompetition'),c2=document.getElementById('scheduleClockCompetition');if(t2)t2.textContent=s.title;if(x2)x2.textContent=s.text;if(c2)c2.textContent=clockText;const alarm=document.getElementById('alarmMessage');if(alarm&&s.alarm){alarm.textContent=s.alarmLabel;const key=s.p.year+'-'+s.p.month+'-'+s.p.day+'-'+s.p.hour+'-'+s.p.minute;if(key!==lastAlarmKey){lastAlarmKey=key;scheduleBeep();}}else if(alarm)alarm.textContent='No alarm right now. Shared competition countdowns end at 9:00 AM, 2:00 PM and 9:00 PM Kenya time.';}
 // Keep each student's subject choice on this device between page visits.
 try{const a=document.getElementById('afternoonSubject'),e=document.getElementById('eveningSubject'),sc=document.getElementById('scienceLevelChoice');if(a){a.value=localStorage.getItem('jenzy_afternoon_subject')||'English';a.addEventListener('change',()=>localStorage.setItem('jenzy_afternoon_subject',a.value));}if(e){e.value=localStorage.getItem('jenzy_evening_subject')||'Science';e.addEventListener('change',()=>localStorage.setItem('jenzy_evening_subject',e.value));}if(sc){sc.value=localStorage.getItem('jenzy_science_choice')||'Integrated Science';sc.addEventListener('change',()=>localStorage.setItem('jenzy_science_choice',sc.value));}updateScienceOptions();}catch(e){}
 // Auto-launch for confirmed free entrants at each scheduled Kenya-time session.
