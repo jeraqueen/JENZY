@@ -1408,14 +1408,14 @@ async function requireUniqueFullName(){
  if(!currentUser)return false;
  const gate=document.getElementById("uniqueNameGate");
  try{
-  const {data:mine,error:mineError}=await supabaseClient.from("profiles").select("full_name").eq("id",currentUser.id).maybeSingle();
+  const {data:mine,error:mineError}=await supabaseClient.from("profiles").select("full_name,name_change_required").eq("id",currentUser.id).maybeSingle();
   if(mineError)throw mineError;
   const fullName=String(mine?.full_name||document.getElementById("studentName")?.value||"").trim();
   if(!fullName){if(gate)gate.hidden=true;return false;}
   const {data:others,error}=await supabaseClient.from("profiles").select("id,full_name").neq("id",currentUser.id).ilike("full_name",fullName).limit(10);
   if(error)throw error;
   const duplicate=(others||[]).some(p=>String(p.full_name||"").trim().toLocaleLowerCase()===fullName.toLocaleLowerCase());
-  if(!duplicate){if(gate)gate.hidden=true;return false;}
+  if(!duplicate&&!mine?.name_change_required){if(gate)gate.hidden=true;return false;}
   const input=document.getElementById("uniqueNameGateInput");
   if(input)input.value="";
   if(gate)gate.hidden=false;
@@ -1438,7 +1438,7 @@ document.getElementById("uniqueNameGateForm")?.addEventListener("submit",async e
   const {data:others,error:checkError}=await supabaseClient.from("profiles").select("id,full_name").neq("id",currentUser.id).ilike("full_name",fullName).limit(10);
   if(checkError)throw checkError;
   if((others||[]).some(p=>String(p.full_name||"").trim().toLocaleLowerCase()===fullName.toLocaleLowerCase()))throw new Error("That full name is already used. Please choose a different one.");
-  const {data:updated,error}=await supabaseClient.from("profiles").update({full_name:fullName}).eq("id",currentUser.id).select("id,full_name").maybeSingle();
+  const {data:updated,error}=await supabaseClient.from("profiles").update({full_name:fullName,name_change_required:false}).eq("id",currentUser.id).select("id,full_name,name_change_required").maybeSingle();
   if(error)throw error;if(!updated)throw new Error("Your name was not saved. Please try again.");
   const gate=document.getElementById("uniqueNameGate");if(gate)gate.hidden=true;
   await activateUser(currentUser);
