@@ -4,7 +4,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <meta name="theme-color" content="#4f46e5">
-<meta name="jenzy-build" content="jenzy-build-20261019-32">
+<meta name="jenzy-build" content="jenzy-build-20261019-registration-watchdog">
 <title>JENZY — Learn. Play. Compete.</title>
 <style>
 :root{--bg:#f5f7ff;--card:#fff;--text:#19213b;--muted:#69738c;--primary:#4f46e5;--line:#e7e9f3}
@@ -1075,13 +1075,17 @@ async function registerFreeCompetition(){
  finally{btn.disabled=false}
 }
 let homepageRegistrationCheckInProgress=false;
+let homepageRegistrationCheckStartedAt=0;
 async function refreshHomepageCompetitionRegistration(){
  const card=document.getElementById('homepageCompetitionRegistrationCard');
  const details=document.getElementById('homepageCompetitionRegistrationDetails');
- if(!card||!details||homepageRegistrationCheckInProgress)return;
+ if(!card||!details)return;
+ if(homepageRegistrationCheckInProgress && Date.now()-homepageRegistrationCheckStartedAt<15000)return;
+ homepageRegistrationCheckInProgress=false;
  card.hidden=false;
  if(!currentUser){details.innerHTML='<p class="muted">Sign in to see your competition registration status.</p>';return;}
  homepageRegistrationCheckInProgress=true;
+ homepageRegistrationCheckStartedAt=Date.now();
  details.innerHTML='<p class="muted">Checking your registration…</p>';
  try{
   const today=competitionDateNairobi();
