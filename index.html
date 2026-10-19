@@ -4,7 +4,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <meta name="theme-color" content="#4f46e5">
-<meta name="jenzy-build" content="jenzy-build-20261019-registration-watchdog">
+<meta name="jenzy-build" content="jenzy-build-20261019-registration-watchdog2">
 <title>JENZY — Learn. Play. Compete.</title>
 <style>
 :root{--bg:#f5f7ff;--card:#fff;--text:#19213b;--muted:#69738c;--primary:#4f46e5;--line:#e7e9f3}
@@ -1086,7 +1086,10 @@ async function refreshHomepageCompetitionRegistration(){
  if(!currentUser){details.innerHTML='<p class="muted">Sign in to see your competition registration status.</p>';return;}
  homepageRegistrationCheckInProgress=true;
  homepageRegistrationCheckStartedAt=Date.now();
+ const checkStarted=homepageRegistrationCheckStartedAt;
  details.innerHTML='<p class="muted">Checking your registration…</p>';
+ // Independent watchdog: updates the visible card even if a Supabase request never settles.
+ setTimeout(()=>{if(homepageRegistrationCheckInProgress&&homepageRegistrationCheckStartedAt===checkStarted){homepageRegistrationCheckInProgress=false;details.innerHTML='<div class="homepage-registration-status not-registered"><div class="homepage-registration-status-icon" aria-hidden="true">!</div><div class="homepage-registration-status-copy"><strong><span class="status-kicker">STATUS CHECK</span><span class="status-title">COULD NOT LOAD STATUS</span></strong><span>The registration lookup did not finish. Your saved registration has not been changed.</span><small>Check your connection, then tap Retry.</small><button type="button" class="primary" onclick="refreshHomepageCompetitionRegistration()">Retry status check</button></div></div>'; }},13000);
  try{
   const today=competitionDateNairobi();
   const request=supabaseClient.from('jenzy_competition_registrations')
