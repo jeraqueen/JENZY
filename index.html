@@ -462,7 +462,7 @@ let questions=[];
 let currentLearningLabel="Published question bank";
 let learningTopics=[];
 function jenzyPracticeClass(){return document.getElementById("profileClass")?.value||localStorage.getItem(PROFILE_CLASS_KEY)||"Grade 6";}
-function jenzyPracticeSubject(subject,schoolClass){if(subject!=="Science")return subject;return ["Grade 6","Grade 7","Grade 8"].includes(schoolClass)?"Integrated Science":"Biology";}
+function jenzyPracticeSubject(subject,schoolClass){if(subject==="Mathematics"&&schoolClass==="Grade 10")return "Core Mathematics";if(subject!=="Science")return subject;return ["Grade 6","Grade 7","Grade 8"].includes(schoolClass)?"Integrated Science":"Biology";}
 function jenzyPracticeQuestions(rows){return (rows||[]).map(row=>({q:row.question_text,o:[row.option_a,row.option_b,row.option_c,row.option_d],a:Number(row.correct_option),why:row.explanation||"",topic:row.topic||"",subtopic:row.subtopic||""}));}
 async function loadJenzyPracticeQuestions(subject,topic=null){
  const schoolClass=jenzyPracticeClass(),actualSubject=jenzyPracticeSubject(subject,schoolClass);
@@ -1017,7 +1017,7 @@ async function getJenzySavedProfile(){if(!currentUser)return null;try{const {dat
 async function startScheduledCompetition(slot,registeredSubject=null,registeredClass=null,privateOneOff=false){
  if(!currentUser){setStatus('authStatus','Please sign in first.','error');return;}
  if(!privateOneOff&&!currentSlotIsActive(slot)){alert('This competition opens only at its scheduled time in Kenya. Please return during the active competition window.');return;}
- const schoolClass=registeredClass||selectedCompetitionClass(),subject=registeredSubject||selectedCompetitionSubject(slot),expected=slot==='morning'?(subject==='Mathematics'?15:10):slot==='afternoon'?25:20,date=competitionDateNairobi();
+ const schoolClass=registeredClass||selectedCompetitionClass(),subject=registeredSubject||selectedCompetitionSubject(slot),expected=slot==='morning'?(['Mathematics','Core Mathematics','Essential Mathematics'].includes(subject)?15:10):slot==='afternoon'?25:20,date=competitionDateNairobi();
  const area=document.getElementById('competitionPlayArea');area.hidden=false;area.classList.add('jenzy-test-fullscreen');document.body.classList.add('jenzy-test-open');
  document.getElementById('competitionPlayTitle').textContent=subject+' · '+schoolClass;
  document.getElementById('competitionPlayStatus').textContent='Loading published questions…';
@@ -1120,7 +1120,7 @@ function updatePrivateMathLaunchButton(){
  const id='jenzyPrivateMathLaunchButton';let btn=document.getElementById(id);
  const allowed=!!currentUser&&String(currentUser.email||'').toLowerCase()===JENZY_PRIVATE_MATH_EMAIL;
  if(!allowed){if(btn)btn.remove();return;}
- if(!btn){btn=document.createElement('button');btn.id=id;btn.type='button';btn.style.cssText='position:fixed;left:12px;right:12px;bottom:calc(76px + env(safe-area-inset-bottom));z-index:9998;width:calc(100% - 24px);max-width:560px;margin:auto;padding:16px;border:0;border-radius:16px;background:#6d28d9;color:white;font-size:16px;font-weight:900;box-shadow:0 8px 28px #0005';btn.textContent='▶ START PRIVATE MATHEMATICS TEST · 60 SECONDS';btn.addEventListener('click',()=>{if(!currentUser||String(currentUser.email||'').toLowerCase()!==JENZY_PRIVATE_MATH_EMAIL)return;const schoolClass=selectedCompetitionClass();if(!schoolClass){alert('Please choose and save your class in My Profile first.');return;}if(activeCompetition){alert('A test is already open.');return;}jenzyPrivateMathCountdownStarted=true;showJenzyReadiness('morning','Mathematics',schoolClass,new Date(Date.now()+60000));});document.body.appendChild(btn);}
+ if(!btn){btn=document.createElement('button');btn.id=id;btn.type='button';btn.style.cssText='position:fixed;left:12px;right:12px;bottom:calc(76px + env(safe-area-inset-bottom));z-index:9998;width:calc(100% - 24px);max-width:560px;margin:auto;padding:16px;border:0;border-radius:16px;background:#6d28d9;color:white;font-size:16px;font-weight:900;box-shadow:0 8px 28px #0005';btn.textContent='▶ START PRIVATE MATHEMATICS TEST · 60 SECONDS';btn.addEventListener('click',()=>{if(!currentUser||String(currentUser.email||'').toLowerCase()!==JENZY_PRIVATE_MATH_EMAIL)return;const schoolClass=selectedCompetitionClass();if(!schoolClass){alert('Please choose and save your class in My Profile first.');return;}if(activeCompetition){alert('A test is already open.');return;}jenzyPrivateMathCountdownStarted=true;showJenzyReadiness('morning',schoolClass==='Grade 10'?'Core Mathematics':'Mathematics',schoolClass,new Date(Date.now()+60000));});document.body.appendChild(btn);}
 }
 function showJenzyReadiness(slot,subject,schoolClass,startAt){
  if(jenzyReadinessOverlay)jenzyReadinessOverlay.remove();if(jenzyReadinessTimer)clearInterval(jenzyReadinessTimer);
@@ -1139,7 +1139,7 @@ function showJenzyReadiness(slot,subject,schoolClass,startAt){
    if(jenzyReadinessTimer){clearInterval(jenzyReadinessTimer);jenzyReadinessTimer=null;}
    jenzyReadinessSound('final');
    if(jenzyReadinessOverlay){jenzyReadinessOverlay.remove();jenzyReadinessOverlay=null;}
-   if(String(currentUser?.email||'').toLowerCase()===JENZY_PRIVATE_MATH_EMAIL&&slot==='morning'&&subject==='Mathematics') await startScheduledCompetition(slot,subject,schoolClass,true);
+   if(String(currentUser?.email||'').toLowerCase()===JENZY_PRIVATE_MATH_EMAIL&&slot==='morning'&&['Mathematics','Core Mathematics','Essential Mathematics'].includes(subject)) await startScheduledCompetition(slot,subject,schoolClass,true);
    else await startScheduledCompetition(slot,subject,schoolClass);
   }
  };
@@ -1164,7 +1164,7 @@ async function checkPrivateMathSession(){
  jenzyPrivateMathLaunchBusy=true;
  try{
   const startAt=kenyaDateAt(p,2,18);
-  showJenzyReadiness('morning','Mathematics',schoolClass,startAt);
+  showJenzyReadiness('morning',schoolClass==='Grade 10'?'Core Mathematics':'Mathematics',schoolClass,startAt);
   const originalStarter=startScheduledCompetition;
   // The private launch reuses the existing full-page question player and loads the selected class's published Mathematics questions.
   const waitForCountdown=setInterval(()=>{
