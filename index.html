@@ -1084,7 +1084,7 @@ async function refreshHomepageCompetitionRegistration(){
  try{
   const today=competitionDateNairobi();
   const {data,error}=await supabaseClient.from('jenzy_competition_registrations')
-   .select('id,entry_number,student_id,competition_date,session_slot,school_class,subject,entry_type,status,created_at')
+   .select('*')
    .eq('student_id',currentUser.id)
    .eq('status','confirmed');
   if(error)throw error;
@@ -1099,7 +1099,7 @@ async function refreshHomepageCompetitionRegistration(){
   details.innerHTML=rows.map(row=>'<div class="homepage-registration-status registered"><div class="homepage-registration-status-icon" aria-hidden="true">✓</div><div class="homepage-registration-status-copy"><strong><span class="status-kicker">YOUR ENTRY STATUS</span><span class="status-title">REGISTERED ✓</span></strong><span>'+escapeHtml(String(row.subject||'Competition'))+' · '+escapeHtml(String(row.school_class||''))+' · '+escapeHtml(slotLabels[row.session_slot]||String(row.session_slot||''))+' · '+escapeHtml(row.competition_date?formatCompetitionDate(row.competition_date):'Upcoming session')+'</span><small>✦ YOUR ENTRY NUMBER: #'+escapeHtml(String(row.entry_number??'—'))+'</small></div><div class="status-checkmark" aria-hidden="true">✓</div></div>').join('');
  }catch(e){
   console.warn('Could not load homepage competition registration status:',e);
-  details.innerHTML='<div class="homepage-registration-status not-registered"><div class="homepage-registration-status-icon" aria-hidden="true">!</div><div class="homepage-registration-status-copy"><strong><span class="status-kicker">STATUS CHECK</span><span class="status-title">TEMPORARILY UNAVAILABLE</span></strong><span>JENZY could not read your saved entry. Your registration may still be saved.</span><small>Use “View my competition” to check your entry, then return Home.</small></div></div>';
+  details.innerHTML='<div class="homepage-registration-status not-registered"><div class="homepage-registration-status-icon" aria-hidden="true">!</div><div class="homepage-registration-status-copy"><strong><span class="status-kicker">STATUS CHECK</span><span class="status-title">TEMPORARILY UNAVAILABLE</span></strong><span>JENZY could not read your saved entry just now. Your saved registration has not been deleted.</span><small>Tap “View my competition” or refresh the page to try again.</small></div></div>';
  }
 }
 async function refreshCompetitionCounts(){
