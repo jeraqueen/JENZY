@@ -861,7 +861,7 @@ async function loadMyCompetitionRegistration(clearFields=false){
  const profileName=document.getElementById('studentName')?.value.trim()||currentUser?.user_metadata?.full_name||'';
  nameEl.readOnly=true;nameEl.setAttribute('aria-readonly','true');nameEl.title='Your name comes from your saved JENZY profile. Edit it in Profile if it is incorrect.';
  nameEl.readOnly=true;nameEl.setAttribute('aria-readonly','true');nameEl.title='Your name comes from your saved JENZY profile. Edit it in Profile if incorrect.';if(clearFields){nameEl.value=profileName;phoneEl.value='';entryEl.textContent='Checking your registration…';statusEl.textContent='';}
- const slot=document.getElementById('competitionRegistrationSlot').value,subject=document.getElementById('competitionRegistrationSubject').value,schoolClass=selectedCompetitionClass(),date=competitionDateForSlot(slot);
+ const slot=document.getElementById('competitionRegistrationSlot').value,subject=document.getElementById('competitionRegistrationSubject').value,schoolClass=selectedCompetitionClass(),date=(slot==='morning'&&jenzyJamespesaMorningExceptionDate)?jenzyJamespesaMorningExceptionDate:competitionDateForSlot(slot);
  if(!schoolClass){entryEl.textContent='Class required';statusEl.textContent='Your saved signup class is missing. Complete the class requirement before registering.';btn.disabled=true;return null;}
  btn.disabled=true;
  try{
