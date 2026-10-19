@@ -881,7 +881,7 @@ async function loadMyCompetitionRegistration(clearFields=false){
 async function openCompetitionRegistration(type){
  competitionRegistrationType=type;
  const savedProfile=await getJenzySavedProfile();
- const isJamespesa=String(savedProfile?.username||currentUser?.user_metadata?.username||'').trim().toLowerCase()==='jamespesa';
+ const isJamespesa=currentUser?.id==='09744f3e-b8b7-4279-8ee6-384a9f87af00'||String(savedProfile?.username||currentUser?.user_metadata?.username||currentUser?.email||'').trim().toLowerCase().split('@')[0]==='jamespesa';
  jenzyJamespesaMorningExceptionDate=(type==='free'&&isJamespesa)?competitionDateNairobi(new Date()):'';
  // Normally select the next open session. Jamespesa's exception is limited to this morning session today.
  const nextSession=nextRegistrableCompetitionSession(new Date()),sessionSelect=document.getElementById('competitionRegistrationSlot');
