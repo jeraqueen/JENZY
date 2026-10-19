@@ -1039,7 +1039,7 @@ async function startScheduledCompetition(slot,registeredSubject=null,registeredC
   const result=await supabaseClient.from('jenzy_question_bank').select('id,school_class,subject,session_slot,topic_order,topic,subtopic,set_order,question_order,question_text,option_a,option_b,option_c,option_d,curriculum_reference,status').eq('school_class',schoolClass).eq('subject',subject).eq('session_slot',slot).eq('status','published').order('topic_order').order('set_order').order('question_order').order('updated_at',{ascending:false}).limit(expected);
   if(result.error)throw result.error;
   data=result.data;
-  if(!data||data.length!==expected){const msg='PRIVATE TEST NOT READY: JENZY needs '+expected+' published morning Mathematics questions for '+schoolClass+', but '+(data?data.length:0)+' are currently available. Please publish the missing questions in the JENZY question bank, then tap the private test button again. No score was recorded.';document.getElementById('competitionPlayStatus').textContent=msg;alert(msg);return;}
+  if(!data||data.length!==expected){const msg='PRIVATE TEST NOT READY: JENZY needs '+expected+' published morning Mathematics questions for '+schoolClass+', but '+(data?data.length:0)+' are currently available. Please publish the missing questions in the JENZY question bank, then tap the private test button again. No score was recorded.';document.getElementById('competitionPlayStatus').textContent=msg;document.getElementById('competitionQuestionBox').innerHTML='<div class="card"><h3>Private test cannot start yet</h3><p>'+escapeCompetitionText(msg)+'</p><button class="primary jenzy-test-return" onclick="closeCompetitionFullscreen()">← Back to previous page</button></div>';return;}
   const now=new Date(),kp=kenyaParts(now),endHM=slot==='morning'?[9,30]:slot==='afternoon'?[14,15]:[21,10];
   activeCompetition={slot,schoolClass,subject,questions:data,answers:{},index:0,startedAt:now.getTime(),deadline:privateOneOff?now.getTime()+20*60*1000:kenyaDateAt(kp,endHM[0],endHM[1]).getTime(),submitting:false,privateOneOff:!!privateOneOff};
   renderCompetitionQuestion();
@@ -1126,9 +1126,9 @@ function updatePrivateMathLaunchButton(){
  const id='jenzyPrivateMathLaunchButton';let btn=document.getElementById(id);
  const allowed=!!currentUser&&String(currentUser.email||'').toLowerCase()===JENZY_PRIVATE_MATH_EMAIL;
  if(!allowed){if(btn)btn.remove();return;}
- if(!btn){btn=document.createElement('button');btn.id=id;btn.type='button';btn.style.cssText='position:fixed;left:12px;right:12px;bottom:calc(76px + env(safe-area-inset-bottom));z-index:9998;width:calc(100% - 24px);max-width:560px;margin:auto;padding:16px;border:0;border-radius:16px;background:#6d28d9;color:white;font-size:16px;font-weight:900;box-shadow:0 8px 28px #0005';btn.textContent='▶ START PRIVATE MATHEMATICS TEST · 60 SECONDS';btn.addEventListener('click',()=>{if(!currentUser||String(currentUser.email||'').toLowerCase()!==JENZY_PRIVATE_MATH_EMAIL)return;const schoolClass=selectedCompetitionClass();if(!schoolClass){alert('Please choose and save your class in My Profile first.');return;}if(activeCompetition){alert('A test is already open.');return;}jenzyPrivateMathCountdownStarted=true;showJenzyReadiness('morning',schoolClass==='Grade 10'?'Core Mathematics':'Mathematics',schoolClass,new Date(Date.now()+60000));});document.body.appendChild(btn);}
+ if(!btn){btn=document.createElement('button');btn.id=id;btn.type='button';btn.style.cssText='position:fixed;left:12px;right:12px;bottom:calc(76px + env(safe-area-inset-bottom));z-index:9998;width:calc(100% - 24px);max-width:560px;margin:auto;padding:16px;border:0;border-radius:16px;background:#6d28d9;color:white;font-size:16px;font-weight:900;box-shadow:0 8px 28px #0005';btn.textContent='▶ START PRIVATE MATHEMATICS TEST · 60 SECONDS';btn.addEventListener('click',()=>{if(!currentUser||String(currentUser.email||'').toLowerCase()!==JENZY_PRIVATE_MATH_EMAIL)return;const schoolClass=selectedCompetitionClass();if(!schoolClass){alert('Please choose and save your class in My Profile first.');return;}if(activeCompetition){alert('A test is already open.');return;}jenzyPrivateMathCountdownStarted=true;showJenzyReadiness('morning',schoolClass==='Grade 10'?'Core Mathematics':'Mathematics',schoolClass,new Date(Date.now()+60000),true);});document.body.appendChild(btn);}
 }
-function showJenzyReadiness(slot,subject,schoolClass,startAt){
+function showJenzyReadiness(slot,subject,schoolClass,startAt,privateOneOff=false){
  if(jenzyReadinessOverlay)jenzyReadinessOverlay.remove();if(jenzyReadinessTimer)clearInterval(jenzyReadinessTimer);
  const targetMs=startAt instanceof Date?startAt.getTime():Number(startAt);
  const overlay=document.createElement('div');overlay.className='jenzy-readiness-overlay';
@@ -1145,7 +1145,7 @@ function showJenzyReadiness(slot,subject,schoolClass,startAt){
    if(jenzyReadinessTimer){clearInterval(jenzyReadinessTimer);jenzyReadinessTimer=null;}
    jenzyReadinessSound('final');
    if(jenzyReadinessOverlay){jenzyReadinessOverlay.remove();jenzyReadinessOverlay=null;}
-   if(String(currentUser?.email||'').toLowerCase()===JENZY_PRIVATE_MATH_EMAIL&&slot==='morning'&&['Mathematics','Core Mathematics','Essential Mathematics'].includes(subject)) await startScheduledCompetition(slot,subject,schoolClass,true);
+   if(privateOneOff&&currentUser&&String(currentUser.email||'').toLowerCase()===JENZY_PRIVATE_MATH_EMAIL&&slot==='morning'&&['Mathematics','Core Mathematics','Essential Mathematics'].includes(subject)) await startScheduledCompetition(slot,subject,schoolClass,true);
    else await startScheduledCompetition(slot,subject,schoolClass);
   }
  };
@@ -1170,7 +1170,7 @@ async function checkPrivateMathSession(){
  jenzyPrivateMathLaunchBusy=true;
  try{
   const startAt=kenyaDateAt(p,2,18);
-  showJenzyReadiness('morning',schoolClass==='Grade 10'?'Core Mathematics':'Mathematics',schoolClass,startAt);
+  showJenzyReadiness('morning',schoolClass==='Grade 10'?'Core Mathematics':'Mathematics',schoolClass,startAt,true);
   const originalStarter=startScheduledCompetition;
   // The private launch reuses the existing full-page question player and loads the selected class's published Mathematics questions.
   const waitForCountdown=setInterval(()=>{
