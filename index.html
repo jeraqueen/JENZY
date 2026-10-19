@@ -4,7 +4,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <meta name="theme-color" content="#4f46e5">
-<meta name="jenzy-build" content="jenzy-build-20261019-10">
+<meta name="jenzy-build" content="jenzy-build-20261019-11">
 <title>JENZY — Learn. Play. Compete.</title>
 <style>
 :root{--bg:#f5f7ff;--card:#fff;--text:#19213b;--muted:#69738c;--primary:#4f46e5;--line:#e7e9f3}
@@ -419,9 +419,9 @@ if (!window.supabase) {
 }
 </script>
 <script>
-const JENZY_BUILD_VERSION = '20261018-16';
+const JENZY_BUILD_VERSION = '20261019-11';
 (function enableAutomaticJenzyUpdates(){
- const checkEveryMs=10000;
+ const checkEveryMs=5000;
  let updateFound=false,checking=false;
  function pageIsSafeToReload(){
   if(typeof activeCompetition!=='undefined'&&activeCompetition)return false;
@@ -1363,90 +1363,7 @@ function openClassResultsPage(schoolClass){
 
 
 
-<script>
-// Check for a newly deployed JENZY build every 10 seconds.
-(function(){
- const tag=document.querySelector('meta[name="jenzy-build"]');
- if(!tag||window.__jenzyAutoUpdateStarted)return;
- window.__jenzyAutoUpdateStarted=true;
- const currentBuild=tag.content;
- let checking=false;
- function safeToReload(){
-  const active=document.activeElement;
-  if(active&&(/^(INPUT|TEXTAREA|SELECT)$/.test(active.tagName)||active.isContentEditable))return false;
-  const play=document.getElementById('competitionPlayArea');
-  if(play&&!play.hidden)return false;
-  return true;
- }
- async function checkForUpdate(){
-  if(checking||document.visibilityState==='hidden')return;
-  checking=true;
-  try{
-   const url=location.pathname+location.search+(location.search?'&':'?')+'jenzy_update_check='+Date.now();
-   const response=await fetch(url,{cache:'no-store',credentials:'same-origin'});
-   if(!response.ok)return;
-   const html=await response.text();
-   const match=html.match(/<meta[^>]*name=["']jenzy-build["'][^>]*content=["']([^"']+)["']/i);
-   if(match&&match[1]!==currentBuild&&safeToReload()){
-    location.reload();
-    return;
-   }
-  }catch(e){}finally{checking=false;}
- }
- // Check as soon as the page opens, then repeat every 10 seconds.
- checkForUpdate();
- setInterval(checkForUpdate,10000);
-})();
 
-// Security cleanup: only the admin account keeps admin-only testing controls.
-function updatePrivateMathLaunchButton(){const b=document.getElementById('jenzyPrivateMathLaunchButton');if(b)b.remove();}
-function updateJamespesaRegisteredLaunchButton(){const b=document.getElementById('jenzyJamespesaRegisteredLaunchButton');if(b)b.remove();}
-function checkPrivateMathSession(){return;}
-
-/* Require duplicate full names to be changed at the next sign-in, and check again on save. */
-async function requireUniqueFullName(){
- if(!currentUser)return false;
- const gate=document.getElementById("uniqueNameGate");
- try{
-  const {data:mine,error:mineError}=await supabaseClient.from("profiles").select("full_name,name_change_required").eq("id",currentUser.id).maybeSingle();
-  if(mineError)throw mineError;
-  const fullName=String(mine?.full_name||document.getElementById("studentName")?.value||"").trim();
-  if(!fullName){if(gate)gate.hidden=true;return false;}
-  const {data:others,error}=await supabaseClient.from("profiles").select("id,full_name").neq("id",currentUser.id).ilike("full_name",fullName).limit(10);
-  if(error)throw error;
-  const duplicate=(others||[]).some(p=>String(p.full_name||"").trim().toLocaleLowerCase()===fullName.toLocaleLowerCase());
-  if(!duplicate&&!mine?.name_change_required){if(gate)gate.hidden=true;return false;}
-  const input=document.getElementById("uniqueNameGateInput");
-  if(input)input.value="";
-  if(gate)gate.hidden=false;
-  const status=document.getElementById("uniqueNameGateStatus");if(status)status.textContent="This name is already in use. Please choose a different full name.";
-  return true;
- }catch(e){
-  console.warn("Could not check for duplicate full names:",e.message);
-  const status=document.getElementById("uniqueNameGateStatus");
-  if(status){status.textContent="We could not verify your name. Please check your connection and try again.";const g=document.getElementById("uniqueNameGate");if(g)g.hidden=false;}
-  return true;
- }
-}
-document.getElementById("uniqueNameGateForm")?.addEventListener("submit",async event=>{
- event.preventDefault();if(!currentUser)return;
- const input=document.getElementById("uniqueNameGateInput"),button=document.getElementById("uniqueNameGateSave"),status=document.getElementById("uniqueNameGateStatus");
- const fullName=String(input?.value||"").trim();
- if(fullName.split(/\s+/).filter(Boolean).length<2){if(status)status.textContent="Please enter your first name and surname.";return;}
- button.disabled=true;if(status)status.textContent="Checking and saving your name…";
- try{
-  const {data:others,error:checkError}=await supabaseClient.from("profiles").select("id,full_name").neq("id",currentUser.id).ilike("full_name",fullName).limit(10);
-  if(checkError)throw checkError;
-  if((others||[]).some(p=>String(p.full_name||"").trim().toLocaleLowerCase()===fullName.toLocaleLowerCase()))throw new Error("That full name is already used. Please choose a different one.");
-  const {data:updated,error}=await supabaseClient.from("profiles").update({full_name:fullName,name_change_required:false}).eq("id",currentUser.id).select("id,full_name,name_change_required").maybeSingle();
-  if(error)throw error;if(!updated)throw new Error("Your name was not saved. Please try again.");
-  const gate=document.getElementById("uniqueNameGate");if(gate)gate.hidden=true;
-  await activateUser(currentUser);
- }catch(e){if(status)status.textContent=e.message||"Could not save your name. Please try another one.";}
- finally{button.disabled=false;}
-});
-
-</script>
 
 
 <style>#uniqueNameGate[hidden]{display:none!important}</style>
