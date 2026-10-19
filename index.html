@@ -1076,28 +1076,30 @@ async function registerFreeCompetition(){
 }
 let homepageRegistrationCheckInProgress=false;
 let homepageRegistrationCheckStartedAt=0;
+let homepageRegistrationCheckId=0;
 async function refreshHomepageCompetitionRegistration(){
  const card=document.getElementById('homepageCompetitionRegistrationCard');
  const details=document.getElementById('homepageCompetitionRegistrationDetails');
  if(!card||!details)return;
- if(homepageRegistrationCheckInProgress && Date.now()-homepageRegistrationCheckStartedAt<15000)return;
- homepageRegistrationCheckInProgress=false;
+ if(homepageRegistrationCheckInProgress)return;
  card.hidden=false;
  if(!currentUser){details.innerHTML='<p class="muted">Sign in to see your competition registration status.</p>';return;}
  homepageRegistrationCheckInProgress=true;
  homepageRegistrationCheckStartedAt=Date.now();
- const checkStarted=homepageRegistrationCheckStartedAt;
+ const checkId=++homepageRegistrationCheckId;
+ const isCurrent=()=>checkId===homepageRegistrationCheckId && details.isConnected;
+ const showFailure=(title,message)=>{if(!isCurrent())return;homepageRegistrationCheckInProgress=false;details.innerHTML='<div class="homepage-registration-status not-registered"><div class="homepage-registration-status-icon" aria-hidden="true">!</div><div class="homepage-registration-status-copy"><strong><span class="status-kicker">STATUS CHECK</span><span class="status-title">'+title+'</span></strong><span>'+escapeHtml(message)+'</span><small>Your saved registration has not been changed. Tap Retry to check again.</small><button type="button" class="primary" onclick="refreshHomepageCompetitionRegistration()">Retry status check</button></div></div>';};
  details.innerHTML='<p class="muted">Checking your registration…</p>';
- // Independent watchdog: updates the visible card even if a Supabase request never settles.
- setTimeout(()=>{if(details.isConnected && details.textContent.includes('Checking your registration')){homepageRegistrationCheckInProgress=false;details.innerHTML='<div class="homepage-registration-status not-registered"><div class="homepage-registration-status-icon" aria-hidden="true">!</div><div class="homepage-registration-status-copy"><strong><span class="status-kicker">STATUS CHECK</span><span class="status-title">COULD NOT LOAD STATUS</span></strong><span>The registration lookup is still loading. Your saved registration has not been changed.</span><small>Tap Retry to check again.</small><button type="button" class="primary" onclick="refreshHomepageCompetitionRegistration()">Retry status check</button></div></div>'; }},13000);
+ const watchdog=setTimeout(()=>{if(isCurrent()&&details.textContent.includes('Checking your registration'))showFailure('COULD NOT LOAD STATUS','The registration lookup did not finish.');},10000);
  try{
   const today=competitionDateNairobi();
   const request=supabaseClient.from('jenzy_competition_registrations')
    .select('id,entry_number,student_id,competition_date,session_slot,school_class,subject,entry_type,status,created_at')
    .eq('student_id',currentUser.id)
    .eq('status','confirmed');
-  const timeout=new Promise((_,reject)=>setTimeout(()=>reject(new Error('The database did not respond within 12 seconds. Check your internet connection and Supabase availability, then tap Retry.')),12000));
+  const timeout=new Promise((_,reject)=>setTimeout(()=>reject(new Error('The database did not respond within 9 seconds.')),9000));
   const {data,error}=await Promise.race([request,timeout]);
+  if(!isCurrent())return;
   if(error)throw error;
   const rows=(data||[])
    .filter(row=>String(row.status||'').toLowerCase()==='confirmed' && (!row.competition_date || String(row.competition_date)>=today))
@@ -1110,9 +1112,11 @@ async function refreshHomepageCompetitionRegistration(){
   details.innerHTML=rows.map(row=>'<div class="homepage-registration-status registered"><div class="homepage-registration-status-icon" aria-hidden="true">✓</div><div class="homepage-registration-status-copy"><strong><span class="status-kicker">YOUR ENTRY STATUS</span><span class="status-title">REGISTERED ✓</span></strong><span>'+escapeHtml(String(row.subject||'Competition'))+' · '+escapeHtml(String(row.school_class||''))+' · '+escapeHtml(slotLabels[row.session_slot]||String(row.session_slot||''))+' · '+escapeHtml(row.competition_date?formatCompetitionDate(row.competition_date):'Upcoming session')+'</span><small>✦ YOUR ENTRY NUMBER: #'+escapeHtml(String(row.entry_number??'—'))+'</small></div><div class="status-checkmark" aria-hidden="true">✓</div></div>').join('');
  }catch(e){
   console.warn('Could not load homepage competition registration status:',e);
-  const diagnostic=String(e?.message||e||'Unknown error');
-  details.innerHTML='<div class="homepage-registration-status not-registered"><div class="homepage-registration-status-icon" aria-hidden="true">!</div><div class="homepage-registration-status-copy"><strong><span class="status-kicker">STATUS CHECK</span><span class="status-title">STATUS CHECK FAILED</span></strong><span>Your saved registration has not been deleted. '+escapeHtml(diagnostic.slice(0,240))+'</span><small>Tap Retry to check again.</small><button type="button" class="primary" onclick="refreshHomepageCompetitionRegistration()">Retry status check</button></div></div>';
- }finally{homepageRegistrationCheckInProgress=false}
+  showFailure('STATUS CHECK FAILED',String(e?.message||e||'Unknown error').slice(0,240));
+ }finally{
+  clearTimeout(watchdog);
+  if(checkId===homepageRegistrationCheckId)homepageRegistrationCheckInProgress=false;
+ }
 }
 async function refreshCompetitionCounts(){
  if(!currentUser)return;updateCompetitionRegistrationWindow();
