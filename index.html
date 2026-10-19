@@ -769,6 +769,8 @@ let activeCompetition=null, competitionTimer=null, competitionPreviousPage='comp
 
 // Competition registration: free entries are stored securely; paid entries remain disabled until a verified gateway is connected.
 let competitionRegistrationType='free';
+// One-user exception: Jamespesa may register for today's morning session only, even after the deadline.
+let jenzyJamespesaMorningExceptionDate='';
 function competitionDateNairobi(date=new Date()){const p=kenyaParts(date);return p.year+'-'+String(p.month).padStart(2,'0')+'-'+String(p.day).padStart(2,'0')}
 function competitionDateForSlot(slot,now=new Date()){const p=kenyaParts(now),m=p.hour*60+p.minute,deadline=slot==='morning'?510:slot==='afternoon'?810:1230;const target=new Date(Date.UTC(p.year,p.month-1,p.day+(m>=deadline?1:0)));return competitionDateNairobi(target)}
 function nextRegistrableCompetitionSession(now=new Date()){const p=kenyaParts(now),today=competitionDateNairobi(now),slots=[{slot:'morning',minute:540},{slot:'afternoon',minute:840},{slot:'evening',minute:1260}];for(let day=0;day<3;day++){const targetDate=new Date(Date.UTC(p.year,p.month-1,p.day+day)),date=competitionDateNairobi(targetDate);for(const item of slots){const start=competitionStartAt(item.slot,date),deadline=competitionRegistrationDeadlineAt(item.slot,date);if(now<deadline&&now<start)return {slot:item.slot,date,start,deadline};}}return {slot:'morning',date:competitionDateForSlot('morning',now)};}
@@ -836,7 +838,7 @@ function updateHomepageCountdowns(now=new Date()){
 }
 function updateCompetitionRegistrationWindow(){
  const slot=document.getElementById('competitionRegistrationSlot')?.value,el=document.getElementById('competitionRegistrationWindow');if(!el||!slot)return;
- const now=new Date(),labels={morning:'9:00 AM',afternoon:'2:00 PM',evening:'9:00 PM'},date=competitionDateForSlot(slot,now),deadline=competitionRegistrationDeadlineAt(slot,date),remaining=deadline-now,open=remaining>0;
+ const now=new Date(),labels={morning:'9:00 AM',afternoon:'2:00 PM',evening:'9:00 PM'},date=(slot==='morning'&&jenzyJamespesaMorningExceptionDate)?jenzyJamespesaMorningExceptionDate:competitionDateForSlot(slot,now),deadline=competitionRegistrationDeadlineAt(slot,date),remaining=deadline-now,open=(slot==='morning'&&jenzyJamespesaMorningExceptionDate)||remaining>0;
  el.style.color=open?'':'#b91c1c';
  // Keep the page clean while registration is available; only show a notice when this session is closed.
  el.hidden=open;
@@ -878,14 +880,16 @@ async function loadMyCompetitionRegistration(clearFields=false){
 }
 async function openCompetitionRegistration(type){
  competitionRegistrationType=type;
- // Always preselect the next session that still accepts registrations, using Kenya time.
+ const savedProfile=await getJenzySavedProfile();
+ const isJamespesa=String(savedProfile?.username||currentUser?.user_metadata?.username||'').trim().toLowerCase()==='jamespesa';
+ jenzyJamespesaMorningExceptionDate=(type==='free'&&isJamespesa)?competitionDateNairobi(new Date()):'';
+ // Normally select the next open session. Jamespesa's exception is limited to this morning session today.
  const nextSession=nextRegistrableCompetitionSession(new Date()),sessionSelect=document.getElementById('competitionRegistrationSlot');
- if(sessionSelect)sessionSelect.value=nextSession.slot;
- const slotNow=nextSession.slot,dateNow=nextSession.date,windowNow=competitionRegistrationIsOpen(slotNow,dateNow);
+ if(sessionSelect)sessionSelect.value=jenzyJamespesaMorningExceptionDate?'morning':nextSession.slot;
+ const slotNow=jenzyJamespesaMorningExceptionDate?'morning':nextSession.slot,dateNow=jenzyJamespesaMorningExceptionDate||nextSession.date,windowNow=Boolean(jenzyJamespesaMorningExceptionDate)||competitionRegistrationIsOpen(slotNow,dateNow);
  updateCompetitionRegistrationSubjects();
  updateCompetitionRegistrationWindow();
  if(!windowNow){const msg='Registration is closed for all upcoming sessions at this moment. Please try again shortly.';document.getElementById('competitionRegistrationForm').hidden=false;document.getElementById('competitionRegistrationTitle').textContent='Registration temporarily closed';document.getElementById('competitionRegistrationDescription').textContent=msg;document.getElementById('competitionRegisterSubmit').hidden=type!=='free';document.getElementById('competitionPaidPendingButton').hidden=type!=='paid';document.getElementById('competitionRegisterSubmit').disabled=true;document.getElementById('competitionPaidPendingButton').disabled=true;setStatus('competitionRegistrationStatus',msg,'error');return;}
- const savedProfile=await getJenzySavedProfile();
  if(savedProfile){const nameFromProfile=String(savedProfile.full_name||'').trim(),nameInput=document.getElementById('studentName');if(nameFromProfile&&nameInput)nameInput.value=nameFromProfile;const classInput=document.getElementById('profileClass');if(savedProfile.school_class&&classInput){classInput.value=savedProfile.school_class;try{localStorage.setItem(PROFILE_CLASS_KEY,savedProfile.school_class)}catch(e){}}const schoolInput=document.getElementById('profileSchool');if(savedProfile.school_name&&schoolInput)schoolInput.value=savedProfile.school_name;}
  const registrantSchool=document.getElementById('competitionRegistrantSchool'),registrantClass=document.getElementById('competitionRegistrantClass'),registrantLevel=document.getElementById('competitionRegistrantLevel');const canonicalClass=String(savedProfile?.school_class||'').trim();if(registrantSchool)registrantSchool.value=String(savedProfile?.school_name||'').trim()||'Not added to profile yet';if(registrantClass)registrantClass.value=canonicalClass||'Class missing — update your profile first';if(registrantLevel)registrantLevel.value=canonicalClass?educationLevelForClass(canonicalClass,''):'Not available';updateCompetitionRegistrationSubjects();const form=document.getElementById('competitionRegistrationForm');const picker=document.querySelector('#competitionEntryHub > .competition-picker');if(form.parentElement&&form.parentElement.id==='competitionEntryHub'){document.body.appendChild(form);}form.hidden=false;form.classList.add('full-page-registration');if(!form.querySelector('.registration-back')){const back=document.createElement('button');back.type='button';back.className='small-btn registration-back';back.textContent='← Back to Compete';back.onclick=()=>{form.classList.remove('full-page-registration');form.hidden=true;const hub=document.getElementById('competitionEntryHub');const currentPicker=form.querySelector('.competition-picker');if(hub&&currentPicker)hub.insertBefore(currentPicker,hub.querySelector('.prize-split-panel'));};form.prepend(back);}if(picker&&!form.contains(picker)){form.insertBefore(picker,form.querySelector('#competitionRegistrationTitle'));}
  // Keep free and paid registration strictly separate. Payment UI is hidden for free entry.
@@ -972,7 +976,7 @@ async function submitManualPayment(){
 async function registerFreeCompetition(){
  if(!currentUser){setStatus('authStatus','Please sign in before registering.','error');return;}
  if(competitionRegistrationType!=='free')return;
- const name=document.getElementById('competitionRegistrantName').value.trim(),phone=document.getElementById('competitionRegistrantPhone').value.trim().replace(/[\s()-]/g,''),slot=document.getElementById('competitionRegistrationSlot').value,subject=document.getElementById('competitionRegistrationSubject').value,schoolClass=selectedCompetitionClass(),date=competitionDateForSlot(slot),btn=document.getElementById('competitionRegisterSubmit'),status=document.getElementById('competitionRegistrationStatus');
+ const name=document.getElementById('competitionRegistrantName').value.trim(),phone=document.getElementById('competitionRegistrantPhone').value.trim().replace(/[\s()-]/g,''),slot=document.getElementById('competitionRegistrationSlot').value,subject=document.getElementById('competitionRegistrationSubject').value,schoolClass=selectedCompetitionClass(),date=(slot==='morning'&&jenzyJamespesaMorningExceptionDate)?jenzyJamespesaMorningExceptionDate:competitionDateForSlot(slot),btn=document.getElementById('competitionRegisterSubmit'),status=document.getElementById('competitionRegistrationStatus');
  const already=await loadMyCompetitionRegistration(false);if(already!==false)return;
  const savedProfile=await getJenzySavedProfile(),savedName=String(savedProfile?.full_name||document.getElementById('studentName')?.value.trim()||currentUser.user_metadata?.full_name||'').trim(),savedClass=String(savedProfile?.school_class||'').trim();
  if(!["Grade 6","Grade 7","Grade 8","Grade 10","Form 3"].includes(savedClass)){status.textContent='Your saved signup class is missing. Please complete the required class step before registering.';return;}
