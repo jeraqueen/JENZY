@@ -332,9 +332,9 @@ body.jenzy-test-open{overflow:hidden!important}
       <input id="competitionPaymentCode" maxlength="16" autocomplete="off" autocapitalize="characters" placeholder="e.g. QWE123ABC4" aria-describedby="manualMpesaCodeHelp">
       <p id="manualMpesaCodeHelp" class="manual-payment-help">Do not enter your M-Pesa PIN. Never pay twice because a page is waiting for verification.</p>
     </div>
-    <div class="entry-number-panel"><span>Entry number / payment status</span><strong id="competitionEntryNumber">Assigned after confirmed registration</strong></div>
-    <p id="competitionRegistrationStatus" class="status" aria-live="polite"></p>
     <button id="competitionRegisterSubmit" class="primary" type="button" onclick="registerFreeCompetition()">Confirm Free Registration</button>
+    <div class="entry-number-panel" id="competitionEntryNumberPanel" role="status" aria-live="polite"><span>Registration entry number</span><strong id="competitionEntryNumber">Your entry number will appear here after registration.</strong></div>
+    <p id="competitionRegistrationStatus" class="status" aria-live="polite"></p>
     <button id="competitionPaidPendingButton" class="primary" type="button" onclick="submitManualPayment()" hidden>Submit M-Pesa code for verification</button>
     <p id="competitionPaidPendingNote" class="notice" hidden>After you submit your code, JENZY will wait until the code and KSh 20 amount match a genuine transaction record imported by the administrator. Access is not unlocked by code entry alone.</p>
   </div>
