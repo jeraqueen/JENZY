@@ -1287,7 +1287,7 @@ function scheduleState(now=new Date()){
  else if(now>=todayStart&&now<mathEnd){title='Morning Mathematics competition is active';text='Your class-specific Mathematics competition ends at 9:30 AM.';target=mathEnd;}
  else if(mins>=13*60+55&&mins<14*60){alarm=true;alarmLabel='Afternoon competition starts at 2:00 PM.';title='Afternoon competition starts soon';text='The shared 60-second red circular readiness timer appears at 2:00 PM.';target=aftStart;}
  else if(mins>=9*60+30&&mins<14*60){title='Countdown to afternoon competition';text='The shared countdown ends at 2:00 PM. Choose English or Kiswahili and register.';target=aftStart;}
- else if(now>=aftStart&&now<aftEnd){title='Afternoon competition is active';text='Your selected subject questions end at 2:10 PM.';target=aftEnd;}
+ else if(now>=aftStart&&now<aftEnd){title='Afternoon competition is active';text='Your selected subject questions end at 2:15 PM.';target=aftEnd;}
  else if(mins>=14*60+10&&mins<14*60+30){title='Afternoon competition completed';text='The shared countdown to the evening competition begins at 2:30 PM.';target=kenyaDateAt(p,14,30);}
  else if(mins>=20*60+55&&mins<21*60){alarm=true;alarmLabel='Evening competition starts at 9:00 PM.';title='Evening competition starts soon';text='The shared 60-second red circular readiness timer appears at 9:00 PM.';target=eveStart;}
  else if(mins>=14*60+30&&mins<21*60){title='Countdown to evening competition';text='The shared countdown ends at 9:00 PM. Your selected evening subject and class determine the questions.';target=eveStart;}
