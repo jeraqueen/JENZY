@@ -1352,7 +1352,7 @@ setInterval(checkPrivateMathSession,250);
 async function checkJenzyAutomaticCompetition(){
  if(!currentUser||jenzyAutoLaunchBusy||activeCompetition||jenzyReadinessOverlay)return;
  const now=new Date(),p=kenyaParts(now),date=competitionDateNairobi(now),schoolClass=selectedCompetitionClass();
- const slots=[{slot:'morning',start:competitionStartAt('morning',date),end:kenyaDateAt(p,9,20)},{slot:'afternoon',start:competitionStartAt('afternoon',date),end:kenyaDateAt(p,14,10)},{slot:'evening',start:competitionStartAt('evening',date),end:kenyaDateAt(p,21,10)}];
+ const slots=[{slot:'morning',start:competitionStartAt('morning',date),end:kenyaDateAt(p,9,30)},{slot:'afternoon',start:competitionStartAt('afternoon',date),end:kenyaDateAt(p,14,15)},{slot:'evening',start:competitionStartAt('evening',date),end:kenyaDateAt(p,21,10)}];
  // Begin the 60-second readiness timer during the final minute before a session.
  const session=slots.find(x=>now<x.end&&x.start.getTime()-now.getTime()<=60000);
  if(!session)return;
