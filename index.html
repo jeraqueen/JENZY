@@ -1027,7 +1027,7 @@ async function startScheduledCompetition(slot,registeredSubject=null,registeredC
  document.getElementById('competitionPlayTitle').textContent=subject+' · '+schoolClass;
  document.getElementById('competitionPlayStatus').textContent='Loading published questions…';
  document.getElementById('competitionQuestionBox').innerHTML='';document.getElementById('competitionResult').textContent='';
- document.getElementById('competitionPrevBtn').hidden=true;document.getElementById('competitionNextBtn').hidden=false;document.getElementById('competitionNextBtn').disabled=false;document.getElementById('competitionSubmitBtn').hidden=true;
+ document.getElementById('competitionPrevBtn').hidden=true;document.getElementById('competitionNextBtn').hidden=true;document.getElementById('competitionNextBtn').disabled=false;document.getElementById('competitionSubmitBtn').hidden=true;
  area.scrollIntoView({behavior:'smooth',block:'start'});
  try{
   let data;
@@ -1047,7 +1047,7 @@ async function startScheduledCompetition(slot,registeredSubject=null,registeredC
   competitionTimer=setInterval(()=>{if(!activeCompetition)return;const remain=activeCompetition.deadline-Date.now();document.getElementById('competitionPlayStatus').textContent=subject+' · '+schoolClass+' · Time left '+fmtCountdown(remain);if(remain<=2000){clearInterval(competitionTimer);submitCompetitionAnswers(true);}},500);
  }catch(e){const msg='JENZY could not open the private Mathematics test: '+(e&&e.message?e.message:'Could not load the published question set.');const status=document.getElementById('competitionPlayStatus');if(status)status.textContent=msg;const area=document.getElementById('competitionPlayArea');if(area){area.hidden=false;area.classList.add('jenzy-test-fullscreen');document.body.classList.add('jenzy-test-open');area.scrollIntoView({behavior:'smooth',block:'start'});}alert(msg);}
 }
-function closeCompetitionFullscreen(){const area=document.getElementById('competitionPlayArea');if(area)area.classList.remove('jenzy-test-fullscreen');document.body.classList.remove('jenzy-test-open');const target=document.getElementById(competitionPreviousPage);showPage(target?competitionPreviousPage:'competitions');}
+function closeCompetitionFullscreen(){const area=document.getElementById('competitionPlayArea');if(area){area.classList.remove('jenzy-test-fullscreen');area.hidden=true;}document.body.classList.remove('jenzy-test-open');const target=document.getElementById(competitionPreviousPage);showPage(target?competitionPreviousPage:'competitions');}
 function previousCompetitionQuestion(){if(!activeCompetition||activeCompetition.submitting)return;if(activeCompetition.index>0){activeCompetition.index--;renderCompetitionQuestion();document.getElementById('competitionPlayArea').scrollIntoView({behavior:'smooth',block:'start'});}}
 function renderCompetitionQuestion(){if(!activeCompetition)return;const c=activeCompetition,q=c.questions[c.index],opts=[q.option_a,q.option_b,q.option_c,q.option_d];
  document.getElementById('competitionPlayStatus').textContent=c.subject+' · '+c.schoolClass+' · Question '+(c.index+1)+' of '+c.questions.length+' · Time left '+fmtCountdown(c.deadline-Date.now());
