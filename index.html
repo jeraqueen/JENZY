@@ -4,7 +4,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <meta name="theme-color" content="#4f46e5">
-<meta name="jenzy-build" content="jenzy-build-20261019-25">
+<meta name="jenzy-build" content="jenzy-build-20261019-26">
 <title>JENZY — Learn. Play. Compete.</title>
 <style>
 :root{--bg:#f5f7ff;--card:#fff;--text:#19213b;--muted:#69738c;--primary:#4f46e5;--line:#e7e9f3}
@@ -256,8 +256,24 @@ body.jenzy-test-open{overflow:hidden!important}
 
 
 /* Clear registration badges and consistent compact trophy leaderboard rows. */
-.homepage-registration-status{border-radius:16px!important;box-shadow:0 5px 16px rgba(15,23,42,.07)}
-.homepage-registration-status-copy strong{display:block!important;line-height:1.2!important}
+.homepage-registration-status{position:relative;overflow:hidden;display:flex;align-items:center;gap:13px;border-radius:20px!important;padding:17px!important;box-shadow:0 10px 24px rgba(15,23,42,.12)!important;transition:transform .18s ease,box-shadow .18s ease}
+.homepage-registration-status:before{content:"";position:absolute;inset:0 auto 0 0;width:5px;background:currentColor;opacity:.75}
+.homepage-registration-status.registered{border:1px solid #16a34a!important;background:linear-gradient(125deg,#dcfce7 0%,#f0fdf4 58%,#ffffff 100%)!important;color:#14532d!important}
+.homepage-registration-status.not-registered{border:1px solid #ef4444!important;background:linear-gradient(125deg,#fee2e2 0%,#fff1f2 58%,#ffffff 100%)!important;color:#7f1d1d!important}
+.homepage-registration-status .homepage-registration-status-icon{width:48px;height:48px;flex-basis:48px;border-radius:16px;box-shadow:0 5px 12px #00000012;font-size:28px}
+.homepage-registration-status.registered .homepage-registration-status-icon{background:linear-gradient(145deg,#22c55e,#15803d)!important;color:#fff!important}
+.homepage-registration-status.not-registered .homepage-registration-status-icon{background:linear-gradient(145deg,#fb7185,#dc2626)!important;color:#fff!important}
+.homepage-registration-status-copy{flex:1;gap:6px}
+.homepage-registration-status-copy strong{display:block!important;line-height:1.15!important}
+.homepage-registration-status-copy strong .status-kicker{display:block;font-size:10px;letter-spacing:1.3px;font-weight:900;color:inherit;opacity:.75}
+.homepage-registration-status-copy strong .status-title{display:block;font-size:20px;font-weight:1000;letter-spacing:.5px;margin-top:3px}
+.homepage-registration-status-copy span{color:inherit!important;opacity:.88}
+.homepage-registration-status-copy small{display:inline-block!important;align-self:flex-start;border-radius:9px;padding:5px 8px;margin-top:2px;background:#ffffffa8;color:inherit!important;font-weight:900!important}
+.status-checkmark{width:28px;height:28px;flex:0 0 28px;display:grid;place-items:center;border-radius:50%;background:#16a34a;color:white;font-size:18px;font-weight:1000;box-shadow:0 3px 9px #16a34a40}
+body.theme-dark .homepage-registration-status.registered{background:linear-gradient(125deg,#102f20,#123d2b 60%,#172b25)!important;color:#bbf7d0!important;border-color:#22c55e!important}
+body.theme-dark .homepage-registration-status.not-registered{background:linear-gradient(125deg,#35171b,#471c24 60%,#2b1b23)!important;color:#fecaca!important;border-color:#f87171!important}
+body.theme-dark .homepage-registration-status-copy small{background:#ffffff16;color:inherit!important}
+@media(max-width:420px){.homepage-registration-status{padding:13px!important;gap:10px}.homepage-registration-status .homepage-registration-status-icon{width:42px;height:42px;flex-basis:42px;border-radius:13px}.homepage-registration-status-copy strong .status-title{font-size:18px}.status-checkmark{width:24px;height:24px;flex-basis:24px}}
 .class-winner-list{display:grid;gap:0;margin:14px 0 22px;border:1px solid var(--line);border-radius:18px;padding:4px 14px;background:var(--card)}
 .class-results-fullpage .class-winner-row{display:flex;align-items:center;gap:12px;padding:16px 4px;border-bottom:1px solid var(--line);min-width:0}
 .class-results-fullpage .class-winner-row:last-child{border-bottom:0}
@@ -316,7 +332,7 @@ body.jenzy-test-open{overflow:hidden!important}
   <div class="card" id="homepageCompetitionRegistrationCard" style="border:2px solid var(--primary);margin:0 0 16px">
     <span class="chip">YOUR COMPETITION STATUS</span>
     <h2 style="margin-top:8px">Your competition status</h2>
-    <p class="muted">Your confirmed registrations for today will appear here.</p>
+    <p class="muted">Your confirmed entries for today and upcoming sessions will appear here.</p>
     <div id="homepageCompetitionRegistrationDetails" aria-live="polite"></div>
     <button class="primary" type="button" onclick="showPage('competitions')">View my competition →</button>
   </div>
@@ -1066,20 +1082,20 @@ async function refreshHomepageCompetitionRegistration(){
  try{
   const today=competitionDateNairobi();
   const {data,error}=await supabaseClient.from('jenzy_competition_registrations')
-   .select('session_slot,subject,school_class,entry_number,entry_type,status')
-   .eq('student_id',currentUser.id).gte('competition_date',today)
-   .eq('status','confirmed').order('competition_date',{ascending:true}).order('session_slot',{ascending:true});
+   .select('competition_date,session_slot,subject,school_class,entry_number,entry_type,status')
+   .eq('student_id',currentUser.id).eq('status','confirmed')
+   .order('competition_date',{ascending:true}).order('session_slot',{ascending:true});
   if(error)throw error;
-  const rows=(data||[]).filter(row=>String(row.status||'').toLowerCase()==='confirmed');
+  const rows=(data||[]).filter(row=>String(row.status||'').toLowerCase()==='confirmed' && (!row.competition_date || String(row.competition_date)>=today));
   const slotLabels={morning:'Morning · 9:00 AM',afternoon:'Afternoon · 2:00 PM',evening:'Evening · 9:00 PM'};
   if(!rows.length){
-   details.innerHTML='<div class="homepage-registration-status not-registered"><div class="homepage-registration-status-icon" aria-hidden="true">✕</div><div class="homepage-registration-status-copy"><strong>Not registered</strong><span>You do not have a confirmed entry for today yet.</span><small>No entry number assigned</small></div></div><p class="muted" style="margin:10px 0 0">You can register on the Compete page until 10 minutes before the session starts.</p>';
+   details.innerHTML='<div class="homepage-registration-status not-registered"><div class="homepage-registration-status-icon" aria-hidden="true">×</div><div class="homepage-registration-status-copy"><strong><span class="status-kicker">YOUR ENTRY STATUS</span><span class="status-title">NOT REGISTERED</span></strong><span>No confirmed competition entry was found for today or an upcoming session.</span><small>Ready when you are · Register on the Compete page</small></div></div><p class="muted" style="margin:10px 0 0">Choose your class and session, then register before the session deadline.</p>';
    return;
   }
-  details.innerHTML=rows.map(row=>'<div class="homepage-registration-status registered"><div class="homepage-registration-status-icon" aria-hidden="true">✓</div><div class="homepage-registration-status-copy"><strong>REGISTERED</strong><span>'+escapeHtml(String(row.subject||'Competition'))+' · '+escapeHtml(String(row.school_class||''))+' · '+escapeHtml(slotLabels[row.session_slot]||String(row.session_slot||''))+' · '+escapeHtml(formatCompetitionDate(row.competition_date))+'</span>'+(row.entry_number!=null?'<small>Entry number: #'+escapeHtml(String(row.entry_number))+'</small>':'<small>Entry number not available</small>')+'</div></div>').join('');
+  details.innerHTML=rows.map(row=>'<div class="homepage-registration-status registered"><div class="homepage-registration-status-icon" aria-hidden="true">✓</div><div class="homepage-registration-status-copy"><strong><span class="status-kicker">YOUR ENTRY STATUS</span><span class="status-title">REGISTERED</span></strong><span>'+escapeHtml(String(row.subject||'Competition'))+' · '+escapeHtml(String(row.school_class||''))+' · '+escapeHtml(slotLabels[row.session_slot]||String(row.session_slot||''))+' · '+escapeHtml(row.competition_date?formatCompetitionDate(row.competition_date):'Upcoming session')+'</span>'+(row.entry_number!=null?'<small>✦ YOUR ENTRY NUMBER: #'+escapeHtml(String(row.entry_number))+'</small>':'<small>Entry confirmed · Number not available</small>')+'</div><div class="status-checkmark" aria-hidden="true">✓</div></div>').join('');
  }catch(e){
   console.warn('Could not load homepage competition registration status:',e.message);
-  details.innerHTML='<p class="muted">We could not check your registration right now. Open the Compete page to check your entry.</p>';
+  details.innerHTML='<div class="homepage-registration-status not-registered"><div class="homepage-registration-status-icon" aria-hidden="true">!</div><div class="homepage-registration-status-copy"><strong><span class="status-kicker">STATUS CHECK</span><span class="status-title">TEMPORARILY UNAVAILABLE</span></strong><span>We could not verify your registration right now.</span><small>Please try again in a moment.</small></div></div>';
  }
 }
 async function refreshCompetitionCounts(){
