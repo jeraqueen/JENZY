@@ -239,7 +239,7 @@ body.theme-dark .jenzy-test-option{background:#202c33;color:#e9edef;border-color
 }
 #competitionPlayArea.jenzy-test-fullscreen[hidden]{display:none!important}
 #competitionPlayArea.jenzy-test-fullscreen #competitionPlayTitle{font-size:clamp(24px,6vw,34px);margin:0 0 10px}
-#competitionPlayArea.jenzy-test-fullscreen #competitionPlayStatus{position:sticky;top:0;z-index:2;padding:12px;border-radius:12px;background:var(--card,#fff);font-size:16px;font-weight:700}\n#competitionPlayArea .competition-timer-display{position:sticky;top:0;z-index:4;width:100%;box-sizing:border-box;text-align:center;padding:15px 12px;margin:0 0 10px;border:3px solid currentColor;border-radius:16px;font-size:clamp(25px,7vw,38px);font-weight:1000;letter-spacing:1px;line-height:1.15;box-shadow:0 5px 16px #0002;font-variant-numeric:tabular-nums}\n#competitionPlayArea .competition-timer-display.timer-blue{background:#dbeafe;color:#1d4ed8;border-color:#2563eb}\n#competitionPlayArea .competition-timer-display.timer-green{background:#dcfce7;color:#166534;border-color:#16a34a}\n#competitionPlayArea .competition-timer-display.timer-red{background:#fee2e2;color:#b91c1c;border-color:#dc2626}\n#competitionPlayArea .competition-timer-display.timer-critical{background:#b91c1c;color:#fff;border-color:#7f1d1d;animation:jenzyTimerPulse .8s steps(2,start) infinite}\n@keyframes jenzyTimerPulse{to{filter:brightness(.78);transform:scale(.995)}}\n@media(prefers-reduced-motion:reduce){#competitionPlayArea .competition-timer-display.timer-critical{animation:none}}
+#competitionPlayArea.jenzy-test-fullscreen #competitionPlayStatus{position:relative;z-index:1;padding:12px;border-radius:12px;background:var(--card,#fff);font-size:16px;font-weight:700}\n#competitionPlayArea .competition-timer-display{position:sticky;top:0;z-index:4;width:100%;box-sizing:border-box;text-align:center;padding:15px 12px;margin:0 0 10px;border:3px solid currentColor;border-radius:16px;font-size:clamp(25px,7vw,38px);font-weight:1000;letter-spacing:1px;line-height:1.15;box-shadow:0 5px 16px #0002;font-variant-numeric:tabular-nums}\n#competitionPlayArea .competition-timer-display.timer-blue{background:#dbeafe;color:#1d4ed8;border-color:#2563eb}\n#competitionPlayArea .competition-timer-display.timer-green{background:#dcfce7;color:#166534;border-color:#16a34a}\n#competitionPlayArea .competition-timer-display.timer-red{background:#fee2e2;color:#b91c1c;border-color:#dc2626}\n#competitionPlayArea .competition-timer-display.timer-critical{background:#b91c1c;color:#fff;border-color:#7f1d1d;animation:jenzyTimerPulse .8s steps(2,start) infinite}\n@keyframes jenzyTimerPulse{to{filter:brightness(.78);transform:scale(.995)}}\n@media(prefers-reduced-motion:reduce){#competitionPlayArea .competition-timer-display.timer-critical{animation:none}}
 #competitionPlayArea.jenzy-test-fullscreen #competitionQuestionBox>.card{max-width:760px;margin:14px auto;padding:clamp(18px,4vw,30px);border-radius:20px}
 #competitionPlayArea.jenzy-test-fullscreen #competitionQuestionBox h3{font-size:clamp(22px,5.5vw,32px);line-height:1.45;margin:18px 0 24px}
 #competitionPlayArea.jenzy-test-fullscreen #competitionQuestionBox label{min-height:58px;align-items:center!important;font-size:clamp(17px,4vw,21px);line-height:1.35;cursor:pointer;padding:16px!important;border-width:2px!important;background:var(--card,#fff)}
@@ -1382,10 +1382,10 @@ updateHomepageCountdowns();setInterval(updateHomepageCountdowns,1000);
 
 /* Class results: show only the top three publicly plus the signed-in registered student's own result row. */
 let competitionResultsReleaseInterval=null;
-let competitionResultsReleaseReached=false;
+let competitionResultsReleaseReachedKey='';
 function startCompetitionResultsReleaseCountdown(schoolClass){
  const el=document.getElementById('competitionResultsReleaseCountdown');
- if(!el||competitionResultsReleaseReached)return;
+ if(!el)return;
  if(competitionResultsReleaseInterval)clearInterval(competitionResultsReleaseInterval);
  const tick=()=>{
   const now=new Date(),p=kenyaParts(now),mins=p.hour*60+p.minute;
@@ -1393,13 +1393,15 @@ function startCompetitionResultsReleaseCountdown(schoolClass){
   if(mins>=9*60&&mins<14*60)end=kenyaDateAt(p,9,30);
   else if(mins>=14*60&&mins<21*60)end=kenyaDateAt(p,14,15);
   else end=kenyaDateAt(mins<9*60?{...p,day:p.day-1}:p,21,10);
+  const releaseKey=p.year+'-'+p.month+'-'+p.day+'-'+(mins>=21*60||mins<9*60?'evening':mins>=14*60?'afternoon':'morning');
+  if(competitionResultsReleaseReachedKey===releaseKey)return;
   const ms=now.getTime(),endMs=end.getTime(),waitEnd=endMs+60000,releaseAt=endMs+120000;
   if(ms<endMs)el.textContent='Competition session remaining: '+fmtCountdown(endMs-ms);
   else if(ms<waitEnd)el.textContent='Results preparation wait: '+fmtCountdown(waitEnd-ms);
   else if(ms<releaseAt)el.textContent='Official results countdown: '+fmtCountdown(releaseAt-ms);
   else{
    el.textContent='The release countdown has finished. Refreshing official results…';
-   competitionResultsReleaseReached=true;
+   competitionResultsReleaseReachedKey=releaseKey;
    if(competitionResultsReleaseInterval)clearInterval(competitionResultsReleaseInterval);
    competitionResultsReleaseInterval=null;
    loadClassCompetitionResults(schoolClass);
@@ -1415,6 +1417,7 @@ function competitionSlotLabel(slot){return slot==="morning"?"Morning":slot==="af
 function competitionResultKey(row){return [row.competition_date,row.session_slot,row.subject].join("|");}
 function formatCompetitionDate(value){if(!value)return "Date not set";const d=new Date(value+"T12:00:00");return Number.isNaN(d.getTime())?value:d.toLocaleDateString("en-KE",{day:"numeric",month:"short",year:"numeric"});}
 async function loadClassCompetitionResults(schoolClass){
+ if(competitionResultsReleaseInterval){clearInterval(competitionResultsReleaseInterval);competitionResultsReleaseInterval=null;}
  const box=document.getElementById("classCompetitionResults");
  if(!box)return;
  classCompetitionResultsClass=schoolClass;
