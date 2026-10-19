@@ -888,7 +888,7 @@ async function openCompetitionRegistration(type){
  const savedProfile=await getJenzySavedProfile();
  if(savedProfile){const nameFromProfile=String(savedProfile.full_name||'').trim(),nameInput=document.getElementById('studentName');if(nameFromProfile&&nameInput)nameInput.value=nameFromProfile;const classInput=document.getElementById('profileClass');if(savedProfile.school_class&&classInput){classInput.value=savedProfile.school_class;try{localStorage.setItem(PROFILE_CLASS_KEY,savedProfile.school_class)}catch(e){}}const schoolInput=document.getElementById('profileSchool');if(savedProfile.school_name&&schoolInput)schoolInput.value=savedProfile.school_name;}
  const registrantSchool=document.getElementById('competitionRegistrantSchool'),registrantClass=document.getElementById('competitionRegistrantClass'),registrantLevel=document.getElementById('competitionRegistrantLevel');const canonicalClass=String(savedProfile?.school_class||'').trim();if(registrantSchool)registrantSchool.value=String(savedProfile?.school_name||'').trim()||'Not added to profile yet';if(registrantClass)registrantClass.value=canonicalClass||'Class missing — update your profile first';if(registrantLevel)registrantLevel.value=canonicalClass?educationLevelForClass(canonicalClass,''):'Not available';updateCompetitionRegistrationSubjects();const form=document.getElementById('competitionRegistrationForm');const picker=document.querySelector('#competitionEntryHub > .competition-picker');if(form.parentElement&&form.parentElement.id==='competitionEntryHub'){document.body.appendChild(form);}form.hidden=false;form.classList.add('full-page-registration');if(!form.querySelector('.registration-back')){const back=document.createElement('button');back.type='button';back.className='small-btn registration-back';back.textContent='← Back to Compete';back.onclick=()=>{form.classList.remove('full-page-registration');form.hidden=true;const hub=document.getElementById('competitionEntryHub');const currentPicker=form.querySelector('.competition-picker');if(hub&&currentPicker)hub.insertBefore(currentPicker,hub.querySelector('.prize-split-panel'));};form.prepend(back);}if(picker&&!form.contains(picker)){form.insertBefore(picker,form.querySelector('#competitionRegistrationTitle'));}
- // In paid flow, show the existing manual M-Pesa payment box immediately after session/subject selection.
+ // Keep free and paid registration strictly separate. Payment UI is hidden for free entry.
  const paymentBox=document.getElementById('manualMpesaInstructions');
  const formTitle=document.getElementById('competitionRegistrationTitle');
  const entryPanel=document.querySelector('.entry-number-panel');
@@ -896,16 +896,19 @@ async function openCompetitionRegistration(type){
  const freeSubmit=document.getElementById('competitionRegisterSubmit');
  const paidSubmit=document.getElementById('competitionPaidPendingButton');
  const paidNote=document.getElementById('competitionPaidPendingNote');
+ if(paymentBox){
+   paymentBox.hidden=type!=='paid';
+   paymentBox.style.display=type==='paid'?'':'none';
+ }
  if(type==='paid'&&paymentBox&&picker&&picker.parentElement===form){
    form.insertBefore(paymentBox,formTitle);
-   // Keep payment code, payment status, and the paid-submit action together in one payment section.
    [entryPanel,statusLine,paidSubmit,paidNote].forEach(el=>{if(el)paymentBox.appendChild(el);});
  }else if(type==='free'&&paymentBox&&formTitle){
-   const fields=form.querySelector('.competition-fields');
-   if(fields&&paymentBox.parentElement===form)form.insertBefore(paymentBox,form.querySelector('.entry-number-panel'));
-   // Restore shared status and entry elements outside the hidden M-Pesa box for free registration.
-   const anchor=paymentBox.parentElement===form?paymentBox:formTitle;
-   [entryPanel,statusLine,freeSubmit,paidSubmit,paidNote].forEach(el=>{if(el)form.insertBefore(el,anchor.nextSibling);});
+   if(entryPanel)form.insertBefore(entryPanel,freeSubmit||formTitle.nextSibling);
+   if(statusLine)form.insertBefore(statusLine,freeSubmit||formTitle.nextSibling);
+   if(freeSubmit)form.insertBefore(freeSubmit,formTitle.nextSibling);
+   if(paidSubmit)paidSubmit.hidden=true;
+   if(paidNote)paidNote.hidden=true;
  }
  document.getElementById('competitionRegistrationTitle').textContent=type==='free'?'Free competition registration':'Paid competition registration';
  document.getElementById('competitionRegistrationDescription').textContent=type==='free'?'Check your signed-in profile details, choose the session and subject for your registered class, then confirm your free entry.':'Pay KSh 20 to the JENZY M-Pesa number, then submit the transaction code from your confirmation message. Your paid entry will be approved only after the code and amount are matched to the administrator’s imported M-Pesa records.';if(!savedProfile?.school_class)document.getElementById('competitionRegistrationStatus').textContent='Your class is missing from your saved profile. Go to My Profile, save your class, then return to register.';else if(!savedProfile?.school_name)document.getElementById('competitionRegistrationStatus').textContent='Please add your school name in My Profile before registering.';
@@ -916,7 +919,7 @@ async function openCompetitionRegistration(type){
  document.getElementById('competitionRegistrationStatus').textContent='';
  document.getElementById('competitionRegisterSubmit').hidden=type!=='free';
  document.getElementById('competitionRegisterSubmit').disabled=type==='free';
- const paidPendingButton=document.getElementById('competitionPaidPendingButton');paidPendingButton.hidden=type!=='paid';paidPendingButton.disabled=!JENZY_MPESA_NUMBER;paidPendingButton.textContent='Submit M-Pesa code for verification';document.getElementById('competitionPaidPendingNote').hidden=type!=='paid';document.getElementById('manualMpesaInstructions').hidden=type!=='paid';document.getElementById('competitionPaymentCode').value='';document.getElementById('jenzyMpesaPayeeDisplay').textContent=JENZY_MPESA_PAYEE;document.getElementById('jenzyMpesaNumberDisplay').textContent=JENZY_MPESA_NUMBER||'Not configured yet';document.getElementById('copyJenzyMpesaNumberButton').disabled=!JENZY_MPESA_NUMBER;if(type==='paid'){document.getElementById('competitionRegistrationStatus').textContent=JENZY_MPESA_NUMBER?'Enter the M-Pesa transaction code after paying KSh 20.':'The receiving M-Pesa number must be added before students can pay. No payment will be accepted until it is configured.';await loadMyManualPaymentStatus();}
+ const paidPendingButton=document.getElementById('competitionPaidPendingButton');paidPendingButton.hidden=type!=='paid';paidPendingButton.disabled=!JENZY_MPESA_NUMBER;paidPendingButton.textContent='Submit M-Pesa code for verification';document.getElementById('competitionPaidPendingNote').hidden=type!=='paid';document.getElementById('manualMpesaInstructions').hidden=type!=='paid';document.getElementById('manualMpesaInstructions').style.display=type==='paid'?'':'none';document.getElementById('competitionPaymentCode').value='';document.getElementById('jenzyMpesaPayeeDisplay').textContent=JENZY_MPESA_PAYEE;document.getElementById('jenzyMpesaNumberDisplay').textContent=JENZY_MPESA_NUMBER||'Not configured yet';document.getElementById('copyJenzyMpesaNumberButton').disabled=!JENZY_MPESA_NUMBER;if(type==='paid'){document.getElementById('competitionRegistrationStatus').textContent=JENZY_MPESA_NUMBER?'Enter the M-Pesa transaction code after paying KSh 20.':'The receiving M-Pesa number must be added before students can pay. No payment will be accepted until it is configured.';await loadMyManualPaymentStatus();}
  form.scrollIntoView({behavior:'smooth',block:'start'});
  if(type==='free'){updateCompetitionRegistrationWindow();await loadMyCompetitionRegistration(true);}
 }
