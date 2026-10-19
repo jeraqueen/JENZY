@@ -1025,7 +1025,7 @@ function selectedCompetitionSubject(slot){
 function currentSlotIsActive(slot){const p=kenyaParts(new Date()),m=p.hour*60+p.minute;
  return slot==='morning' ? m>=540&&m<570 : slot==='afternoon' ? m>=840&&m<855 : m>=1260&&m<1275;
 }
-async function getJenzySavedProfile(){if(!currentUser)return null;try{const {data,error}=await supabaseClient.from('profiles').select('full_name,school_class,school_name').eq('id',currentUser.id).maybeSingle();if(error)throw error;return data||null;}catch(e){console.warn('Could not load saved JENZY profile:',e.message);return null;}}
+async function getJenzySavedProfile(){if(!currentUser)return null;try{const {data,error}=await supabaseClient.from('profiles').select('username,full_name,school_class,school_name').eq('id',currentUser.id).maybeSingle();if(error)throw error;return data||null;}catch(e){console.warn('Could not load saved JENZY profile:',e.message);return null;}}
 async function startScheduledCompetition(slot,registeredSubject=null,registeredClass=null,privateOneOff=false){
  if(!currentUser){setStatus('authStatus','Please sign in first.','error');return;}
  if(!privateOneOff&&!currentSlotIsActive(slot)){alert('This competition opens only at its scheduled time in Kenya. Please return during the active competition window.');return;}
