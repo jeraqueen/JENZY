@@ -228,7 +228,12 @@ body.theme-dark .jenzy-test-option{background:#202c33;color:#e9edef;border-color
 #competitionPlayArea.jenzy-test-fullscreen #competitionQuestionBox h3{font-size:clamp(22px,5.5vw,32px);line-height:1.45;margin:18px 0 24px}
 #competitionPlayArea.jenzy-test-fullscreen #competitionQuestionBox label{min-height:58px;align-items:center!important;font-size:clamp(17px,4vw,21px);line-height:1.35;cursor:pointer;padding:16px!important;border-width:2px!important;background:var(--card,#fff)}
 #competitionPlayArea.jenzy-test-fullscreen #competitionQuestionBox label input{width:23px;height:23px;flex:0 0 23px;margin:2px 4px 0 0}
-#competitionPlayArea.jenzy-test-fullscreen #competitionNextBtn,#competitionPlayArea.jenzy-test-fullscreen #competitionSubmitBtn{width:100%;max-width:760px;min-height:56px;display:block;margin:14px auto;font-size:18px;font-weight:800}
+.competition-navigation{max-width:760px;margin:14px auto;display:grid;grid-template-columns:1fr 1fr;gap:10px}
+#competitionPlayArea.jenzy-test-fullscreen .competition-navigation button{width:100%;min-height:56px;margin:0;font-size:17px;font-weight:800}
+#competitionPlayArea.jenzy-test-fullscreen #competitionNextBtn:disabled{opacity:.38;filter:grayscale(1);cursor:not-allowed}
+#competitionPlayArea.jenzy-test-fullscreen #competitionSubmitBtn{background:#16a34a!important;color:#fff!important;border-color:#15803d!important}
+#competitionPlayArea.jenzy-test-fullscreen #competitionPrevBtn{grid-column:1 / -1}
+#competitionPlayArea.jenzy-test-fullscreen .competition-navigation button[hidden]{display:none!important}
 #competitionPlayArea.jenzy-test-fullscreen #competitionResult{max-width:760px;margin:16px auto}
 #competitionPlayArea.jenzy-test-fullscreen .jenzy-test-return{width:100%;min-height:52px;margin-top:16px;font-size:17px}
 body.jenzy-test-open{overflow:hidden!important}
@@ -342,7 +347,7 @@ body.jenzy-test-open{overflow:hidden!important}
 <div class="card"><span class="chip">9:00 AM</span><h2>Choose your Mathematics subject</h2><label for="morningSubject">Your morning subject</label><select id="morningSubject"><option value="Mathematics">Mathematics</option></select><p>15 questions · 30 minutes · Ends at 9:30 AM.</p><p class="muted">Grade 10 students can choose Core Mathematics or Essential Mathematics. Other classes use Mathematics.</p></div>
 <div class="card"><span class="chip">2:00 PM</span><h2>Choose English or Kiswahili</h2><label for="afternoonSubject">Your afternoon subject</label><select id="afternoonSubject"><option value="English">English</option><option value="Kiswahili">Kiswahili</option></select><p>25 questions · 15 minutes · Ends at 2:15 PM.</p></div>
 <div class="card"><span class="chip">9:00 PM</span><h2>Choose your evening subject</h2><label for="eveningSubject">Choose a subject</label><select id="eveningSubject"><option value="Social Studies">Social Studies</option></select><div id="scienceOptionsWrap" hidden><label for="scienceLevelChoice">Science subject</label><select id="scienceLevelChoice"><option value="Science and Technology">Science and Technology</option></select></div><p>20 questions · 10 minutes.</p></div>
-<div class="card" id="competitionPlayArea" hidden><h2 id="competitionPlayTitle">Competition</h2><p id="competitionPlayStatus" class="notice" aria-live="polite"></p><div id="competitionQuestionBox"></div><button class="primary" id="competitionNextBtn" onclick="nextCompetitionQuestion()" hidden>Next question →</button><button class="small-btn" id="competitionSubmitBtn" onclick="submitCompetitionAnswers()" hidden>Submit answers</button><div id="competitionResult" aria-live="polite"></div></div>
+<div class="card" id="competitionPlayArea" hidden><h2 id="competitionPlayTitle">Competition</h2><p id="competitionPlayStatus" class="notice" aria-live="polite"></p><div id="competitionQuestionBox"></div><div class="competition-navigation"><button class="small-btn competition-prev" id="competitionPrevBtn" onclick="previousCompetitionQuestion()" hidden>← Previous question</button><button class="primary" id="competitionNextBtn" onclick="nextCompetitionQuestion()">Next question →</button><button class="small-btn competition-submit" id="competitionSubmitBtn" onclick="submitCompetitionAnswers()" hidden>Submit answers ✓</button></div><div id="competitionResult" aria-live="polite"></div></div>
 
 </section><section class="page" id="classResultsPage">
   <button type="button" class="small-btn" onclick="showPage('competitions')">← Back to Compete</button>
@@ -760,7 +765,7 @@ function nextQuestion(){if(qi<questions.length-1){qi++;renderQuestion();return}d
 
 // Published JENZY competition flow. Correct answers are never fetched by the browser;
 // the database scoring RPC checks them server-side.
-let activeCompetition=null, competitionTimer=null;
+let activeCompetition=null, competitionTimer=null, competitionPreviousPage='competitions';
 
 // Competition registration: free entries are stored securely; paid entries remain disabled until a verified gateway is connected.
 let competitionRegistrationType='free';
@@ -1018,11 +1023,11 @@ async function startScheduledCompetition(slot,registeredSubject=null,registeredC
  if(!currentUser){setStatus('authStatus','Please sign in first.','error');return;}
  if(!privateOneOff&&!currentSlotIsActive(slot)){alert('This competition opens only at its scheduled time in Kenya. Please return during the active competition window.');return;}
  const schoolClass=registeredClass||selectedCompetitionClass(),subject=registeredSubject||selectedCompetitionSubject(slot),expected=slot==='morning'?(['Mathematics','Core Mathematics','Essential Mathematics'].includes(subject)?15:10):slot==='afternoon'?25:20,date=competitionDateNairobi();
- const area=document.getElementById('competitionPlayArea');area.hidden=false;area.classList.add('jenzy-test-fullscreen');document.body.classList.add('jenzy-test-open');
+ const visiblePage=document.querySelector('.page.active');competitionPreviousPage=visiblePage?visiblePage.id:'competitions';const area=document.getElementById('competitionPlayArea');area.hidden=false;area.classList.add('jenzy-test-fullscreen');document.body.classList.add('jenzy-test-open');
  document.getElementById('competitionPlayTitle').textContent=subject+' · '+schoolClass;
  document.getElementById('competitionPlayStatus').textContent='Loading published questions…';
  document.getElementById('competitionQuestionBox').innerHTML='';document.getElementById('competitionResult').textContent='';
- document.getElementById('competitionNextBtn').hidden=true;document.getElementById('competitionSubmitBtn').hidden=true;
+ document.getElementById('competitionPrevBtn').hidden=true;document.getElementById('competitionNextBtn').hidden=false;document.getElementById('competitionNextBtn').disabled=false;document.getElementById('competitionSubmitBtn').hidden=true;
  area.scrollIntoView({behavior:'smooth',block:'start'});
  try{
   let data;
@@ -1042,22 +1047,23 @@ async function startScheduledCompetition(slot,registeredSubject=null,registeredC
   competitionTimer=setInterval(()=>{if(!activeCompetition)return;const remain=activeCompetition.deadline-Date.now();document.getElementById('competitionPlayStatus').textContent=subject+' · '+schoolClass+' · Time left '+fmtCountdown(remain);if(remain<=2000){clearInterval(competitionTimer);submitCompetitionAnswers(true);}},500);
  }catch(e){const msg='JENZY could not open the private Mathematics test: '+(e&&e.message?e.message:'Could not load the published question set.');const status=document.getElementById('competitionPlayStatus');if(status)status.textContent=msg;const area=document.getElementById('competitionPlayArea');if(area){area.hidden=false;area.classList.add('jenzy-test-fullscreen');document.body.classList.add('jenzy-test-open');area.scrollIntoView({behavior:'smooth',block:'start'});}alert(msg);}
 }
-function closeCompetitionFullscreen(){const area=document.getElementById('competitionPlayArea');if(area)area.classList.remove('jenzy-test-fullscreen');document.body.classList.remove('jenzy-test-open');showPage('home');}
+function closeCompetitionFullscreen(){const area=document.getElementById('competitionPlayArea');if(area)area.classList.remove('jenzy-test-fullscreen');document.body.classList.remove('jenzy-test-open');const target=document.getElementById(competitionPreviousPage);showPage(target?competitionPreviousPage:'competitions');}
+function previousCompetitionQuestion(){if(!activeCompetition||activeCompetition.submitting)return;if(activeCompetition.index>0){activeCompetition.index--;renderCompetitionQuestion();document.getElementById('competitionPlayArea').scrollIntoView({behavior:'smooth',block:'start'});}}
 function renderCompetitionQuestion(){if(!activeCompetition)return;const c=activeCompetition,q=c.questions[c.index],opts=[q.option_a,q.option_b,q.option_c,q.option_d];
  document.getElementById('competitionPlayStatus').textContent=c.subject+' · '+c.schoolClass+' · Question '+(c.index+1)+' of '+c.questions.length+' · Time left '+fmtCountdown(c.deadline-Date.now());
  document.getElementById('competitionQuestionBox').innerHTML='<div class="card"><div class="muted">'+escapeCompetitionText(q.topic)+' · '+escapeCompetitionText(q.subtopic)+'</div><h3>'+escapeCompetitionText(q.question_text)+'</h3>'+opts.map((o,i)=>'<label style="display:flex;gap:10px;align-items:flex-start;padding:12px;border:1px solid var(--line);border-radius:12px;margin:8px 0"><input type="radio" name="competitionAnswer" value="'+i+'" '+(String(c.answers[q.id])===String(i)?'checked':'')+' onchange="recordCompetitionAnswer(this.value)"><span>'+String.fromCharCode(65+i)+'. '+escapeCompetitionText(o)+'</span></label>').join('')+'</div>';
- document.getElementById('competitionNextBtn').hidden=c.index>=c.questions.length-1;document.getElementById('competitionSubmitBtn').hidden=c.index<c.questions.length-1;
+ document.getElementById('competitionPrevBtn').hidden=c.index===0;const last=c.index>=c.questions.length-1;document.getElementById('competitionNextBtn').hidden=false;document.getElementById('competitionNextBtn').disabled=last;document.getElementById('competitionNextBtn').setAttribute('aria-disabled',String(last));document.getElementById('competitionNextBtn').textContent=last?'Last question reached':'Next question →';document.getElementById('competitionSubmitBtn').hidden=!last;
 }
 function escapeCompetitionText(value){return String(value??'').replace(/[&<>"']/g,ch=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[ch]));}
 function recordCompetitionAnswer(value){if(!activeCompetition)return;activeCompetition.answers[activeCompetition.questions[activeCompetition.index].id]=Number(value);}
-function nextCompetitionQuestion(){if(!activeCompetition)return;if(activeCompetition.index<activeCompetition.questions.length-1){activeCompetition.index++;renderCompetitionQuestion();}}
+function nextCompetitionQuestion(){if(!activeCompetition||activeCompetition.submitting)return;if(activeCompetition.index<activeCompetition.questions.length-1){activeCompetition.index++;renderCompetitionQuestion();document.getElementById('competitionPlayArea').scrollIntoView({behavior:'smooth',block:'start'});}}
 async function submitCompetitionAnswers(auto=false){const c=activeCompetition;if(!c||c.submitting)return;c.submitting=true;if(competitionTimer)clearInterval(competitionTimer);document.getElementById('competitionSubmitBtn').disabled=true;document.getElementById('competitionNextBtn').disabled=true;
- if(c.privateOneOff){document.getElementById('competitionQuestionBox').innerHTML='';document.getElementById('competitionNextBtn').hidden=true;document.getElementById('competitionSubmitBtn').hidden=true;document.getElementById('competitionPlayStatus').textContent='Private Mathematics test completed.';document.getElementById('competitionResult').innerHTML='<div class="card"><h3>Test completed</h3><p>Your answers were not submitted to the official competition leaderboard.</p></div>';return;}
+ if(c.privateOneOff){document.getElementById('competitionQuestionBox').innerHTML='';document.getElementById('competitionPrevBtn').hidden=true;document.getElementById('competitionNextBtn').hidden=true;document.getElementById('competitionSubmitBtn').hidden=true;document.getElementById('competitionPlayStatus').textContent='Private Mathematics test completed.';document.getElementById('competitionResult').innerHTML='<div class="card"><h3>Test completed</h3><p>Your answers were not submitted to the official competition leaderboard.</p><button class="primary jenzy-test-return" onclick="closeCompetitionFullscreen()">← Back to previous page</button></div>';activeCompetition=null;return;}
  try{
   document.getElementById('competitionPlayStatus').textContent='Submitting answers for secure server-side scoring…';
   const {data,error}=await supabaseClient.rpc('jenzy_submit_competition',{p_session_slot:c.slot,p_school_class:c.schoolClass,p_subject:c.subject,p_answers:c.answers});if(error)throw error;
-  document.getElementById('competitionQuestionBox').innerHTML='';document.getElementById('competitionNextBtn').hidden=true;document.getElementById('competitionSubmitBtn').hidden=true;document.getElementById('competitionPlayStatus').textContent='Competition submitted.';document.getElementById('competitionResult').innerHTML='<div class="card"><h3>Verified competition result</h3><p>Score: <b>'+data.correct_count+' / '+data.question_count+'</b> ('+data.score_percent+'%)</p><p class="muted">Free entry · '+escapeCompetitionText(data.competition_date)+'</p><button class="primary jenzy-test-return" onclick="closeCompetitionFullscreen()">Return to JENZY</button></div>';activeCompetition=null;
- }catch(e){c.submitting=false;document.getElementById('competitionSubmitBtn').disabled=false;document.getElementById('competitionNextBtn').disabled=false;document.getElementById('competitionPlayStatus').textContent=(auto?'Time ended. ':'')+(e.message||'The result could not be saved.');}
+  document.getElementById('competitionQuestionBox').innerHTML='';document.getElementById('competitionPrevBtn').hidden=true;document.getElementById('competitionNextBtn').hidden=true;document.getElementById('competitionSubmitBtn').hidden=true;document.getElementById('competitionPlayStatus').textContent='Competition submitted.';document.getElementById('competitionResult').innerHTML='<div class="card"><h3>Verified competition result</h3><p>Score: <b>'+data.correct_count+' / '+data.question_count+'</b> ('+data.score_percent+'%)</p><p class="muted">Free entry · '+escapeCompetitionText(data.competition_date)+'</p><button class="primary jenzy-test-return" onclick="closeCompetitionFullscreen()">← Back to previous page</button></div>';activeCompetition=null;
+ }catch(e){c.submitting=false;document.getElementById('competitionSubmitBtn').disabled=false;document.getElementById('competitionNextBtn').disabled=c.index>=c.questions.length-1;document.getElementById('competitionPlayStatus').textContent=(auto?'Time ended. ':'')+(e.message||'The result could not be saved.');}
 }
 
 // JENZY fixed schedule: Africa/Nairobi time. These are the ONLY reminder windows.
