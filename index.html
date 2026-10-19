@@ -4,7 +4,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <meta name="theme-color" content="#4f46e5">
-<meta name="jenzy-build" content="jenzy-build-20261019-28">
+<meta name="jenzy-build" content="jenzy-build-20261019-29">
 <title>JENZY — Learn. Play. Compete.</title>
 <style>
 :root{--bg:#f5f7ff;--card:#fff;--text:#19213b;--muted:#69738c;--primary:#4f46e5;--line:#e7e9f3}
@@ -1277,9 +1277,11 @@ async function checkJenzyAutomaticCompetition(){
  if(!currentUser||jenzyAutoLaunchBusy||activeCompetition||jenzyReadinessOverlay)return;
  const now=new Date(),p=kenyaParts(now),date=competitionDateNairobi(now),schoolClass=selectedCompetitionClass();
  const slots=[{slot:'morning',start:competitionStartAt('morning',date),end:kenyaDateAt(p,9,20)},{slot:'afternoon',start:competitionStartAt('afternoon',date),end:kenyaDateAt(p,14,10)},{slot:'evening',start:competitionStartAt('evening',date),end:kenyaDateAt(p,21,10)}];
- const session=slots.find(x=>now>=x.start&&now<x.end);
+ // Begin the 60-second readiness timer during the final minute before a session.
+ const session=slots.find(x=>now<x.end&&x.start.getTime()-now.getTime()<=60000);
  if(!session)return;
  const startDelta=session.start.getTime()-now.getTime();
+ if(startDelta<0&&now>=session.end)return;
  const testKey=[currentUser.id,date,session.slot,schoolClass].join('|');
  if(jenzyAutoLaunchedKeys.has(testKey))return;
  jenzyAutoLaunchBusy=true;
@@ -1288,10 +1290,12 @@ async function checkJenzyAutomaticCompetition(){
   if(error)throw error;
   const registration=(data||[]).find(row=>row.subject);
   if(!registration)return;
-  const subject=registration.subject,registeredClass=registration.school_class||schoolClass,key=[currentUser.id,date,session.slot,registeredClass,subject].join('|');
+  const subject=registration.subject,registeredClass=registration.school_class||schoolClass;
+  const key=[currentUser.id,date,session.slot,registeredClass,subject].join('|');
   if(jenzyAutoLaunchedKeys.has(key))return;
   jenzyAutoLaunchedKeys.add(testKey);jenzyAutoLaunchedKeys.add(key);
-  await startScheduledCompetition(session.slot,subject,registeredClass);
+  if(startDelta>0)showJenzyReadiness(session.slot,subject,registeredClass,session.start);
+  else await startScheduledCompetition(session.slot,subject,registeredClass);
  }catch(e){console.warn('Could not check automatic competition entry:',e.message)}finally{jenzyAutoLaunchBusy=false}
 }
 setInterval(checkJenzyAutomaticCompetition,1000);
