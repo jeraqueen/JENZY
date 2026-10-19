@@ -1381,6 +1381,33 @@ updateJenzySchedule();setInterval(updateJenzySchedule,1000);
 updateHomepageCountdowns();setInterval(updateHomepageCountdowns,1000);
 
 /* Class results: show only the top three publicly plus the signed-in registered student's own result row. */
+let competitionResultsReleaseInterval=null;
+let competitionResultsReleaseReached=false;
+function startCompetitionResultsReleaseCountdown(schoolClass){
+ const el=document.getElementById('competitionResultsReleaseCountdown');
+ if(!el||competitionResultsReleaseReached)return;
+ if(competitionResultsReleaseInterval)clearInterval(competitionResultsReleaseInterval);
+ const tick=()=>{
+  const now=new Date(),p=kenyaParts(now),mins=p.hour*60+p.minute;
+  let end;
+  if(mins>=9*60&&mins<14*60)end=kenyaDateAt(p,9,30);
+  else if(mins>=14*60&&mins<21*60)end=kenyaDateAt(p,14,15);
+  else end=kenyaDateAt(mins<9*60?{...p,day:p.day-1}:p,21,10);
+  const ms=now.getTime(),endMs=end.getTime(),waitEnd=endMs+60000,releaseAt=endMs+120000;
+  if(ms<endMs)el.textContent='Competition session remaining: '+fmtCountdown(endMs-ms);
+  else if(ms<waitEnd)el.textContent='Results preparation wait: '+fmtCountdown(waitEnd-ms);
+  else if(ms<releaseAt)el.textContent='Official results countdown: '+fmtCountdown(releaseAt-ms);
+  else{
+   el.textContent='The release countdown has finished. Refreshing official results…';
+   competitionResultsReleaseReached=true;
+   if(competitionResultsReleaseInterval)clearInterval(competitionResultsReleaseInterval);
+   competitionResultsReleaseInterval=null;
+   loadClassCompetitionResults(schoolClass);
+  }
+ };
+ tick();
+ competitionResultsReleaseInterval=setInterval(tick,1000);
+}
 let classCompetitionResultsRows = [];
 let classCompetitionResultsClass = "";
 let classCompetitionHasConfirmedRegistration = false;
@@ -1403,8 +1430,8 @@ async function loadClassCompetitionResults(schoolClass){
   if(!classCompetitionResultsRows.length){
    const savedClass=getSavedUserSchoolClass();
    const mayShowPosition=!!classCompetitionHasConfirmedRegistration&&!!savedClass&&savedClass===String(classCompetitionResultsClass||"").trim();
-   box.innerHTML='<section class="class-results-subject-section class-results-pending"><div class="class-pending-heading"><span class="class-results-empty-cup">🏆</span><div><h2>'+safeText(schoolClass)+' Results</h2><p>Competition leaderboard · Current session</p></div><span class="class-pending-badge">PENDING</span></div><div class="class-pending-list">'+[{rank:1,color:"#d4a017",image:"https://images.openai.com/static-rsc-4/JZuJFHTG4_jnog9PCmMcGItCyMsPgwgfZ34djmrUHZ7uwQ32JpKisq30ZrMvhvayVlbU0yOUKr-vh81kt2Mie1ixNv-LAONNxzl4hNqAvejYnUtg5hkNMihwBIcy_-Zchd8KGhLc2Lk33OWQGJCgQn0PEchV5F-A0ycpLSjPDfz-oJb3RDeyVW3YxSqR7aQo?purpose=fullsize"},{rank:2,color:"#c0c0c0",image:"https://images.openai.com/static-rsc-4/vKSN6yuY0dpfe57U6A_cBUJiAps-wgVqlMC-yh_4QpFKDTXtKp9CBYMXufaVCiZU5scuZ3FkC19YFKrwGv-CjHAQB4H5r4oXrOtsSYz2gxYHHiuwlknDCmGYHvqtTdvLlS3UUZUPrDXFUCjbtWJAOP3yy4RhUB7G5-tBJZiF4Th6R9CaOrF55nF-VBLSKaa6?purpose=fullsize"},{rank:3,color:"#cd7f32",image:"https://images.openai.com/static-rsc-4/YSdv7G0KZwK7ULja7t71MfK68j4YmbMOnNrGyp9L3EJOPw0WfpUYcKXcg6_BqU1HarOHGu9WYpxNX01i9xc9sHtuYVEN5ooDk37NEMIKAG_oHUg7lBd-SOvgPf4uCOPn6FMVxSStsemgmaUePoiBSn7mbIhsHSo3IxdWEAHyEtSDeO-Mz1gOHouiabtWcdMh?purpose=fullsize"}].map(r=>'<div class="class-pending-row"><img src="'+r.image+'" alt="'+r.rank+' place trophy" onerror="this.style.display=\'none\'"><div class="class-pending-person"><strong>'+r.rank+'. <span class="class-pending-name"></span></strong><span>'+safeText(schoolClass)+' · Results pending</span></div><div class="class-pending-score" style="color:'+r.color+'">—<small>— marks</small></div></div>').join("")+(mayShowPosition?'<div class="class-pending-row class-pending-user"><span class="class-pending-user-icon">👤</span><div class="class-pending-person"><strong>Your position: —</strong><span>If you participated, your position will appear here after results are released.</span></div></div>':'')+'</div><p class="class-pending-note">Official results have not been published for this class yet.</p></section>';
-   return;
+   box.innerHTML='<section class="class-results-subject-section class-results-pending"><div class="class-pending-heading"><span class="class-results-empty-cup">🏆</span><div><h2>'+safeText(schoolClass)+' Results</h2><p>Competition leaderboard · Current session</p></div><span class="class-pending-badge">PENDING</span></div><div class="class-pending-list">'+[{rank:1,color:"#d4a017",image:"https://images.openai.com/static-rsc-4/JZuJFHTG4_jnog9PCmMcGItCyMsPgwgfZ34djmrUHZ7uwQ32JpKisq30ZrMvhvayVlbU0yOUKr-vh81kt2Mie1ixNv-LAONNxzl4hNqAvejYnUtg5hkNMihwBIcy_-Zchd8KGhLc2Lk33OWQGJCgQn0PEchV5F-A0ycpLSjPDfz-oJb3RDeyVW3YxSqR7aQo?purpose=fullsize"},{rank:2,color:"#c0c0c0",image:"https://images.openai.com/static-rsc-4/vKSN6yuY0dpfe57U6A_cBUJiAps-wgVqlMC-yh_4QpFKDTXtKp9CBYMXufaVCiZU5scuZ3FkC19YFKrwGv-CjHAQB4H5r4oXrOtsSYz2gxYHHiuwlknDCmGYHvqtTdvLlS3UUZUPrDXFUCjbtWJAOP3yy4RhUB7G5-tBJZiF4Th6R9CaOrF55nF-VBLSKaa6?purpose=fullsize"},{rank:3,color:"#cd7f32",image:"https://images.openai.com/static-rsc-4/YSdv7G0KZwK7ULja7t71MfK68j4YmbMOnNrGyp9L3EJOPw0WfpUYcKXcg6_BqU1HarOHGu9WYpxNX01i9xc9sHtuYVEN5ooDk37NEMIKAG_oHUg7lBd-SOvgPf4uCOPn6FMVxSStsemgmaUePoiBSn7mbIhsHSo3IxdWEAHyEtSDeO-Mz1gOHouiabtWcdMh?purpose=fullsize"}].map(r=>'<div class="class-pending-row"><img src="'+r.image+'" alt="'+r.rank+' place trophy" onerror="this.style.display=\'none\'"><div class="class-pending-person"><strong>'+r.rank+'. <span class="class-pending-name"></span></strong><span>'+safeText(schoolClass)+' · Results pending</span></div><div class="class-pending-score" style="color:'+r.color+'">—<small>— marks</small></div></div>').join("")+(mayShowPosition?'<div class="class-pending-row class-pending-user"><span class="class-pending-user-icon">👤</span><div class="class-pending-person"><strong>Your position: —</strong><span>If you participated, your position will appear here after results are released.</span></div></div>':'')+'</div><p class="class-pending-note">Official results have not been published for this class yet.</p><p id="competitionResultsReleaseCountdown" class="notice" style="font-size:16px;font-weight:900;text-align:center;margin-top:12px">Waiting for the official session release time…</p></section>';
+   startCompetitionResultsReleaseCountdown(schoolClass);\n   return;
   }
   const groups=new Map();
   classCompetitionResultsRows.forEach(row=>{const key=competitionResultKey(row);if(!groups.has(key))groups.set(key,[]);groups.get(key).push(row)});
