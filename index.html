@@ -1089,7 +1089,7 @@ async function refreshHomepageCompetitionRegistration(){
  // Prevent repeated Home/auth events from continually restarting this lookup.
  if(homepageRegistrationCheckInProgress)return;
  card.hidden=false;
- if(!currentUser){details.className='homepage-registration-status not-registered homepage-registration-status-simple';details.innerHTML='<span class="homepage-registration-status-icon" aria-hidden="true">☐</span><strong>NOT REGISTERED</strong>';return;}
+ if(!currentUser){details.className='homepage-registration-status not-registered homepage-registration-status-simple';details.innerHTML='<span class="homepage-registration-status-icon" aria-hidden="true">☐</span><strong>NOT REGISTERED</strong><span class="homepage-registration-entry-number">No Entry Number</span>';return;}
  homepageRegistrationCheckInProgress=true;
  homepageRegistrationCheckStartedAt=Date.now();
  const checkId=++homepageRegistrationCheckId;
@@ -1101,7 +1101,7 @@ async function refreshHomepageCompetitionRegistration(){
   const nextSession=nextRegistrableCompetitionSession(new Date());
   // Show status only for the next session the student can register for, including free and paid entries.
    const request=supabaseClient.from('jenzy_competition_registrations')
-    .select('id,student_id,competition_date,session_slot,entry_type,status')
+    .select('id,student_id,competition_date,session_slot,entry_type,status,entry_number')
     .eq('student_id',currentUser.id)
     .eq('competition_date',nextSession.date)
     .eq('session_slot',nextSession.slot)
@@ -1113,10 +1113,11 @@ async function refreshHomepageCompetitionRegistration(){
   if(error)throw error;
   const rows=(data||[]).filter(row=>String(row.status||'').toLowerCase()==='confirmed');
   if(!rows.length){
-   details.className='homepage-registration-status not-registered homepage-registration-status-simple';details.innerHTML='<span class="homepage-registration-status-icon" aria-hidden="true">☐</span><strong>NOT REGISTERED</strong>';
+   details.className='homepage-registration-status not-registered homepage-registration-status-simple';details.innerHTML='<span class="homepage-registration-status-icon" aria-hidden="true">☐</span><strong>NOT REGISTERED</strong><span class="homepage-registration-entry-number">No Entry Number</span>';
    return;
   }
-  details.className='homepage-registration-status registered homepage-registration-status-simple';details.innerHTML='<span class="homepage-registration-status-icon" aria-hidden="true">☑</span><strong>REGISTERED</strong>';
+  const entryNumber=rows.find(row=>row.entry_number!==null&&row.entry_number!==undefined&&String(row.entry_number).trim()!=='')?.entry_number;
+  details.className='homepage-registration-status registered homepage-registration-status-simple';details.innerHTML='<span class="homepage-registration-status-icon" aria-hidden="true">☑</span><strong>REGISTERED</strong><span class="homepage-registration-entry-number">Entry Number: '+String(entryNumber??'Not available').replace(/[&<>"']/g,ch=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[ch]))+'</span>';
  }catch(e){
   console.warn('Could not load homepage competition registration status:',e);
   showFailure('STATUS CHECK FAILED',String(e?.message||e||'Unknown error').slice(0,240));
