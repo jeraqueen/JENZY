@@ -682,17 +682,19 @@ function jenzyPlayChime(kind="welcome"){
 }
 function jenzySpeakWelcome(kind){
  if(!jenzySoundEnabled())return;
- const spoken=kind==="registration"?"Registration successful! You are in. Good luck with your JENZY competition!":kind==="returning"?"Welcome back to JENZY. Ready to learn and shine?":"Welcome to JENZY! We are glad you are here. Learn, compete, and grow!";
+ const spoken=kind==="registration"?"Registration successful! You are in. Good luck with your Jen-zee competition!":kind==="returning"?"Welcome back to Jen-zee. Ready to learn and shine?":"Welcome to Jen-zee! We are glad you are here. Learn, compete, and grow!";
  const played=jenzyPlayChime(kind==="registration"?"success":kind==="returning"?"returning":"welcome");
  try{if("speechSynthesis" in window){window.speechSynthesis.cancel();const u=new SpeechSynthesisUtterance(spoken);u.lang="en-KE";u.rate=.92;u.pitch=1.04;u.volume=.9;window.speechSynthesis.speak(u)}}catch(e){}
  if(!played){const b=document.getElementById("jenzySoundEnableButton");if(b)b.hidden=false}
 }
 function jenzyOfferSoundEnable(){
- if(document.getElementById("jenzySoundEnableButton"))return;
- const b=document.createElement("button");b.id="jenzySoundEnableButton";b.type="button";b.textContent=jenzySoundEnabled()?"🔊 JENZY sounds on":"🔊 Enable JENZY sounds";
- b.style.cssText="position:fixed;right:12px;top:12px;z-index:20000;border:0;border-radius:24px;padding:10px 13px;background:#f5d0fe;color:#3b0764;font-weight:800;box-shadow:0 3px 14px #0002";
- b.addEventListener("click",()=>{try{localStorage.setItem(JENZY_SOUND_PREF_KEY,"yes")}catch{};jenzyPlayChime("welcome");b.textContent="🔊 JENZY sounds on";b.title="Tap again to test the welcome sound";if("speechSynthesis" in window){window.speechSynthesis.cancel();const u=new SpeechSynthesisUtterance("JENZY sounds are enabled. Welcome!");u.lang="en-KE";window.speechSynthesis.speak(u)}});
- document.body.appendChild(b);
+ const actions=document.querySelector("header .header-actions");
+ if(!actions||document.getElementById("jenzySoundEnableButton"))return;
+ const b=document.createElement("button");b.id="jenzySoundEnableButton";b.type="button";b.className="pill jenzy-sound-button";b.setAttribute("aria-pressed",jenzySoundEnabled()?"true":"false");b.textContent=jenzySoundEnabled()?"🔊 Sound on":"🔈 Enable sound";
+ b.title="Enable or test JENZY welcome sounds";
+ b.style.cssText="white-space:nowrap;padding:9px 11px;font-size:12px;line-height:1.2;min-height:38px;flex-shrink:0";
+ b.addEventListener("click",()=>{try{localStorage.setItem(JENZY_SOUND_PREF_KEY,"yes")}catch{};b.setAttribute("aria-pressed","true");b.textContent="🔊 Sound on";jenzyPlayChime("welcome");if("speechSynthesis" in window){window.speechSynthesis.cancel();const u=new SpeechSynthesisUtterance("Jen-zee sounds are enabled. Welcome!");u.lang="en-KE";u.rate=.92;window.speechSynthesis.speak(u)}});
+ actions.insertBefore(b,actions.firstChild);
 }
 document.addEventListener("DOMContentLoaded",jenzyOfferSoundEnable);
 async function activateUser(user){const previousUserId=(()=>{try{return localStorage.getItem(JENZY_LAST_WELCOME_KEY)}catch{return null}})();if(currentUser&&currentUser.id!==user.id)stopJenzyPresence();currentUser=user;startJenzyPresence();updateAdminChatVisibility();resetCompetitionRegistrationForm();document.body.classList.add("signed-in");configureOptionalProfileEmail(user);await loadProfile(user);if(await requireUniqueFullName())return;updatePrivateMathLaunchButton();updateJamespesaRegisteredLaunchButton();if(document.body.classList.contains("class-required")){toggleProfileEdit(true);return}subscribeUnreadMessages();refreshUnreadBadge();showPage("home");try{localStorage.setItem(JENZY_LAST_WELCOME_KEY,user.id)}catch{};if(sessionStorage.getItem("jenzy_signup_sound_pending")==="yes"){sessionStorage.removeItem("jenzy_signup_sound_pending");jenzySpeakWelcome("new")}else if(previousUserId===user.id&&sessionStorage.getItem("jenzy_return_sound_played")!=="yes"){sessionStorage.setItem("jenzy_return_sound_played","yes");if(jenzySoundEnabled())jenzySpeakWelcome("returning")} }
