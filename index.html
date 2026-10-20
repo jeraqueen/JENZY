@@ -927,11 +927,20 @@ function updateHomepageCountdowns(now=new Date()){
   warning.hidden=true;warning.textContent='';return;
  }
  const deadlineMs=next.deadline-now,startMs=next.start-now;
- const countdownVisible=startMs<=2*60*60*1000;
+ // Start showing the next-session countdown 30 minutes after the previous scheduled session ends.
+ const [ny,nmo,nd]=next.date.split('-').map(Number);
+ const previousDate=next.slot==='morning'
+  ?competitionDateNairobi(new Date(Date.UTC(ny,nmo-1,nd-1)))
+  :next.date;
+ const previousSlot=next.slot==='morning'?'evening':next.slot==='afternoon'?'morning':'afternoon';
+ const previousStart=competitionStartAt(previousSlot,previousDate);
+ const previousDuration=previousSlot==='evening'?10:previousSlot==='afternoon'?15:30;
+ const countdownStartsAt=new Date(previousStart.getTime()+(previousDuration+30)*60*1000);
+ const countdownVisible=now>=countdownStartsAt;
  if(!countdownVisible){
-  box.innerHTML='<div class="homepage-countdown-row"><div class="countdown-label">'+next.label+'</div><div class="countdown-time">Starts later</div><div class="countdown-sub">Both countdowns appear 2 hours before the session. Registration closes 10 minutes before it begins.</div></div>';
-  if(heading)heading.textContent='⏳ Upcoming competition';
-  if(description)description.textContent='Two countdowns: time remaining to register and time remaining until the session.';
+  box.innerHTML='<div class="homepage-countdown-row"><div class="countdown-label">'+next.label+'</div><div class="countdown-time">'+fmtCountdown(countdownStartsAt-now)+'</div><div class="countdown-sub">The next-session countdown begins 30 minutes after the previous competition session ends.</div></div>';
+  if(heading)heading.textContent='⏳ Next countdown begins in';
+  if(description)description.textContent='All times use Kenya time. The next-session countdown starts 30 minutes after the previous session ends.';
   warning.hidden=true;warning.textContent='';return;
  }
  // Both countdowns share one urgency colour so they change together.
