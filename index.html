@@ -4,7 +4,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <meta name="theme-color" content="#4f46e5">
-<meta name="jenzy-build" content="jenzy-build-20261020-official-results-fullpage-countdown">
+<meta name="jenzy-build" content="jenzy-build-20261020-all-sessions-late-entry-30s">
 <title>JENZY — Learn. Play. Compete.</title>
 <style>
 :root{--bg:#f5f7ff;--card:#fff;--text:#19213b;--muted:#69738c;--primary:#4f46e5;--line:#e7e9f3}
@@ -1401,11 +1401,11 @@ function jenzyReadinessSound(kind='tick',urgency=1){
 const JENZY_JAMESPESA_ACCOUNT_ID='09744f3e-b8b7-4279-8ee6-384a9f87af00';
 function updateJamespesaRegisteredLaunchButton(){const btn=document.getElementById('jenzyJamespesaRegisteredLaunchButton');if(btn)btn.remove();}
 function updatePrivateMathLaunchButton(){const btn=document.getElementById('jenzyPrivateMathLaunchButton');if(btn)btn.remove();}
-function showJenzyReadiness(slot,subject,schoolClass,startAt,privateOneOff=false,adminScheduleOverride=false){
+function showJenzyReadiness(slot,subject,schoolClass,startAt,privateOneOff=false,adminScheduleOverride=false,durationSeconds=60){
  if(jenzyReadinessOverlay)jenzyReadinessOverlay.remove();if(jenzyReadinessTimer)clearInterval(jenzyReadinessTimer);
  const targetMs=startAt instanceof Date?startAt.getTime():Number(startAt);
  const overlay=document.createElement('div');overlay.className='jenzy-readiness-overlay';
- overlay.innerHTML='<div class="jenzy-readiness-inner"><div class="jenzy-readiness-brand">🏆 JEN<span>ZY</span></div><div class="jenzy-readiness-kicker">Competition starts in</div><h1 style="margin:0;font-size:clamp(20px,5vw,32px)">'+escapeCompetitionText(subject)+'</h1><div class="jenzy-readiness-circle" role="timer" aria-live="off"><div class="jenzy-readiness-number" id="jenzyReadinessNumber">60</div><div class="jenzy-readiness-caption">SECONDS</div></div><div class="jenzy-readiness-warning" id="jenzyReadinessWarning">⚠ GET READY!</div><div class="jenzy-readiness-sub">Your '+escapeCompetitionText(subject)+' questions for '+escapeCompetitionText(schoolClass)+' will open automatically at the scheduled start time.</div><div class="jenzy-readiness-ring-label">TICK · TOCK · FINAL 10-SECOND ALARM</div></div>';
+ overlay.innerHTML='<div class="jenzy-readiness-inner"><div class="jenzy-readiness-brand">🏆 JEN<span>ZY</span></div><div class="jenzy-readiness-kicker">'+(durationSeconds===30?'LATE ENTRY · QUESTIONS OPEN IN':'Competition starts in')+'</div><h1 style="margin:0;font-size:clamp(20px,5vw,32px)">'+escapeCompetitionText(subject)+'</h1><div class="jenzy-readiness-circle" role="timer" aria-live="off"><div class="jenzy-readiness-number" id="jenzyReadinessNumber">'+durationSeconds+'</div><div class="jenzy-readiness-caption">SECONDS</div></div><div class="jenzy-readiness-warning" id="jenzyReadinessWarning">⚠ GET READY!</div><div class="jenzy-readiness-sub">Your '+escapeCompetitionText(subject)+' questions for '+escapeCompetitionText(schoolClass)+' will open automatically at the scheduled start time.</div><div class="jenzy-readiness-ring-label">TICK · TOCK · FINAL 10-SECOND ALARM</div></div>';
  document.body.appendChild(overlay);jenzyReadinessOverlay=overlay;let lastLeft=null;
  const tick=async()=>{
   const left=Math.max(0,Math.ceil((targetMs-Date.now())/1000));
