@@ -4,7 +4,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <meta name="theme-color" content="#4f46e5">
-<meta name="jenzy-build" content="jenzy-build-20261020-chat-edit-delete-results-countdown">
+<meta name="jenzy-build" content="jenzy-build-20261020-auto-retry-question-loader">
 <title>JENZY — Learn. Play. Compete.</title>
 <style>
 :root{--bg:#f5f7ff;--card:#fff;--text:#19213b;--muted:#69738c;--primary:#4f46e5;--line:#e7e9f3}
@@ -1236,7 +1236,7 @@ async function startScheduledCompetition(slot,registeredSubject=null,registeredC
   renderCompetitionQuestion();
   if(competitionTimer)clearInterval(competitionTimer);
   competitionTimer=setInterval(()=>{if(!activeCompetition)return;const remain=activeCompetition.deadline-Date.now();updateCompetitionTimerDisplay(remain);document.getElementById('competitionPlayStatus').textContent=subject+' · '+schoolClass+' · Question '+(activeCompetition.index+1)+' of '+activeCompetition.questions.length;if(remain<=2000){clearInterval(competitionTimer);submitCompetitionAnswers(true);}},500);
- }catch(e){const msg='JENZY could not open the competition questions: '+(e&&e.message?e.message:'Could not load the published question set.');const status=document.getElementById('competitionPlayStatus');if(status)status.textContent=msg;const area=document.getElementById('competitionPlayArea');if(area){area.hidden=false;area.classList.add('jenzy-test-fullscreen');document.body.classList.add('jenzy-test-open');area.scrollIntoView({behavior:'smooth',block:'start'});}alert(msg);}
+ }catch(e){const raw=e&&e.message?e.message:'Could not load the published question set.';const msg='JENZY could not open the competition questions: '+raw;const status=document.getElementById('competitionPlayStatus');const area=document.getElementById('competitionPlayArea');if(area){area.hidden=false;area.classList.add('jenzy-test-fullscreen');document.body.classList.add('jenzy-test-open');area.scrollIntoView({behavior:'smooth',block:'start'});}if(/session_slot.*ambiguous|ambiguous.*session_slot/i.test(raw)){if(status)status.textContent='JENZY update detected. Retrying question loading automatically in 5 seconds… You do not need to refresh this page.';window.setTimeout(()=>{if(!activeCompetition&&currentUser&&currentSlotIsActive(slot))startScheduledCompetition(slot,registeredSubject,registeredClass,privateOneOff,adminScheduleOverride);},5000);return;}if(status)status.textContent=msg;if(/network|fetch|timeout|temporarily unavailable/i.test(raw)){if(status)status.textContent=msg+' Retrying automatically in 5 seconds…';window.setTimeout(()=>{if(!activeCompetition&&currentUser&&currentSlotIsActive(slot))startScheduledCompetition(slot,registeredSubject,registeredClass,privateOneOff,adminScheduleOverride);},5000);return;}alert(msg);}
 }
 function closeCompetitionFullscreen(){const area=document.getElementById('competitionPlayArea');if(area){area.classList.remove('jenzy-test-fullscreen');area.hidden=true;}document.body.classList.remove('jenzy-test-open');const target=document.getElementById(competitionPreviousPage);showPage(target?competitionPreviousPage:'competitions');}
 function previousCompetitionQuestion(){if(!activeCompetition||activeCompetition.submitting)return;if(activeCompetition.index>0){activeCompetition.index--;renderCompetitionQuestion();document.getElementById('competitionPlayArea').scrollIntoView({behavior:'smooth',block:'start'});}}
