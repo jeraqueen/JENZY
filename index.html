@@ -1526,6 +1526,13 @@ async function loadClassCompetitionResults(schoolClass){
   classCompetitionResultsRows.forEach(row=>{const key=competitionResultKey(row);if(!groups.has(key))groups.set(key,[]);groups.get(key).push(row)});
   const options=[...groups.entries()].sort((a,b)=>String(a[1][0].subject).localeCompare(String(b[1][0].subject)));
   box.innerHTML=options.map(([key,rows])=>renderClassCompetitionGroup(key,rows)).join("");
+  if(lastCompetitionReviewContext&&String(lastCompetitionReviewContext.schoolClass||"")===String(schoolClass)){
+   const review=document.createElement("section");review.id="jenzyAnswerReviewPanel";review.style.cssText="margin-top:20px;padding:16px;border-radius:18px;background:#111820;color:#f8fafc;border:1px solid #334155";
+   review.innerHTML='<h2 style="margin-top:0">📝 Your answer review</h2><p style="color:#aab6c2">Loading your answers, correct answers, and explanations…</p>';
+   box.appendChild(review);
+   const hidden=document.createElement("div");hidden.id="competitionAnswerReviewResult";hidden.style.cssText="color:#f8fafc";review.appendChild(hidden);
+   loadLastCompetitionAnswerReview();
+  }
  }catch(e){
   console.error("Could not load JENZY class competition results:",e);
   box.innerHTML='<div class="empty-state"><b>Results could not be loaded.</b><p class="muted">Please try again. If this continues, JENZY may need to refresh the results service.</p><button type="button" class="small-btn" onclick="loadClassCompetitionResults('+JSON.stringify(schoolClass)+')">Try again</button></div>';
