@@ -472,7 +472,7 @@ if (!window.supabase) {
 }
 </script>
 <script>
-const JENZY_BUILD_VERSION = '20261020-20';
+const JENZY_BUILD_VERSION = '20261020-21';
 (function enableAutomaticJenzyUpdates(){
  const checkEveryMs=5000;
  let updateFound=false,checking=false;
@@ -943,17 +943,18 @@ function updateHomepageCountdowns(now=new Date()){
   if(description)description.textContent='All times use Kenya time. The next-session countdown starts 30 minutes after the previous session ends.';
   warning.hidden=true;warning.textContent='';return;
  }
- // Both countdowns share one urgency colour so they change together.
- const urgencyClass=startMs<=600000?'countdown-danger':startMs<=3600000?'countdown-blue':'countdown-session';
- const urgencyLabel=startMs<=600000?'🚨 Less than 10 minutes':startMs<=3600000?'🔵 One hour or less':'🟢 2-hour countdown';
+ // Give each countdown its own urgency colour, based on its own remaining time.
+ const deadlineClass=deadlineMs<=0?'countdown-danger':deadlineMs<=600000?'countdown-danger':deadlineMs<=3600000?'countdown-blue':'countdown-session';
+ const sessionClass=startMs<=600000?'countdown-danger':startMs<=3600000?'countdown-blue':'countdown-session';
+ const urgencyLabel=startMs<=600000?'🚨 Session starts in less than 10 minutes':startMs<=3600000?'🔵 Session starts within one hour':'🟢 Next session countdown';
  if(heading)heading.textContent=urgencyLabel;
- if(description)description.textContent='Both countdowns use Kenya time and change colour together: green, blue, then red in the final 10 minutes.';
+ if(description)description.textContent='Each countdown changes colour independently according to its own remaining time. Green = more than one hour, blue = one hour or less, red = final 10 minutes or deadline closed.';
  const deadlineText=deadlineMs>0?fmtCountdown(deadlineMs):'CLOSED';
  const sessionText=fmtCountdown(startMs);
  const registrationDetail=deadlineMs>0?'Registration closes before the session begins.':'Registration deadline has passed.';
  box.innerHTML=
-  '<div class="homepage-countdown-row '+urgencyClass+'"><div class="countdown-label">⏳ Registration deadline</div><div class="countdown-time">'+deadlineText+'</div><div class="countdown-sub">'+registrationDetail+'</div></div>'+
-  '<div class="homepage-countdown-row '+urgencyClass+'"><div class="countdown-label">🏁 Session begins</div><div class="countdown-time">'+sessionText+'</div><div class="countdown-sub">'+next.label+' · '+next.startLabel+' Kenya time'+(startMs<=600000?' · LESS THAN 10 MINUTES — ACT NOW!':'')+'</div></div>';
+  '<div class="homepage-countdown-row '+deadlineClass+'"><div class="countdown-label">⏳ Registration deadline</div><div class="countdown-time">'+deadlineText+'</div><div class="countdown-sub">'+registrationDetail+'</div></div>'+
+  '<div class="homepage-countdown-row '+sessionClass+'"><div class="countdown-label">🏁 Session begins</div><div class="countdown-time">'+sessionText+'</div><div class="countdown-sub">'+next.label+' · '+next.startLabel+' Kenya time'+(startMs<=600000?' · LESS THAN 10 MINUTES — ACT NOW!':'')+'</div></div>';
  warning.hidden=true;warning.textContent='';
  const heroClock=document.getElementById('scheduleClock');
  if(heroClock)heroClock.classList.toggle('schedule-countdown-danger',startMs>0&&startMs<=600000);
