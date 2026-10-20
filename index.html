@@ -1332,7 +1332,7 @@ async function submitCompetitionAnswers(auto=false){const c=activeCompetition;if
  try{
   document.getElementById('competitionPlayStatus').textContent='Submitting answers for secure server-side scoring…';
    const {data,error}=await supabaseClient.rpc('jenzy_submit_competition',{p_session_slot:c.slot,p_school_class:c.schoolClass,p_subject:c.subject,p_answers:c.answers});if(error)throw error;
-   lastCompetitionReviewContext={resultId:data.result_id,questions:c.questions,answers:{...c.answers}};
+   lastCompetitionReviewContext={resultId:data.result_id,questions:c.questions,answers:{...c.answers},schoolClass:c.schoolClass,subject:c.subject,slot:c.slot};
    const date=String(data.competition_date||competitionDateNairobi()),hm=c.slot==='morning'?[9,30]:c.slot==='afternoon'?[14,15]:[21,10],parts=date.split('-').map(Number),endAt=new Date(Date.UTC(parts[0],parts[1]-1,parts[2],hm[0]-3,hm[1])).getTime();
    jenzyResultsFlowOpened=false;localStorage.setItem('jenzy_pending_result_countdown',JSON.stringify({resultId:data.result_id,competitionDate:date,slot:c.slot,subject:c.subject,schoolClass:c.schoolClass,submittedAt:new Date().toISOString(),endAt:new Date(endAt).toISOString(),releaseAt:new Date(endAt).toISOString()}));
    document.getElementById('competitionQuestionBox').innerHTML='';document.getElementById('competitionPrevBtn').hidden=true;document.getElementById('competitionNextBtn').hidden=true;document.getElementById('competitionSubmitBtn').hidden=true;
@@ -1572,6 +1572,15 @@ function openClassResultsPage(schoolClass){
  showPage("classResultsPage");
  if(adminSample){classCompetitionResultsClass=schoolClass;showGrade6SampleResults();return;}
  loadClassCompetitionResults(schoolClass);
+ const resultsBox=document.getElementById("classCompetitionResults");
+ if(resultsBox&&lastCompetitionReviewContext&&String(lastCompetitionReviewContext.schoolClass||schoolClass)===String(schoolClass)){
+  const review=document.createElement("section");review.id="jenzyAnswerReviewPanel";review.style.cssText="margin-top:20px;padding:16px;border-radius:18px;background:#111820;color:#f8fafc;border:1px solid #334155";
+  review.innerHTML='<h2 style="margin-top:0">📝 Your answer review</h2><p style="color:#aab6c2">Loading your answers, correct answers, and explanations…</p>';
+  resultsBox.appendChild(review);
+  const priorBox=document.getElementById("competitionAnswerReviewResult");
+  if(!priorBox){const hidden=document.createElement("div");hidden.id="competitionAnswerReviewResult";hidden.style.cssText="color:#f8fafc";review.appendChild(hidden);}
+  loadLastCompetitionAnswerReview();
+ }
 }
 
 
