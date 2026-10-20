@@ -472,7 +472,7 @@ if (!window.supabase) {
 }
 </script>
 <script>
-const JENZY_BUILD_VERSION = '20261020-19';
+const JENZY_BUILD_VERSION = '20261020-20';
 (function enableAutomaticJenzyUpdates(){
  const checkEveryMs=5000;
  let updateFound=false,checking=false;
@@ -1381,10 +1381,11 @@ function jenzyReadinessSound(kind='tick',urgency=1){
   if(kind==='tick'){tone(1150,now,0.075,0.075,'square');}
   else if(kind==='tock'){tone(760,now,0.09,0.085,'triangle');}
   else if(kind==='heartbeat'){
-   const vol=Math.min(0.24,0.11+urgency*0.012),pitch=58+urgency*3;
-   tone(pitch,now,0.16,vol,'sine',pitch*0.58);
-   tone(pitch*0.82,now+0.20,0.19,vol*0.88,'sine',pitch*0.48);
-  }else if(kind==='final'){tone(880,now,0.14,0.16,'sawtooth',330);tone(660,now+0.17,0.18,0.15,'sawtooth',220);}
+   // Final 10 seconds: bright, audible double alarm instead of a quiet low bass heartbeat.
+   const vol=Math.min(0.28,0.17+urgency*0.011),pitch=1180+urgency*42;
+   tone(pitch,now,0.105,vol,'square',pitch*0.82);
+   tone(pitch*0.78,now+0.13,0.12,Math.min(0.28,vol*0.92),'square',pitch*0.62);
+  }else if(kind==='final'){tone(1040,now,0.16,0.19,'sawtooth',520);tone(820,now+0.18,0.20,0.18,'sawtooth',390);}
  }catch(e){/* Browser or device sound may be unavailable; visual timer still works. */}
 }
 const JENZY_JAMESPESA_ACCOUNT_ID='09744f3e-b8b7-4279-8ee6-384a9f87af00';
