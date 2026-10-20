@@ -1540,5 +1540,65 @@ function openClassResultsPage(schoolClass){
  </form>
 </div>
 
+
+<style>
+#jenzy-admin-session-simulation{position:fixed;right:12px;bottom:14px;z-index:100001;width:min(440px,calc(100vw - 24px));max-height:82dvh;overflow:auto;background:#fff;color:#172033;border:2px solid #6d28d9;border-radius:18px;box-shadow:0 12px 40px #0004;padding:16px;font-family:system-ui,-apple-system,sans-serif}
+#jenzy-admin-session-simulation[hidden]{display:none!important}
+#jenzy-admin-session-simulation .jats-title{font-size:19px;font-weight:950;margin:0 0 6px}
+#jenzy-admin-session-simulation .jats-status{padding:10px;border-radius:12px;background:#f3e8ff;font-weight:850;margin:10px 0}
+#jenzy-admin-session-simulation .jats-timer{font-size:34px;font-weight:1000;text-align:center;font-variant-numeric:tabular-nums;padding:10px;border:2px solid #6d28d9;border-radius:12px}
+#jenzy-admin-session-simulation .jats-btn{width:100%;padding:12px;margin-top:8px;border:0;border-radius:11px;background:#5b21b6;color:white;font-size:15px;font-weight:900}
+#jenzy-admin-session-simulation .jats-btn.secondary{background:#e9e5f5;color:#32145f}
+#jenzy-admin-session-simulation .jats-q{padding:12px;border:1px solid #ddd6fe;border-radius:12px;margin:10px 0}
+#jenzy-admin-session-simulation .jats-option{display:block;width:100%;text-align:left;margin-top:7px;padding:10px;border:1px solid #c4b5fd;border-radius:9px;background:#fff;color:#172033;font-weight:650}
+#jenzy-admin-session-simulation .jats-option:disabled{opacity:.8}
+#jenzy-admin-session-simulation .jats-note{font-size:12px;color:#5b6475}
+body.theme-dark #jenzy-admin-session-simulation{background:#0b141a;color:#e9edef;border-color:#a78bfa}
+body.theme-dark #jenzy-admin-session-simulation .jats-status{background:#202c33;color:#e9edef}
+body.theme-dark #jenzy-admin-session-simulation .jats-option{background:#202c33;color:#e9edef;border-color:#475569}
+</style>
+<div id="jenzy-admin-session-simulation" hidden aria-live="polite">
+ <div class="jats-title">🛠️ Admin-only session rehearsal</div>
+ <div class="jats-note">SIMULATION ONLY — does not create official registrations, attempts, scores or results.</div>
+ <div id="jats-status" class="jats-status">Ready. The five-minute rehearsal includes a 30-second start countdown, a 3-minute test, 30-second result preparation and a 60-second release countdown.</div>
+ <div id="jats-timer" class="jats-timer">05:00</div>
+ <div id="jats-stage">Checks: signed in as admin · test registration simulated · official schedule unchanged</div>
+ <div id="jats-question"></div>
+ <div id="jats-result"></div>
+ <button id="jats-start" class="jats-btn" type="button">Schedule admin test now (starts in 30 seconds)</button>
+ <button id="jats-reset" class="jats-btn secondary" type="button">Reset / run again</button>
+ <button id="jats-close" class="jats-btn secondary" type="button">Close test panel</button>
+</div>
+<script>
+(function(){
+ const ADMIN_ID='d47ff567-cced-4e3b-a22a-f58b8d2076bc';
+ const panel=document.getElementById('jenzy-admin-session-simulation');
+ if(!panel)return;
+ const statusEl=document.getElementById('jats-status'),timerEl=document.getElementById('jats-timer'),stageEl=document.getElementById('jats-stage'),questionEl=document.getElementById('jats-question'),resultEl=document.getElementById('jats-result');
+ const startBtn=document.getElementById('jats-start');
+ const questions=[
+  {q:'Which number is a prime number?',o:['21','29','39','51'],a:1},
+  {q:'Solve: 3x + 6 = 18.',o:['x = 2','x = 3','x = 4','x = 8'],a:2},
+  {q:'What is 15% of 200?',o:['15','20','30','45'],a:2},
+  {q:'Which fraction is equivalent to 1/2?',o:['2/3','3/6','4/6','5/8'],a:1},
+  {q:'What is the area of a rectangle 8 cm by 4 cm?',o:['12 cm²','24 cm²','32 cm²','36 cm²'],a:2}
+ ];
+ let interval=null,phase='idle',phaseEnds=0,answers={},shownQuestion=-1,startedAt=0;
+ function admin(){try{return typeof currentUser!=='undefined'&&currentUser&&currentUser.id===ADMIN_ID}catch(e){return false}}
+ function fmt(ms){const s=Math.max(0,Math.ceil(ms/1000));return String(Math.floor(s/60)).padStart(2,'0')+':'+String(s%60).padStart(2,'0')}
+ function clearRun(){if(interval)clearInterval(interval);interval=null;phase='idle';answers={};shownQuestion=-1;startedAt=0;questionEl.innerHTML='';resultEl.innerHTML='';timerEl.textContent='05:00';statusEl.textContent='Ready. The rehearsal runs through countdown, timed questions, submission, result preparation and release.';stageEl.textContent='Checks: admin access · simulated registration · official schedule unchanged';startBtn.disabled=false;startBtn.textContent='Schedule admin test now (starts in 30 seconds)'}
+ function showQuestion(){const i=shownQuestion;if(i<0||i>=questions.length)return;const q=questions[i];questionEl.innerHTML='<div class="jats-q"><strong>Question '+(i+1)+' of '+questions.length+'</strong><p>'+q.q+'</p>'+q.o.map((v,j)=>'<button class="jats-option" type="button" data-answer="'+j+'" '+(answers[i]!==undefined?'disabled':'')+'>'+(String.fromCharCode(65+j))+'. '+v+(answers[i]===j?' ✓':'')+'</button>').join('')+'</div>';questionEl.querySelectorAll('[data-answer]').forEach(b=>b.addEventListener('click',()=>{if(answers[i]!==undefined||phase!=='test')return;answers[i]=Number(b.dataset.answer);showQuestion();if(shownQuestion<questions.length-1){shownQuestion++;showQuestion()}else{statusEl.textContent='All questions answered. The test timer continues until submission or timeout.'}}))}
+ function beginTest(){phase='test';startedAt=Date.now();phaseEnds=startedAt+180000;shownQuestion=0;statusEl.textContent='TEST IN PROGRESS — 3-minute timer is running. Select answers; submission is automatic when time expires.';stageEl.textContent='Session opened · simulated registration passed · 5 sample questions · 3:00 test duration';showQuestion()}
+ function finishTest(){phase='prep';phaseEnds=Date.now()+30000;const correct=questions.reduce((n,q,i)=>n+(answers[i]===q.a?1:0),0);const elapsed=Math.min(180,Math.round((Date.now()-startedAt)/1000));questionEl.innerHTML='';statusEl.textContent='Test submitted automatically. Preparing the simulated result…';stageEl.textContent='Submission captured locally · '+Object.keys(answers).length+'/5 answered · elapsed '+fmt(elapsed*1000);resultEl.innerHTML='<div class="jats-q"><strong>Submission receipt (simulation)</strong><p>Answer data is held only in this page; nothing has been written to Supabase.</p></div>';window.__jenzyAdminTestScore={correct,total:questions.length,elapsed,answers:Object.assign({},answers)}}
+ function releaseResults(){phase='released';if(interval)clearInterval(interval);interval=null;const s=window.__jenzyAdminTestScore||{correct:0,total:5,elapsed:0};const pct=Math.round(s.correct/s.total*100);statusEl.textContent='RESULTS RELEASED — simulation complete.';stageEl.textContent='Results countdown finished · ranking and answer review checks displayed below';timerEl.textContent='00:00';resultEl.innerHTML='<div class="jats-q"><h3 style="margin:0 0 8px">Test result</h3><p><strong>Score:</strong> '+s.correct+'/'+s.total+' ('+pct+'%)</p><p><strong>Simulated rank:</strong> 1 of 1 test participant</p><p><strong>Duration:</strong> '+fmt(s.elapsed*1000)+'</p><p><strong>Answer review:</strong></p>'+questions.map((q,i)=>'<p>'+(i+1)+'. '+q.q+'<br>Your answer: '+(s.answers[i]===undefined?'Not answered':q.o[s.answers[i]])+'<br>Correct answer: '+q.o[q.a]+' — '+(s.answers[i]===q.a?'Correct':'Incorrect')+'</p>').join('')+'<p><strong>PASS:</strong> countdown → timed test → automatic submission → preparation → results countdown → results/rank/review.</p><p><strong>Not tested against the live database:</strong> real student registration, official RPC grading, public result visibility and cross-device syncing.</p></div>';startBtn.disabled=false;startBtn.textContent='Schedule admin test again'}
+ function tick(){const now=Date.now(),remaining=phaseEnds-now;timerEl.textContent=fmt(remaining);if(phase==='schedule'){statusEl.textContent='Session countdown — starts in '+fmt(remaining);if(remaining<=0)beginTest()}else if(phase==='test'){const elapsed=180000-remaining;const qIndex=Math.min(questions.length-1,Math.floor(elapsed/36000));if(qIndex!==shownQuestion){shownQuestion=qIndex;showQuestion()}if(remaining<=0)finishTest()}else if(phase==='prep'){statusEl.textContent='Results preparation wait — '+fmt(remaining);if(remaining<=0){phase='release';phaseEnds=Date.now()+60000;statusEl.textContent='Official results countdown (simulated)';stageEl.textContent='Preparation complete · release countdown started'}}else if(phase==='release'){statusEl.textContent='Results release countdown — '+fmt(remaining);if(remaining<=0)releaseResults()}}
+ function start(){if(!admin()){panel.hidden=true;return}clearRun();phase='schedule';phaseEnds=Date.now()+30000;startBtn.disabled=true;startBtn.textContent='Test scheduled';statusEl.textContent='Admin-only test scheduled. Countdown begins now; no public session is created.';stageEl.textContent='30-second start countdown · then 3-minute test · 30-second preparation · 60-second release countdown';interval=setInterval(tick,250);tick()}
+ document.getElementById('jats-start').addEventListener('click',start);
+ document.getElementById('jats-reset').addEventListener('click',clearRun);
+ document.getElementById('jats-close').addEventListener('click',()=>{if(interval)clearInterval(interval);interval=null;panel.hidden=true});
+ setInterval(()=>{panel.hidden=!admin()},500);
+})();
+</script>
+
 </body>
 </html>
