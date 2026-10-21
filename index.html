@@ -699,7 +699,7 @@ function jenzyOfferSoundEnable(){
  actions.insertBefore(b,actions.firstChild);
 }
 document.addEventListener("DOMContentLoaded",jenzyOfferSoundEnable);
-async function activateUser(user){const previousUserId=(()=>{try{return localStorage.getItem(JENZY_LAST_WELCOME_KEY)}catch{return null}})();if(currentUser&&currentUser.id!==user.id)stopJenzyPresence();currentUser=user;startJenzyPresence();updateAdminChatVisibility();resetCompetitionRegistrationForm();document.body.classList.add("signed-in");configureOptionalProfileEmail(user);await loadProfile(user);if(await requireUniqueFullName())return;updatePrivateMathLaunchButton();updateJamespesaRegisteredLaunchButton();if(document.body.classList.contains("class-required")){toggleProfileEdit(true);return}subscribeUnreadMessages();refreshUnreadBadge();showPage("home");setTimeout(()=>recoverMorningMathAnswerReview().catch(e=>console.warn("Morning Mathematics answer-review recovery:",e.message)),700);try{localStorage.setItem(JENZY_LAST_WELCOME_KEY,user.id)}catch{};if(sessionStorage.getItem("jenzy_signup_sound_pending")==="yes"){sessionStorage.removeItem("jenzy_signup_sound_pending");jenzySpeakWelcome("new")}else if(previousUserId===user.id&&sessionStorage.getItem("jenzy_return_sound_played")!=="yes"){sessionStorage.setItem("jenzy_return_sound_played","yes");if(jenzySoundEnabled())jenzySpeakWelcome("returning")} }
+async function activateUser(user){const previousUserId=(()=>{try{return localStorage.getItem(JENZY_LAST_WELCOME_KEY)}catch{return null}})();if(currentUser&&currentUser.id!==user.id)stopJenzyPresence();currentUser=user;startJenzyPresence();updateAdminChatVisibility();resetCompetitionRegistrationForm();document.body.classList.add("signed-in");configureOptionalProfileEmail(user);await loadProfile(user);if(await requireUniqueFullName())return;updatePrivateMathLaunchButton();updateJamespesaRegisteredLaunchButton();if(document.body.classList.contains("class-required")){toggleProfileEdit(true);return}subscribeUnreadMessages();refreshUnreadBadge();showPage("home");setTimeout(()=>recoverMorningMathAnswerReview().catch(e=>console.warn("Morning Mathematics answer-review recovery:",e.message)),700);setTimeout(()=>maybeOpenCurrentSessionAnswerReview().catch(e=>console.warn("Current-session answer-review recovery:",e.message)),1400);try{localStorage.setItem(JENZY_LAST_WELCOME_KEY,user.id)}catch{};if(sessionStorage.getItem("jenzy_signup_sound_pending")==="yes"){sessionStorage.removeItem("jenzy_signup_sound_pending");jenzySpeakWelcome("new")}else if(previousUserId===user.id&&sessionStorage.getItem("jenzy_return_sound_played")!=="yes"){sessionStorage.setItem("jenzy_return_sound_played","yes");if(jenzySoundEnabled())jenzySpeakWelcome("returning")} }
 async function loadProfile(user){
 const {data,error}=await supabaseClient.from("profiles").select("id, username, full_name, school_name, education_level, school_class, phone_number, avatar_url, cover_photo_url").eq("id",user.id).maybeSingle();
 if(error){setStatus("profileStatus","Signed in, but the profile could not be loaded. Check the profiles SELECT RLS policy for the user's own id. Details: "+error.message,"error");return}
@@ -1720,6 +1720,20 @@ function showJenzyClassPosition(){
  const review=document.getElementById('jenzyAnswerReviewPanel'),leaderboard=document.getElementById('classCompetitionLeaderboard');
  if(review)review.hidden=true;
  if(leaderboard){leaderboard.hidden=false;leaderboard.scrollIntoView({behavior:'smooth',block:'start'});}
+}
+async function maybeOpenCurrentSessionAnswerReview(){
+ if(!currentUser||document.body.classList.contains('class-required'))return;
+ const now=new Date(),kp=kenyaParts(now),mins=kp.hour*60+kp.minute;
+ const slot=mins>=21*60||mins<9*60?'evening':mins>=14*60?'afternoon':'morning';
+ const date=mins<9*60?competitionDateNairobi(new Date(Date.UTC(kp.year,kp.month-1,kp.day-1))):competitionDateNairobi();
+ const releaseMinute=slot==='morning'?570:slot==='afternoon'?855:1270;
+ const afterRelease=mins>releaseMinute||(mins===releaseMinute&&now.getSeconds()>=30);
+ if(!afterRelease)return;
+ const {data,error}=await supabaseClient.from('jenzy_competition_registrations').select('school_class,subject,session_slot,competition_date').eq('student_id',currentUser.id).eq('status','confirmed').eq('session_slot',slot).eq('competition_date',date).limit(1);
+ if(error)throw error;
+ const registration=Array.isArray(data)&&data.length?data[0]:null;
+ if(!registration)return;
+ await openClassResultsPage(registration.school_class,{slot,competitionDate:date});
 }
 async function openClassResultsPage(schoolClass,pending=null){
  const title=document.getElementById('classResultsPageTitle'),desc=document.getElementById('classResultsPageDescription'),tools=document.getElementById('classResultsAdminPreviewTools');
