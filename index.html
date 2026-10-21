@@ -1005,6 +1005,7 @@ async function loadMyCompetitionRegistration(clearFields=false){
  nameEl.readOnly=true;nameEl.setAttribute('aria-readonly','true');nameEl.title='Your name comes from your saved JENZY profile. Edit it in Profile if it is incorrect.';
  nameEl.readOnly=true;nameEl.setAttribute('aria-readonly','true');nameEl.title='Your name comes from your saved JENZY profile. Edit it in Profile if incorrect.';if(clearFields){nameEl.value=profileName;phoneEl.value='';entryEl.textContent='Checking your registration…';statusEl.textContent='';}
  const slot=document.getElementById('competitionRegistrationSlot').value,subject=document.getElementById('competitionRegistrationSubject').value,schoolClass=selectedCompetitionClass(),date=(slot==='morning'&&jenzyJamespesaMorningExceptionDate)?jenzyJamespesaMorningExceptionDate:competitionDateForSlot(slot);
+ try{const lifecycle=await supabaseClient.rpc('jenzy_refresh_registration_lifecycle',{p_competition_date:date,p_session_slot:slot});if(lifecycle.error)throw lifecycle.error;}catch(lifecycleError){console.error('Could not refresh registration lifecycle:',lifecycleError);entryEl.textContent='Registration status unavailable';statusEl.textContent='Could not refresh your session registration. Please retry.';btn.disabled=true;return null;}
  if(!schoolClass){entryEl.textContent='Class required';statusEl.textContent='Your saved signup class is missing. Complete the class requirement before registering.';btn.disabled=true;return null;}
  btn.disabled=true;
  try{
@@ -1166,6 +1167,9 @@ async function refreshHomepageCompetitionRegistration(){
  const watchdog=setTimeout(()=>{if(details.isConnected&&details.textContent.includes('CHECKING')){homepageRegistrationCheckInProgress=false;details.className='homepage-registration-status not-registered homepage-registration-status-simple';details.innerHTML='<span class="homepage-registration-status-icon" aria-hidden="true">☐</span><strong>NOT REGISTERED</strong>'; }},10000);
  try{
   const nextSession=nextRegistrableCompetitionSession(new Date());
+  // Expire registrations made before the previous session's results became available.
+  const lifecycle=await supabaseClient.rpc('jenzy_refresh_registration_lifecycle',{p_competition_date:nextSession.date,p_session_slot:nextSession.slot});
+  if(lifecycle.error)throw lifecycle.error;
   // Show status only for the next session the student can register for, including free and paid entries.
    const request=supabaseClient.from('jenzy_competition_registrations')
     .select('id,student_id,competition_date,session_slot,entry_type,status,entry_number')
