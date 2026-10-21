@@ -1623,7 +1623,7 @@ function competitionResultKey(row){return [row.competition_date,row.session_slot
 function formatCompetitionDate(value){if(!value)return "Date not set";const d=new Date(value+"T12:00:00");return Number.isNaN(d.getTime())?value:d.toLocaleDateString("en-KE",{day:"numeric",month:"short",year:"numeric"});}
 async function loadClassCompetitionResults(schoolClass){
  if(competitionResultsReleaseInterval){clearInterval(competitionResultsReleaseInterval);competitionResultsReleaseInterval=null;}
- const box=document.getElementById("classCompetitionResults");
+ const box=document.getElementById("classCompetitionLeaderboard")||document.getElementById("classCompetitionResults");
  if(!box)return;
  classCompetitionResultsClass=schoolClass;
  if(!currentUser){box.innerHTML='<div class="empty-state"><b>Please sign in first.</b><p class="muted">Sign in to view competition results and your personal position.</p></div>';return;}
@@ -1688,25 +1688,28 @@ function showGrade6SampleResults(){
  const pct=r=>Math.round(r.marks/r.total*100);
  box.innerHTML='<div style="background:#050505;color:#f8fafc;border:1px solid #242424;border-radius:20px;padding:16px;margin:8px 0 18px"><div style="display:flex;align-items:center;gap:10px;margin-bottom:12px"><span style="font-size:26px">🏆</span><div><strong style="display:block;font-size:20px">JENZY — Grade 6 Results</strong><span style="font-size:13px;color:#a3a3a3">Sample competition · Administrator preview</span></div><span style="margin-left:auto;background:#422006;color:#fb923c;border-radius:20px;padding:5px 9px;font-size:11px;font-weight:800">TEST DATA</span></div>'+examples.map(r=>'<div style="display:grid;grid-template-columns:56px minmax(0,1fr) auto;align-items:center;gap:12px;padding:14px 0;border-top:1px solid #222"><span style="display:flex;align-items:center;justify-content:center;width:56px;height:56px;border-radius:14px;background:#fff;font-size:34px;'+(r.rank===2?'filter:grayscale(1);':r.rank===3?'filter:sepia(.65) saturate(1.5);':'')+'">🏆</span><div style="min-width:0"><strong style="display:block;font-size:16px;overflow-wrap:anywhere">'+r.rank+'. '+r.name+'</strong><span style="font-size:13px;color:#a3a3a3">Grade 6 · Mathematics</span></div><div style="text-align:right;white-space:nowrap"><strong style="font-size:23px;color:'+(r.rank===1?'#d4a017':r.rank===2?'#c0c0c0':'#cd7f32')+'">'+pct(r)+'%</strong><span style="display:block;font-size:12px;color:#a3a3a3">'+r.marks+'/'+r.total+' marks</span></div></div>').join('')+'</div>';
 }
-function openClassResultsPage(schoolClass){
- const title=document.getElementById("classResultsPageTitle");
- const desc=document.getElementById("classResultsPageDescription");
- const tools=document.getElementById("classResultsAdminPreviewTools");
- const adminSample=false; // Keep demo data off for all accounts until official results are released.
+function showJenzyClassPosition(){
+ const review=document.getElementById('jenzyAnswerReviewPanel'),leaderboard=document.getElementById('classCompetitionLeaderboard');
+ if(review)review.hidden=true;
+ if(leaderboard){leaderboard.hidden=false;leaderboard.scrollIntoView({behavior:'smooth',block:'start'});}
+}
+function openClassResultsPage(schoolClass,pending=null){
+ const title=document.getElementById('classResultsPageTitle'),desc=document.getElementById('classResultsPageDescription'),tools=document.getElementById('classResultsAdminPreviewTools');
+ const adminSample=false;
  if(tools)tools.hidden=true;
- if(title)title.textContent="🏆 "+schoolClass+" Competition Results";
- if(desc)desc.textContent=adminSample?"Administrator preview · Grade 6 sample leaderboard.":"Current session leaderboard for "+schoolClass+". Only the current session is shown; it updates when the next session begins.";
- showPage("classResultsPage");
+ if(title)title.textContent='🏆 '+schoolClass+' Competition Results';
+ if(desc)desc.textContent=adminSample?'Administrator preview · Grade 6 sample leaderboard.':'Answer review comes first. Use the button below it to open the leaderboard for '+schoolClass+'.';
+ showPage('classResultsPage');
  if(adminSample){classCompetitionResultsClass=schoolClass;showGrade6SampleResults();return;}
- loadClassCompetitionResults(schoolClass);
- const resultsBox=document.getElementById("classCompetitionResults");
- if(resultsBox&&lastCompetitionReviewContext&&String(lastCompetitionReviewContext.schoolClass||schoolClass)===String(schoolClass)){
-  const review=document.createElement("section");review.id="jenzyAnswerReviewPanel";review.style.cssText="margin-top:20px;padding:16px;border-radius:18px;background:#111820;color:#f8fafc;border:1px solid #334155";
-  review.innerHTML='<h2 style="margin-top:0">📝 Your answer review</h2><p style="color:#aab6c2">Loading your answers, correct answers, and explanations…</p>';
-  resultsBox.appendChild(review);
-  const priorBox=document.getElementById("competitionAnswerReviewResult");
-  if(!priorBox){const hidden=document.createElement("div");hidden.id="competitionAnswerReviewResult";hidden.style.cssText="color:#f8fafc";review.appendChild(hidden);}
+ const resultsBox=document.getElementById('classCompetitionResults'),ctx=lastCompetitionReviewContext;
+ const matchingReview=!!ctx&&!!ctx.resultId&&String(ctx.schoolClass||'').trim()===String(schoolClass||'').trim()&&(!pending||!pending.resultId||String(ctx.resultId)===String(pending.resultId));
+ if(resultsBox&&matchingReview){
+  resultsBox.innerHTML='<section id="jenzyAnswerReviewPanel" style="margin-top:8px;padding:16px;border-radius:18px;background:#111820;color:#f8fafc;border:1px solid #334155"><h2 style="margin-top:0;color:#f8fafc">📝 Your answer review</h2><p style="color:#cbd5e1">Checking your submitted answers, correct answers, and explanations…</p><div id="competitionAnswerReviewResult" style="color:#f8fafc"></div><button type="button" class="primary" style="width:100%;margin-top:18px;padding:15px;font-weight:900" onclick="showJenzyClassPosition()">🏆 Show My Position &amp; Class Leaderboard ↓</button></section><div id="classCompetitionLeaderboard" hidden style="margin-top:18px"></div>';
   loadLastCompetitionAnswerReview();
+  loadClassCompetitionResults(schoolClass);
+ }else{
+  if(resultsBox)resultsBox.innerHTML='';
+  loadClassCompetitionResults(schoolClass);
  }
 }
 
