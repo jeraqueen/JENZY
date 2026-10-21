@@ -971,7 +971,7 @@ function runPendingResultsFlow(pending,now=new Date()){
  if(n&&left<=10&&left>0){n.style.color='#ff3030';n.style.transform='scale(1.08)';if(warning)warning.textContent=left<=3?'🚨 RESULTS OPEN NOW!':('🚨 '+left+' SECONDS — GET READY!');}else if(n){n.style.color='';n.style.transform='';}
  if(left!==jenzyResultsLastSoundSecond){jenzyResultsLastSoundSecond=left;playJenzyResultsCountdownSound(left);}
  if(left<=0&&pending.submissionPending){if(warning)warning.textContent='⏳ SAVING YOUR ANSWERS — PLEASE WAIT';const sub=document.querySelector('#jenzyOfficialResultsCountdown .jenzy-readiness-sub');if(sub)sub.textContent='JENZY is securely saving your submitted answers. The answer review will open as soon as the save is confirmed.';return;}
- if(left<=0&&!jenzyResultsFlowOpened){jenzyResultsFlowOpened=true;if(jenzyResultsFlowOverlay)jenzyResultsFlowOverlay.remove();jenzyResultsFlowOverlay=null;try{localStorage.removeItem('jenzy_pending_result_countdown')}catch(e){}openClassResultsPage(pending.schoolClass||getSavedUserSchoolClass(),pending);}
+ if(left<=0&&!jenzyResultsFlowOpened){jenzyResultsFlowOpened=true;if(jenzyResultsFlowOverlay)jenzyResultsFlowOverlay.remove();jenzyResultsFlowOverlay=null;try{localStorage.removeItem('jenzy_pending_result_countdown')}catch(e){}(async()=>{if(pending.reviewCatchup&&currentUser&&pending.studentId===currentUser.id){try{const {error}=await supabaseClient.from('jenzy_answer_review_acknowledgements').upsert({student_id:currentUser.id,school_class:pending.schoolClass,subject:pending.subject,session_slot:pending.slot||'afternoon',competition_date:pending.competitionDate,revealed_at:new Date().toISOString()},{onConflict:'student_id,school_class,subject,session_slot,competition_date'});if(error)throw error;}catch(e){console.warn('Could not record answer-review reveal; it will be offered again next sign-in:',e.message);}}await openClassResultsPage(pending.schoolClass||getSavedUserSchoolClass(),pending);})().catch(e=>console.warn('Could not open released answer review:',e.message));}
 }
 function updateHomepageCountdowns(now=new Date()){
  const box=document.getElementById('homepageCountdownRows'),warning=document.getElementById('homepageRegistrationWarning');
@@ -1723,17 +1723,33 @@ function showJenzyClassPosition(){
 }
 async function maybeOpenCurrentSessionAnswerReview(){
  if(!currentUser||document.body.classList.contains('class-required'))return;
- const now=new Date(),kp=kenyaParts(now),mins=kp.hour*60+kp.minute;
- const slot=mins>=21*60||mins<9*60?'evening':mins>=14*60?'afternoon':'morning';
- const date=mins<9*60?competitionDateNairobi(new Date(Date.UTC(kp.year,kp.month-1,kp.day-1))):competitionDateNairobi();
- const releaseMinute=slot==='morning'?570:slot==='afternoon'?855:1270;
- const afterRelease=mins>releaseMinute||(mins===releaseMinute&&now.getSeconds()>=30);
- if(!afterRelease)return;
- const {data,error}=await supabaseClient.from('jenzy_competition_registrations').select('school_class,subject,session_slot,competition_date').eq('student_id',currentUser.id).eq('status','confirmed').eq('session_slot',slot).eq('competition_date',date).limit(1);
+ // Do not interrupt a countdown already in progress for a student's own submission.
+ try{const existing=JSON.parse(localStorage.getItem('jenzy_pending_result_countdown')||'null');if(existing&&(existing.endAt||existing.releaseAt))return;}catch(e){}
+ const now=new Date(),today=competitionDateNairobi(now),kp=kenyaParts(now),mins=kp.hour*60+kp.minute;
+ const releasedToday=mins>855||(mins===855&&now.getSeconds()>=30);
+ const {data,error}=await supabaseClient.from('jenzy_competition_registrations')
+  .select('school_class,subject,session_slot,competition_date')
+  .eq('student_id',currentUser.id).eq('status','confirmed').eq('session_slot','afternoon')
+  .lte('competition_date',today).order('competition_date',{ascending:false}).limit(10);
  if(error)throw error;
- const registration=Array.isArray(data)&&data.length?data[0]:null;
- if(!registration)return;
- await openClassResultsPage(registration.school_class,{slot,competitionDate:date});
+ const registrations=Array.isArray(data)?data:[];
+ for(const registration of registrations){
+  const sessionDate=String(registration.competition_date||'');
+  if(!sessionDate)continue;
+  if(sessionDate===today&&!releasedToday)continue;
+  const {data:seen,error:seenError}=await supabaseClient.from('jenzy_answer_review_acknowledgements')
+   .select('student_id').eq('student_id',currentUser.id).eq('school_class',registration.school_class)
+   .eq('subject',registration.subject).eq('session_slot','afternoon').eq('competition_date',sessionDate).limit(1);
+  if(seenError)throw seenError;
+  if(Array.isArray(seen)&&seen.length)continue;
+  // This registration has not yet received its post-login answer-review reveal.
+  const pending={schoolClass:registration.school_class,subject:registration.subject,slot:'afternoon',competitionDate:sessionDate,
+   endAt:now.toISOString(),releaseAt:now.toISOString(),reviewCatchup:true,studentId:currentUser.id};
+  try{localStorage.setItem('jenzy_pending_result_countdown',JSON.stringify(pending))}catch(e){}
+  jenzyResultsFlowOpened=false;jenzyResultsLastSoundSecond=null;
+  runPendingResultsFlow(pending,now);
+  return;
+ }
 }
 async function openClassResultsPage(schoolClass,pending=null){
  const title=document.getElementById('classResultsPageTitle'),desc=document.getElementById('classResultsPageDescription'),tools=document.getElementById('classResultsAdminPreviewTools');
