@@ -1721,22 +1721,46 @@ function showJenzyClassPosition(){
  if(review)review.hidden=true;
  if(leaderboard){leaderboard.hidden=false;leaderboard.scrollIntoView({behavior:'smooth',block:'start'});}
 }
-function openClassResultsPage(schoolClass,pending=null){
+async function openClassResultsPage(schoolClass,pending=null){
  const title=document.getElementById('classResultsPageTitle'),desc=document.getElementById('classResultsPageDescription'),tools=document.getElementById('classResultsAdminPreviewTools');
  const adminSample=false;
  if(tools)tools.hidden=true;
  if(title)title.textContent='🏆 '+schoolClass+' Competition Results';
- if(desc)desc.textContent=adminSample?'Administrator preview · Grade 6 sample leaderboard.':'Answer review comes first. Use the button below it to open the leaderboard for '+schoolClass+'.';
+ if(desc)desc.textContent='Current session answer review appears first. Previous-session reviews are cleared from this view; open the leaderboard using the button below.';
  showPage('classResultsPage');
  if(adminSample){classCompetitionResultsClass=schoolClass;showGrade6SampleResults();return;}
- const resultsBox=document.getElementById('classCompetitionResults'),ctx=lastCompetitionReviewContext,kp=kenyaParts(new Date()),mins=kp.hour*60+kp.minute,expectedSlot=mins>=21*60||mins<9*60?'evening':mins>=14*60?'afternoon':'morning',expectedDate=mins<9*60?competitionDateNairobi(new Date(Date.UTC(kp.year,kp.month-1,kp.day-1))):competitionDateNairobi();
- const matchingReview=!!ctx&&!!ctx.resultId&&String(ctx.schoolClass||'').trim()===String(schoolClass||'').trim()&&(pending&&pending.resultId?String(ctx.resultId)===String(pending.resultId):(String(ctx.slot||'')===expectedSlot&&String(ctx.competitionDate||'')===expectedDate));
+ const resultsBox=document.getElementById('classCompetitionResults');
+ const kp=kenyaParts(new Date()),mins=kp.hour*60+kp.minute;
+ const expectedSlot=pending&&pending.slot?String(pending.slot):(mins>=21*60||mins<9*60?'evening':mins>=14*60?'afternoon':'morning');
+ const expectedDate=pending&&pending.competitionDate?String(pending.competitionDate):(mins<9*60?competitionDateNairobi(new Date(Date.UTC(kp.year,kp.month-1,kp.day-1))):competitionDateNairobi());
+ let ctx=lastCompetitionReviewContext;
+ let matchingReview=!!ctx&&!!ctx.resultId&&String(ctx.schoolClass||'').trim()===String(schoolClass||'').trim()&&String(ctx.slot||'')===expectedSlot&&String(ctx.competitionDate||'')===expectedDate&&(!(pending&&pending.resultId)||String(ctx.resultId)===String(pending.resultId));
+ // Recover the student's own result securely when local storage is empty or belongs to an older session.
+ if(!matchingReview&&currentUser){
+  try{
+   const {data,error}=await supabaseClient.rpc('jenzy_get_my_session_review_context',{p_school_class:schoolClass,p_session_slot:expectedSlot,p_competition_date:expectedDate});
+   if(error)throw error;
+   const row=Array.isArray(data)&&data.length?data[0]:null;
+   if(row&&row.result_id){
+    const answers=row.answers&&typeof row.answers==='object'?row.answers:{};
+    ctx={resultId:row.result_id,answers,questions:Object.keys(answers).map(id=>({id})),schoolClass:row.school_class,subject:row.subject,slot:row.slot,competitionDate:String(row.competition_date)};
+    lastCompetitionReviewContext=ctx;
+    try{localStorage.setItem('jenzy_last_competition_review_context',JSON.stringify(ctx))}catch(e){}
+    matchingReview=String(ctx.schoolClass||'').trim()===String(schoolClass||'').trim()&&String(ctx.slot||'')===expectedSlot&&String(ctx.competitionDate||'')===expectedDate;
+   }
+  }catch(e){console.warn('Could not recover current-session answer review:',e.message)}
+ }
+ // Never show a previous session's review after a newer session starts.
+ if(!matchingReview){
+  lastCompetitionReviewContext=null;
+  try{localStorage.removeItem('jenzy_last_competition_review_context')}catch(e){}
+ }
  if(resultsBox&&matchingReview){
-  resultsBox.innerHTML='<section id="jenzyAnswerReviewPanel" style="margin-top:8px;padding:16px;border-radius:18px;background:#111820;color:#f8fafc;border:1px solid #334155"><h2 style="margin-top:0;color:#f8fafc">📝 Your answer review</h2><p style="color:#cbd5e1">Checking your submitted answers, correct answers, and explanations…</p><div id="competitionAnswerReviewResult" style="color:#f8fafc"></div><button type="button" class="primary" style="width:100%;margin-top:18px;padding:15px;font-weight:900" onclick="showJenzyClassPosition()">🏆 Show My Position &amp; Class Leaderboard ↓</button></section><div id="classCompetitionLeaderboard" hidden style="margin-top:18px"></div>';
+  resultsBox.innerHTML='<section id="jenzyAnswerReviewPanel" style="margin-top:8px;padding:16px;border-radius:18px;background:#111820;color:#f8fafc;border:1px solid #334155"><h2 style="margin-top:0;color:#f8fafc">📝 '+safeText(competitionSlotLabel(expectedSlot))+' session answer review</h2><p style="color:#cbd5e1">Your submitted answers, correct answers, and explanations for '+safeText(expectedDate)+'.</p><div id="competitionAnswerReviewResult" style="color:#f8fafc"></div><button type="button" class="primary" style="width:100%;margin-top:18px;padding:15px;font-weight:900" onclick="showJenzyClassPosition()">🏆 Show My Position &amp; Class Leaderboard ↓</button></section><div id="classCompetitionLeaderboard" hidden style="margin-top:18px"></div>';
   loadLastCompetitionAnswerReview();
   loadClassCompetitionResults(schoolClass);
  }else{
-  if(resultsBox)resultsBox.innerHTML='';
+  if(resultsBox)resultsBox.innerHTML='<section class="card"><h2>📝 Current session answer review</h2><p>Your previous-session review has been cleared. This account has no saved result for the '+safeText(competitionSlotLabel(expectedSlot).toLowerCase())+' session on '+safeText(expectedDate)+' yet. If you completed the competition, refresh this page in a moment so JENZY can recover your saved result.</p></section>';
   loadClassCompetitionResults(schoolClass);
  }
 }
