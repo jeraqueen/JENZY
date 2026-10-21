@@ -1665,6 +1665,7 @@ async function loadClassCompetitionResults(schoolClass){
   const {data,error}=await supabaseClient.rpc("jenzy_get_class_competition_results_public",{p_school_class:schoolClass});
   if(error)throw error;
   classCompetitionResultsRows=Array.isArray(data)?data:[];
+  const savedClassForPosition=String(getSavedUserSchoolClass()||"").trim();if(savedClassForPosition!==String(schoolClass||"").trim())classCompetitionResultsRows=classCompetitionResultsRows.filter(row=>!row.is_current_user);
   const registrationCheck=await supabaseClient.from('jenzy_competition_registrations').select('id').eq('student_id',currentUser.id).eq('school_class',schoolClass).eq('status','confirmed').limit(1);
   if(registrationCheck.error)throw registrationCheck.error;
   classCompetitionHasConfirmedRegistration=Array.isArray(registrationCheck.data)&&registrationCheck.data.length>0;
@@ -1679,13 +1680,7 @@ async function loadClassCompetitionResults(schoolClass){
   classCompetitionResultsRows.forEach(row=>{const key=competitionResultKey(row);if(!groups.has(key))groups.set(key,[]);groups.get(key).push(row)});
   const options=[...groups.entries()].sort((a,b)=>String(a[1][0].subject).localeCompare(String(b[1][0].subject)));
   box.innerHTML=options.map(([key,rows])=>renderClassCompetitionGroup(key,rows)).join("");
-  if(lastCompetitionReviewContext&&String(lastCompetitionReviewContext.schoolClass||"")===String(schoolClass)){
-   const review=document.createElement("section");review.id="jenzyAnswerReviewPanel";review.style.cssText="margin-top:20px;padding:16px;border-radius:18px;background:#111820;color:#f8fafc;border:1px solid #334155";
-   review.innerHTML='<h2 style="margin-top:0">📝 Your answer review</h2><p style="color:#aab6c2">Loading your answers, correct answers, and explanations…</p>';
-   box.insertBefore(review,box.firstChild);
-   const hidden=document.createElement("div");hidden.id="competitionAnswerReviewResult";hidden.style.cssText="color:#f8fafc";review.appendChild(hidden);
-   loadLastCompetitionAnswerReview();
-  }
+  // Answer review is rendered first by openClassResultsPage; keep this container for leaderboard rows only.
  }catch(e){
   console.error("Could not load JENZY class competition results:",e);
   box.innerHTML='<div class="empty-state"><b>Results could not be loaded.</b><p class="muted">Please try again. If this continues, JENZY may need to refresh the results service.</p><button type="button" class="small-btn" onclick="loadClassCompetitionResults('+JSON.stringify(schoolClass)+')">Try again</button></div>';
