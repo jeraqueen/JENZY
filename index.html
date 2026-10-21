@@ -1609,7 +1609,7 @@ function startCompetitionResultsReleaseCountdown(schoolClass){
    competitionResultsReleaseReachedKey=releaseKey;
    if(competitionResultsReleaseInterval)clearInterval(competitionResultsReleaseInterval);
    competitionResultsReleaseInterval=null;
-   loadClassCompetitionResults(schoolClass);
+   openClassResultsPage(schoolClass);
   }
  };
  tick();
