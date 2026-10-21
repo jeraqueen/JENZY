@@ -1536,7 +1536,7 @@ async function loadClassCompetitionResults(schoolClass){
   if(lastCompetitionReviewContext&&String(lastCompetitionReviewContext.schoolClass||"")===String(schoolClass)){
    const review=document.createElement("section");review.id="jenzyAnswerReviewPanel";review.style.cssText="margin-top:20px;padding:16px;border-radius:18px;background:#111820;color:#f8fafc;border:1px solid #334155";
    review.innerHTML='<h2 style="margin-top:0">📝 Your answer review</h2><p style="color:#aab6c2">Loading your answers, correct answers, and explanations…</p>';
-   box.appendChild(review);
+   box.insertBefore(review,box.firstChild);
    const hidden=document.createElement("div");hidden.id="competitionAnswerReviewResult";hidden.style.cssText="color:#f8fafc";review.appendChild(hidden);
    loadLastCompetitionAnswerReview();
   }
