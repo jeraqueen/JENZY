@@ -1011,7 +1011,7 @@ async function loadMyCompetitionRegistration(clearFields=false){
  if(!schoolClass){entryEl.textContent='Class required';statusEl.textContent='Your saved signup class is missing. Complete the class requirement before registering.';btn.disabled=true;return null;}
  btn.disabled=true;
  try{
-  const {data,error}=await supabaseClient.from('jenzy_competition_registrations').select('entry_number,full_name,phone,status').eq('student_id',currentUser.id).eq('competition_date',date).eq('session_slot',slot).eq('school_class',schoolClass).eq('subject',subject).eq('entry_type','free').maybeSingle();
+  const {data,error}=await supabaseClient.from('jenzy_competition_registrations').select('entry_number,full_name,phone,status').eq('student_id',currentUser.id).eq('competition_date',date).eq('session_slot',slot).eq('school_class',schoolClass).eq('subject',subject).eq('entry_type','free').eq('status','confirmed').maybeSingle();
   if(error)throw error;
   if(data&&data.status==='confirmed'){
    nameEl.value=data.full_name||profileName;phoneEl.value='';entryEl.textContent='#'+data.entry_number;
@@ -1129,7 +1129,7 @@ async function registerFreeCompetition(){
  if(!["Grade 6","Grade 7","Grade 8","Grade 10","Form 3"].includes(savedClass)){status.textContent='Your saved signup class is missing. Please complete the required class step before registering.';return;}
  if(savedClass!==schoolClass){status.textContent='Your competition class must match the class saved to your account at signup. Refresh your profile and try again.';return;}
  if(savedName.length<2||name!==savedName){status.textContent='Your registration name must match your saved profile. Update it from Profile if incorrect.';return;}
- const sessionCheck=await supabaseClient.from('jenzy_competition_registrations').select('entry_number,subject').eq('student_id',currentUser.id).eq('competition_date',date).eq('session_slot',slot).eq('entry_type','free').neq('status','cancelled').limit(1).maybeSingle();
+ const sessionCheck=await supabaseClient.from('jenzy_competition_registrations').select('entry_number,subject').eq('student_id',currentUser.id).eq('competition_date',date).eq('session_slot',slot).eq('entry_type','free').in('status',['confirmed','pending_payment']).limit(1).maybeSingle();
  if(sessionCheck.error){status.textContent='Could not verify whether you already registered for this session. Please try again.';return;}
  if(sessionCheck.data){document.getElementById('competitionEntryNumber').textContent='#'+sessionCheck.data.entry_number;status.textContent='You already have an entry for this session ('+sessionCheck.data.subject+'). One entry per session is allowed.';return;}
  const p=kenyaParts(new Date()),minutes=p.hour*60+p.minute,start=slot==='morning'?540:slot==='afternoon'?840:1260;
@@ -1147,7 +1147,7 @@ async function registerFreeCompetition(){
   await refreshCompetitionCounts();
   await refreshHomepageCompetitionRegistration();
  }catch(e){status.textContent=e.message||'Registration could not be completed. Please try again.';console.error('JENZY competition registration failed',e)}
- finally{btn.disabled=false}
+ finally{btn.disabled=btn.classList.contains('registered-confirm-button')}
 }
 let homepageRegistrationCheckInProgress=false;
 let homepageRegistrationCheckStartedAt=0;
