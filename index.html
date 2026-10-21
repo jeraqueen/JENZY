@@ -1456,7 +1456,7 @@ async function checkJenzyAutomaticCompetition(){
   if(jenzyAutoLaunchedKeys.has(key))return;
   jenzyAutoLaunchedKeys.add(testKey);jenzyAutoLaunchedKeys.add(key);
   if(startDelta>0)showJenzyReadiness(session.slot,subject,registeredClass,session.start);
-  else await startScheduledCompetition(session.slot,subject,registeredClass);
+  else showJenzyReadiness(session.slot,subject,registeredClass,Date.now()+30000,false,false,30);
  }catch(e){console.warn('Could not check automatic competition entry:',e.message)}finally{jenzyAutoLaunchBusy=false}
 }
 setInterval(checkJenzyAutomaticCompetition,1000);
