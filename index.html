@@ -584,7 +584,7 @@ function educationLevelForClass(schoolClass,currentValue){if(schoolClass==="Grad
 function setStatus(id,message,kind=""){const el=document.getElementById(id);el.textContent=message;el.className="status"+(kind?" "+kind:"")}
 let authOtpPending=false,authOtpDestination="";
 function normalizeJenzyPhone(value){let p=String(value||"").trim().replace(/[\s().-]/g,"");if(/^0[17]\d{8}$/.test(p))return "+254"+p.slice(1);if(/^254[17]\d{8}$/.test(p))return "+"+p;if(/^[17]\d{8}$/.test(p))return "+254"+p;if(/^\+254[17]\d{8}$/.test(p))return p;throw new Error("Enter a valid Kenyan mobile number, for example 0712345678, 0112345678, +254712345678 or +254112345678.");}
-function updateAuthContactFields(){const method=document.getElementById("authContactMethod").value,isEmail=method==="email",signup=authMode==="signup";document.getElementById("authEmailField").hidden=!isEmail;document.getElementById("authUsernameField").hidden=isEmail||signup;document.getElementById("authPhoneField").hidden=true;document.getElementById("email").required=isEmail;document.getElementById("email").disabled=authOtpPending||!isEmail;document.getElementById("loginUsername").required=!isEmail&&!signup;document.getElementById("loginUsername").disabled=isEmail||signup;document.getElementById("authContactMethod").disabled=authOtpPending;document.getElementById("authSubmit").textContent=!signup?"Log in":authOtpPending?"Verify code":"Create Account";document.getElementById("authHint").textContent=isEmail?"Email accounts keep the existing email verification process.":"Use your JENZY username and password. No email or SMS code is needed. Keep your password safe; email-based recovery is not available for these accounts.";}
+function updateAuthContactFields(){const method=document.getElementById("authContactMethod").value,isEmail=method==="email",signup=authMode==="signup",identifier=document.getElementById("email"),methodSelect=document.getElementById("authContactMethod"),methodLabel=document.querySelector('label[for="authContactMethod"]'),emailLabel=document.querySelector('label[for="email"]');if(methodLabel)methodLabel.hidden=!signup;methodSelect.hidden=!signup;document.getElementById("authEmailField").hidden=signup&&!isEmail;document.getElementById("authUsernameField").hidden=true;document.getElementById("authPhoneField").hidden=true;identifier.type=signup?"email":"text";identifier.autocomplete=signup?"email":"username";identifier.placeholder=signup?"you@example.com":"Email address or JENZY username";if(emailLabel)emailLabel.textContent=signup?"Email address":"Email or JENZY username";identifier.required=signup?isEmail:true;identifier.disabled=authOtpPending||(signup&&!isEmail);document.getElementById("loginUsername").required=false;document.getElementById("loginUsername").disabled=true;methodSelect.disabled=authOtpPending;document.getElementById("authSubmit").textContent=!signup?"Log in":authOtpPending?"Verify code":"Create Account";document.getElementById("authHint").textContent=!signup?"Enter your email address or your JENZY username / student ID, followed by your password.":isEmail?"Email accounts keep the existing email verification process.":"Use your JENZY username and password. No email or SMS code is needed. Keep your password safe; email-based recovery is not available for these accounts.";}
 document.getElementById("authContactMethod").addEventListener("change",updateAuthContactFields);
 async function authFunctionErrorMessage(error,fallback){try{const context=error?.context;if(context){const response=typeof context.clone==="function"?context.clone():context;const body=await response.json();if(body?.error)return String(body.error);if(body?.message)return String(body.message)}}catch(e){}return error?.message||fallback||"The request could not be completed. Please try again."}
 function updateStudentLoginId(){const name=String(document.getElementById("username").value||"").trim().toLowerCase();document.getElementById("studentLoginId").value=/^[a-z0-9_]{3,24}$/.test(name)?name+"@jenzy":"";}
@@ -599,8 +599,8 @@ function syncClassOptions(levelSelect,classSelect,preferredClass){if(!levelSelec
 document.getElementById("authForm").addEventListener("submit",async event=>{
 event.preventDefault();const submit=document.getElementById("authSubmit");submit.disabled=true;
 try{
-const method=document.getElementById("authContactMethod").value,password=document.getElementById("password").value;
-let email=method==="email"?document.getElementById("email").value.trim().toLowerCase():"";
+const rawIdentifier=document.getElementById("email").value.trim(),method=authMode==="login"?(rawIdentifier.includes("@")&&!rawIdentifier.toLowerCase().endsWith("@jenzy")?"email":"username"):document.getElementById("authContactMethod").value,password=document.getElementById("password").value;
+let email=method==="email"?rawIdentifier.toLowerCase():"";
 let phone="";
 if(authMode==="signup"&&!authOtpPending&&method==="username"){
 setStatus("authStatus","Creating your JENZY account…");
@@ -645,7 +645,7 @@ await activateUser(data.user);setStatus("authStatus","Your JENZY account is veri
 }else{
 setStatus("authStatus","Signing you in…");
 if(method==="username"){
-const username=document.getElementById("loginUsername").value.trim();
+const username=rawIdentifier;
 const {data,error}=await supabaseClient.functions.invoke("jenzy-username-auth",{body:{action:"login",username,password}});
 if(error)throw new Error(await authFunctionErrorMessage(error,"Login failed."));if(data?.error)throw new Error(data.error);
 if(!data?.session?.access_token||!data?.session?.refresh_token)throw new Error("Login did not return a session.");
