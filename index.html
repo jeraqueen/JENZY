@@ -4,7 +4,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <meta name="theme-color" content="#4f46e5">
-<meta name="jenzy-build" content="jenzy-build-20261020-results-card-design">
+<meta name="jenzy-build" content="jenzy-build-20261021-math-answer-review-recovery">
 <title>JENZY — Learn. Play. Compete.</title>
 <style>
 :root{--bg:#f5f7ff;--card:#fff;--text:#19213b;--muted:#69738c;--primary:#4f46e5;--line:#e7e9f3}
@@ -472,7 +472,7 @@ if (!window.supabase) {
 }
 </script>
 <script>
-const JENZY_BUILD_VERSION = '20261021-registration-status-fix-1';
+const JENZY_BUILD_VERSION = '20261021-math-answer-review-recovery';
 (function enableAutomaticJenzyUpdates(){
  const checkEveryMs=5000;
  let updateFound=false,checking=false;
@@ -699,7 +699,7 @@ function jenzyOfferSoundEnable(){
  actions.insertBefore(b,actions.firstChild);
 }
 document.addEventListener("DOMContentLoaded",jenzyOfferSoundEnable);
-async function activateUser(user){const previousUserId=(()=>{try{return localStorage.getItem(JENZY_LAST_WELCOME_KEY)}catch{return null}})();if(currentUser&&currentUser.id!==user.id)stopJenzyPresence();currentUser=user;startJenzyPresence();updateAdminChatVisibility();resetCompetitionRegistrationForm();document.body.classList.add("signed-in");configureOptionalProfileEmail(user);await loadProfile(user);if(await requireUniqueFullName())return;updatePrivateMathLaunchButton();updateJamespesaRegisteredLaunchButton();if(document.body.classList.contains("class-required")){toggleProfileEdit(true);return}subscribeUnreadMessages();refreshUnreadBadge();showPage("home");try{localStorage.setItem(JENZY_LAST_WELCOME_KEY,user.id)}catch{};if(sessionStorage.getItem("jenzy_signup_sound_pending")==="yes"){sessionStorage.removeItem("jenzy_signup_sound_pending");jenzySpeakWelcome("new")}else if(previousUserId===user.id&&sessionStorage.getItem("jenzy_return_sound_played")!=="yes"){sessionStorage.setItem("jenzy_return_sound_played","yes");if(jenzySoundEnabled())jenzySpeakWelcome("returning")} }
+async function activateUser(user){const previousUserId=(()=>{try{return localStorage.getItem(JENZY_LAST_WELCOME_KEY)}catch{return null}})();if(currentUser&&currentUser.id!==user.id)stopJenzyPresence();currentUser=user;startJenzyPresence();updateAdminChatVisibility();resetCompetitionRegistrationForm();document.body.classList.add("signed-in");configureOptionalProfileEmail(user);await loadProfile(user);if(await requireUniqueFullName())return;updatePrivateMathLaunchButton();updateJamespesaRegisteredLaunchButton();if(document.body.classList.contains("class-required")){toggleProfileEdit(true);return}subscribeUnreadMessages();refreshUnreadBadge();showPage("home");setTimeout(()=>recoverMorningMathAnswerReview().catch(e=>console.warn("Morning Mathematics answer-review recovery:",e.message)),700);try{localStorage.setItem(JENZY_LAST_WELCOME_KEY,user.id)}catch{};if(sessionStorage.getItem("jenzy_signup_sound_pending")==="yes"){sessionStorage.removeItem("jenzy_signup_sound_pending");jenzySpeakWelcome("new")}else if(previousUserId===user.id&&sessionStorage.getItem("jenzy_return_sound_played")!=="yes"){sessionStorage.setItem("jenzy_return_sound_played","yes");if(jenzySoundEnabled())jenzySpeakWelcome("returning")} }
 async function loadProfile(user){
 const {data,error}=await supabaseClient.from("profiles").select("id, username, full_name, school_name, education_level, school_class, phone_number, avatar_url, cover_photo_url").eq("id",user.id).maybeSingle();
 if(error){setStatus("profileStatus","Signed in, but the profile could not be loaded. Check the profiles SELECT RLS policy for the user's own id. Details: "+error.message,"error");return}
@@ -1317,6 +1317,90 @@ async function uploadJenzyWorkingEvidence(input){
   if(input?.isConnected)input.value='';
  }
 }
+
+// Recovery for students who completed today's morning Mathematics competition but missed the answer review.
+// A student gets one 30-second return countdown, one automatic refresh, and then their own review.
+let jenzyMorningMathRecoveryRunning=false;
+async function recoverMorningMathAnswerReview(){
+ if(!currentUser||jenzyMorningMathRecoveryRunning||document.body.classList.contains("class-required"))return;
+ jenzyMorningMathRecoveryRunning=true;
+ try{
+  const today=competitionDateNairobi();
+  const {data:result,error}=await supabaseClient.from("jenzy_competition_results")
+   .select("id,competition_date,session_slot,school_class,subject,answers")
+   .eq("student_id",currentUser.id).eq("competition_date",today).eq("session_slot","morning")
+   .in("subject",["Mathematics","Core Mathematics","Essential Mathematics"]).limit(1).maybeSingle();
+  if(error)throw error;
+  if(!result||!result.id||!result.school_class)return;
+  const p=kenyaParts(new Date()),officialRelease=kenyaDateAt(p,9,30).getTime()+30000;
+  if(Date.now()<officialRelease)return;
+  const recoveryKey="jenzy_morning_math_review_recovery_"+currentUser.id+"_"+result.id;
+  let ctx=lastCompetitionReviewContext;
+  if(!ctx||String(ctx.resultId)!==String(result.id)){
+   ctx={resultId:result.id,questions:[],answers:result.answers||{},schoolClass:result.school_class,subject:result.subject,slot:"morning"};
+  }else{
+   ctx={...ctx,resultId:result.id,answers:ctx.answers||result.answers||{},schoolClass:result.school_class,subject:result.subject,slot:"morning"};
+  }
+  lastCompetitionReviewContext=ctx;
+  try{localStorage.setItem("jenzy_last_competition_review_context",JSON.stringify(ctx))}catch(e){}
+  const state=localStorage.getItem(recoveryKey);
+  if(state!=="done"){
+   await new Promise(resolve=>{
+    const overlay=document.createElement("div");
+    overlay.id="jenzyMathReviewReturnTimer";
+    overlay.style.cssText="position:fixed;inset:0;z-index:100001;background:rgba(3,7,18,.96);color:#fff;display:flex;align-items:center;justify-content:center;padding:22px;text-align:center";
+    const panel=document.createElement("div");
+    panel.style.cssText="width:min(100%,440px);padding:26px 20px;border:2px solid #22c55e;border-radius:22px;background:#111827;box-shadow:0 20px 70px #0008";
+    const heading=document.createElement("h2");heading.textContent="📝 Your Mathematics answer review is ready";
+    heading.style.cssText="font-size:24px;line-height:1.3;margin:0 0 12px";
+    const message=document.createElement("p");message.textContent="You completed this morning’s competition. JENZY will refresh this page in 30 seconds and show which answers were right and wrong.";
+    message.style.cssText="font-size:15px;line-height:1.6;color:#d1d5db";
+    const timer=document.createElement("div");timer.textContent="00:30";
+    timer.style.cssText="font-size:48px;font-weight:950;letter-spacing:2px;color:#86efac;margin:18px 0";
+    const note=document.createElement("p");note.textContent="Please keep this page open.";
+    note.style.cssText="color:#cbd5e1;font-size:13px";
+    panel.append(heading,message,timer,note);overlay.appendChild(panel);document.body.appendChild(overlay);
+    let seconds=30;
+    const interval=setInterval(()=>{
+     seconds=Math.max(0,seconds-1);timer.textContent="00:"+String(seconds).padStart(2,"0");
+     if(seconds===0){
+      clearInterval(interval);
+      try{localStorage.setItem(recoveryKey,"done")}catch(e){}
+      message.textContent="Refreshing now to open your answer review…";
+      setTimeout(()=>{resolve();location.reload()},500);
+     }
+    },1000);
+   });
+   return;
+  }
+  const {data:reviewRows,error:reviewError}=await supabaseClient.rpc("jenzy_get_competition_answer_review",{p_result_id:result.id});
+  if(reviewError)throw reviewError;
+  if(!Array.isArray(reviewRows)||!reviewRows.length){
+   showPage("classResultsPage");
+   const title=document.getElementById("classResultsPageTitle");if(title)title.textContent="📝 Morning Mathematics Answer Review";
+   const desc=document.getElementById("classResultsPageDescription");if(desc)desc.textContent="Your saved answers are being checked.";
+   const box=document.getElementById("classCompetitionResults");
+   if(box)box.innerHTML='<section class="card"><h2>Answer review not available yet</h2><p>The official review service has not returned the questions yet. Please refresh this page shortly.</p></section>';
+   return;
+  }
+  ctx.questions=reviewRows.map(row=>({id:row.question_id}));
+  lastCompetitionReviewContext=ctx;
+  try{localStorage.setItem("jenzy_last_competition_review_context",JSON.stringify(ctx))}catch(e){}
+  showPage("classResultsPage");
+  const title=document.getElementById("classResultsPageTitle");if(title)title.textContent="📝 Morning Mathematics Answer Review";
+  const desc=document.getElementById("classResultsPageDescription");if(desc)desc.textContent="Your personal review: green marks the correct answer; red marks an incorrect answer.";
+  const box=document.getElementById("classCompetitionResults");
+  if(box){
+   box.innerHTML='<section id="jenzyAnswerReviewPanel" style="margin-top:12px;padding:16px;border-radius:18px;background:#111820;color:#f8fafc;border:1px solid #334155"><h2 style="margin-top:0;color:#fff">📝 Your answer review</h2><p style="color:#cbd5e1">Green shows the correct answer. Red shows the answer you selected when it was wrong.</p><div id="competitionAnswerReviewResult" style="color:#f8fafc"></div></section>';
+   await loadLastCompetitionAnswerReview();
+  }
+ }catch(e){
+  console.warn("Could not recover morning Mathematics answer review:",e.message);
+ }finally{
+  jenzyMorningMathRecoveryRunning=false;
+ }
+}
+
 async function loadLastCompetitionAnswerReview(){
  const box=document.getElementById('competitionAnswerReviewResult');
  if(!box)return;
