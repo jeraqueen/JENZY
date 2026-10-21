@@ -909,14 +909,37 @@ function updateCompetitionRegistrationSubjects(){
 }
 
 function playJenzyResultsAlarm(short=false){try{const C=window.AudioContext||window.webkitAudioContext;if(!C)return;const ctx=window.jenzyResultsAudioContext||(window.jenzyResultsAudioContext=new C());if(ctx.state==='suspended')ctx.resume().catch(()=>{});const tones=short?[880,660]:[880,880,660,880];let t=ctx.currentTime;for(const f of tones){const osc=ctx.createOscillator(),gain=ctx.createGain();osc.type='square';osc.frequency.value=f;gain.gain.setValueAtTime(0.0001,t);gain.gain.exponentialRampToValueAtTime(0.16,t+0.025);gain.gain.setValueAtTime(0.16,t+0.13);gain.gain.exponentialRampToValueAtTime(0.0001,t+0.2);osc.connect(gain);gain.connect(ctx.destination);osc.start(t);osc.stop(t+0.22);t+=0.25;}}catch(e){console.warn('Results alarm unavailable:',e)}}
-let jenzyResultsFlowOverlay=null,jenzyResultsFlowOpened=false;
+let jenzyResultsFlowOverlay=null,jenzyResultsFlowOpened=false,jenzyResultsLastSoundSecond=null;
+function playJenzyResultsCountdownSound(seconds){
+ try{
+  const C=window.AudioContext||window.webkitAudioContext;if(!C)return;
+  const ctx=window.jenzyResultsAudioContext||(window.jenzyResultsAudioContext=new C());
+  if(ctx.state==='suspended')ctx.resume().catch(()=>{});
+  const now=ctx.currentTime;
+  const tone=(freq,start,duration,volume,wave='square',endFreq=null)=>{
+   const osc=ctx.createOscillator(),gain=ctx.createGain();osc.type=wave;osc.frequency.setValueAtTime(freq,start);
+   if(endFreq)osc.frequency.exponentialRampToValueAtTime(Math.max(1,endFreq),start+duration);
+   gain.gain.setValueAtTime(0.0001,start);gain.gain.exponentialRampToValueAtTime(volume,start+0.012);gain.gain.exponentialRampToValueAtTime(0.0001,start+duration);
+   osc.connect(gain);gain.connect(ctx.destination);osc.start(start);osc.stop(start+duration+0.02);
+  };
+  if(seconds>10){tone(seconds%2===0?1120:760,now,0.10,0.095,seconds%2===0?'square':'triangle');}
+  else if(seconds>0){const urgency=11-seconds,vol=Math.min(0.28,0.16+urgency*0.012),pitch=900+urgency*48;tone(pitch,now,0.11,vol,'square',pitch*0.78);tone(pitch*0.78,now+0.13,0.12,Math.min(0.28,vol*0.9),'sawtooth',pitch*0.56);}
+  else{tone(1320,now,0.18,0.24,'sawtooth',620);tone(980,now+0.20,0.22,0.22,'square',420);tone(740,now+0.44,0.25,0.20,'sawtooth',360);}
+ }catch(e){console.warn('Results countdown sound unavailable:',e)}
+}
 function runPendingResultsFlow(pending,now=new Date()){
  if(!pending||jenzyResultsFlowOpened)return;
  const endMs=new Date(pending.endAt||pending.releaseAt).getTime();if(!Number.isFinite(endMs)||now.getTime()<endMs)return;
- if(!jenzyResultsFlowOverlay){const overlay=document.createElement('div');overlay.className='jenzy-readiness-overlay';overlay.id='jenzyOfficialResultsCountdown';overlay.innerHTML='<div class="jenzy-readiness-inner"><div class="jenzy-readiness-brand">🏆 JEN<span>ZY</span></div><div class="jenzy-readiness-kicker">OFFICIAL RESULTS & ANSWER REVIEW OPEN IN</div><h1>'+escapeCompetitionText(pending.subject||'Competition')+'</h1><div class="jenzy-readiness-circle" role="timer"><div class="jenzy-readiness-number" id="jenzyOfficialResultsNumber">30</div><div class="jenzy-readiness-caption">SECONDS</div></div><div class="jenzy-readiness-warning">🔔 GET READY — RESULTS, ANSWER REVIEW & POSITION</div><div class="jenzy-readiness-sub">Your answers are saved. When this 30-second countdown ends, your answer review and class position open automatically.</div></div>';document.body.appendChild(overlay);jenzyResultsFlowOverlay=overlay;playJenzyResultsAlarm();}
- const left=Math.max(0,Math.ceil((endMs+30000-now.getTime())/1000));const n=document.getElementById('jenzyOfficialResultsNumber');if(n)n.textContent=String(left);
- if(left<=5&&left>0&&n&&n.dataset.lastAlarm!==String(left)){n.dataset.lastAlarm=String(left);playJenzyResultsAlarm(true)}
- if(left<=0&&!jenzyResultsFlowOpened){playJenzyResultsAlarm();jenzyResultsFlowOpened=true;if(jenzyResultsFlowOverlay)jenzyResultsFlowOverlay.remove();jenzyResultsFlowOverlay=null;try{localStorage.removeItem('jenzy_pending_result_countdown')}catch(e){}openClassResultsPage(pending.schoolClass||getSavedUserSchoolClass());}
+ if(!jenzyResultsFlowOverlay){
+  const overlay=document.createElement('div');overlay.className='jenzy-readiness-overlay';overlay.id='jenzyOfficialResultsCountdown';
+  overlay.innerHTML='<div class="jenzy-readiness-inner"><div class="jenzy-readiness-brand">🏆 JEN<span>ZY</span></div><div class="jenzy-readiness-kicker">OFFICIAL ANSWER REVIEW OPENS IN</div><h1>'+escapeCompetitionText(pending.subject||'Competition')+'</h1><div class="jenzy-readiness-circle" role="timer"><div class="jenzy-readiness-number" id="jenzyOfficialResultsNumber">30</div><div class="jenzy-readiness-caption">SECONDS</div></div><div class="jenzy-readiness-warning" id="jenzyResultsCountdownWarning">🔔 GET READY — ANSWER REVIEW IS NEXT</div><div class="jenzy-readiness-sub">The competition has ended. All submitted answers are being held until the shared 30-second countdown finishes.</div><div class="jenzy-readiness-ring-label">TICK · TOCK · FINAL 10-SECOND ALARM</div></div>';
+  document.body.appendChild(overlay);jenzyResultsFlowOverlay=overlay;jenzyResultsLastSoundSecond=null;
+ }
+ const left=Math.max(0,Math.ceil((endMs+30000-now.getTime())/1000));
+ const n=document.getElementById('jenzyOfficialResultsNumber'),warning=document.getElementById('jenzyResultsCountdownWarning');if(n)n.textContent=String(left);
+ if(n&&left<=10&&left>0){n.style.color='#ff3030';n.style.transform='scale(1.08)';if(warning)warning.textContent=left<=3?'🚨 RESULTS OPEN NOW!':('🚨 '+left+' SECONDS — GET READY!');}else if(n){n.style.color='';n.style.transform='';}
+ if(left!==jenzyResultsLastSoundSecond){jenzyResultsLastSoundSecond=left;playJenzyResultsCountdownSound(left);}
+ if(left<=0&&!jenzyResultsFlowOpened){jenzyResultsFlowOpened=true;if(jenzyResultsFlowOverlay)jenzyResultsFlowOverlay.remove();jenzyResultsFlowOverlay=null;try{localStorage.removeItem('jenzy_pending_result_countdown')}catch(e){}openClassResultsPage(pending.schoolClass||getSavedUserSchoolClass(),pending);}
 }
 function updateHomepageCountdowns(now=new Date()){
  const box=document.getElementById('homepageCountdownRows'),warning=document.getElementById('homepageRegistrationWarning');
