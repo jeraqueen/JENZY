@@ -974,7 +974,7 @@ function runPendingResultsFlow(pending,now=new Date()){
  if(n&&left<=10&&left>0){n.style.color='#ff3030';n.style.transform='scale(1.08)';if(warning)warning.textContent=left<=3?'🚨 RESULTS OPEN NOW!':('🚨 '+left+' SECONDS — GET READY!');}else if(n){n.style.color='';n.style.transform='';}
  if(left!==jenzyResultsLastSoundSecond){jenzyResultsLastSoundSecond=left;playJenzyResultsCountdownSound(left);}
  if(left<=0&&pending.submissionPending){if(warning)warning.textContent='⏳ SAVING YOUR ANSWERS — PLEASE WAIT';const sub=document.querySelector('#jenzyOfficialResultsCountdown .jenzy-readiness-sub');if(sub)sub.textContent='JENZY is securely saving your submitted answers. The answer review will open as soon as the save is confirmed.';return;}
- if(left<=0&&!jenzyResultsFlowOpened){jenzyResultsFlowOpened=true;if(jenzyResultsFlowOverlay)jenzyResultsFlowOverlay.remove();jenzyResultsFlowOverlay=null;try{localStorage.removeItem('jenzy_pending_result_countdown')}catch(e){}(async()=>{await openClassResultsPage(pending.schoolClass||getSavedUserSchoolClass(),pending);if(pending.reviewCatchup&&currentUser&&pending.studentId===currentUser.id){const panel=document.getElementById('jenzyAnswerReviewPanel');if(panel){try{const {error}=await supabaseClient.from('jenzy_answer_review_acknowledgements').upsert({student_id:currentUser.id,school_class:pending.schoolClass,subject:pending.subject,session_slot:pending.slot||'afternoon',competition_date:pending.competitionDate,revealed_at:new Date().toISOString()},{onConflict:'student_id,school_class,subject,session_slot,competition_date'});if(error)throw error;}catch(e){console.warn('Could not record answer-review reveal; it will be offered again next sign-in:',e.message);}}else{console.warn('Answer review panel was not available; this student will be offered the countdown again next sign-in.');}}})().catch(e=>console.warn('Could not open released answer review:',e.message));}
+ if(left<=0&&!jenzyResultsFlowOpened){jenzyResultsFlowOpened=true;if(jenzyResultsFlowOverlay)jenzyResultsFlowOverlay.remove();jenzyResultsFlowOverlay=null;try{localStorage.removeItem('jenzy_pending_result_countdown')}catch(e){}(async()=>{await openClassResultsPage(pending.schoolClass||getSavedUserSchoolClass(),pending);if(pending.reviewCatchup&&currentUser&&pending.studentId===currentUser.id){const panel=document.getElementById('jenzyAnswerReviewPanel');if(panel){try{const {error}=await supabaseClient.from('jenzy_answer_review_acknowledgements').upsert({student_id:currentUser.id,school_class:pending.schoolClass,subject:'__SESSION__',session_slot:pending.slot||'afternoon',competition_date:pending.competitionDate,revealed_at:new Date().toISOString()},{onConflict:'student_id,school_class,subject,session_slot,competition_date'});if(error)throw error;}catch(e){console.warn('Could not record answer-review reveal; it will be offered again next sign-in:',e.message);}}else{console.warn('Answer review panel was not available; this student will be offered the countdown again next sign-in.');}}})().catch(e=>console.warn('Could not open released answer review:',e.message));}
 }
 function updateHomepageCountdowns(now=new Date()){
  const box=document.getElementById('homepageCountdownRows'),warning=document.getElementById('homepageRegistrationWarning');
@@ -1390,6 +1390,10 @@ async function recoverMorningMathAnswerReview(){
    .in("subject",["Mathematics","Core Mathematics","Essential Mathematics"]).limit(1).maybeSingle();
   if(error)throw error;
   if(!result||!result.id||!result.school_class)return;
+  // Stop repeat popups after this session's answer review has been seen on any device.
+  const {data:morningSeen,error:morningSeenError}=await supabaseClient.from("jenzy_answer_review_acknowledgements").select("student_id").eq("student_id",currentUser.id).eq("school_class",result.school_class).eq("session_slot","morning").eq("competition_date",result.competition_date).limit(1);
+  if(morningSeenError)throw morningSeenError;
+  if(Array.isArray(morningSeen)&&morningSeen.length)return;
   const p=kenyaParts(new Date()),officialRelease=kenyaDateAt(p,9,30).getTime()+30000;
   if(Date.now()<officialRelease)return;
   const recoveryKey="jenzy_morning_math_review_recovery_"+currentUser.id+"_"+result.id;
@@ -1452,6 +1456,9 @@ async function recoverMorningMathAnswerReview(){
    box.innerHTML='<section id="jenzyAnswerReviewPanel" style="margin-top:12px;padding:16px;border-radius:18px;background:#111820;color:#f8fafc;border:1px solid #334155"><h2 style="margin-top:0;color:#fff">📝 Your answer review</h2><p style="color:#cbd5e1">Green shows the correct answer. Red shows the answer you selected when it was wrong.</p><div id="competitionAnswerReviewResult" style="color:#f8fafc"></div></section>';
    await loadLastCompetitionAnswerReview();
   }
+  const {error:markMorningSeenError}=await supabaseClient.from("jenzy_answer_review_acknowledgements").upsert({student_id:currentUser.id,school_class:result.school_class,subject:"__SESSION__",session_slot:"morning",competition_date:result.competition_date,revealed_at:new Date().toISOString()},{onConflict:"student_id,school_class,subject,session_slot,competition_date"});
+  if(markMorningSeenError)throw markMorningSeenError;
+  try{localStorage.setItem("jenzy_morning_math_review_recovery_"+currentUser.id+"_"+result.id,"done")}catch(e){}
  }catch(e){
   console.warn("Could not recover morning Mathematics answer review:",e.message);
  }finally{
@@ -1742,7 +1749,7 @@ async function maybeOpenCurrentSessionAnswerReview(){
   if(sessionDate===today&&!releasedToday)continue;
   const {data:seen,error:seenError}=await supabaseClient.from('jenzy_answer_review_acknowledgements')
    .select('student_id').eq('student_id',currentUser.id).eq('school_class',registration.school_class)
-   .eq('subject',registration.subject).eq('session_slot','afternoon').eq('competition_date',sessionDate).limit(1);
+   .eq('session_slot','afternoon').eq('competition_date',sessionDate).limit(1);
   if(seenError)throw seenError;
   if(Array.isArray(seen)&&seen.length)continue;
   // This registration has not yet received its post-login answer-review reveal.
