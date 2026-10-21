@@ -878,7 +878,7 @@ function nextQuestion(){if(qi<questions.length-1){qi++;renderQuestion();return}d
 // Published JENZY competition flow. Correct answers are never fetched by the browser;
 // the database scoring RPC checks them server-side.
 let activeCompetition=null, competitionTimer=null, competitionPreviousPage='competitions';
-let lastCompetitionReviewContext=null;
+let lastCompetitionReviewContext=(()=>{try{return JSON.parse(localStorage.getItem('jenzy_last_competition_review_context')||'null')}catch(e){return null}})();
 
 // Competition registration: free entries are stored securely; paid entries remain disabled until a verified gateway is connected.
 let competitionRegistrationType='free';
@@ -906,13 +906,15 @@ function updateCompetitionRegistrationSubjects(){
  if(!document.getElementById('competitionRegistrationForm')?.hidden&&currentUser&&competitionRegistrationType==='free')loadMyCompetitionRegistration(true);
 }
 
+function playJenzyResultsAlarm(short=false){try{const C=window.AudioContext||window.webkitAudioContext;if(!C)return;const ctx=window.jenzyResultsAudioContext||(window.jenzyResultsAudioContext=new C());if(ctx.state==='suspended')ctx.resume().catch(()=>{});const tones=short?[880,660]:[880,880,660,880];let t=ctx.currentTime;for(const f of tones){const osc=ctx.createOscillator(),gain=ctx.createGain();osc.type='square';osc.frequency.value=f;gain.gain.setValueAtTime(0.0001,t);gain.gain.exponentialRampToValueAtTime(0.16,t+0.025);gain.gain.setValueAtTime(0.16,t+0.13);gain.gain.exponentialRampToValueAtTime(0.0001,t+0.2);osc.connect(gain);gain.connect(ctx.destination);osc.start(t);osc.stop(t+0.22);t+=0.25;}}catch(e){console.warn('Results alarm unavailable:',e)}}
 let jenzyResultsFlowOverlay=null,jenzyResultsFlowOpened=false;
 function runPendingResultsFlow(pending,now=new Date()){
  if(!pending||jenzyResultsFlowOpened)return;
  const endMs=new Date(pending.endAt||pending.releaseAt).getTime();if(!Number.isFinite(endMs)||now.getTime()<endMs)return;
- if(!jenzyResultsFlowOverlay){const overlay=document.createElement('div');overlay.className='jenzy-readiness-overlay';overlay.id='jenzyOfficialResultsCountdown';overlay.innerHTML='<div class="jenzy-readiness-inner"><div class="jenzy-readiness-brand">🏆 JEN<span>ZY</span></div><div class="jenzy-readiness-kicker">OFFICIAL RESULTS OPEN IN</div><h1>'+escapeCompetitionText(pending.subject||'Competition')+'</h1><div class="jenzy-readiness-circle" role="timer"><div class="jenzy-readiness-number" id="jenzyOfficialResultsNumber">60</div><div class="jenzy-readiness-caption">SECONDS</div></div><div class="jenzy-readiness-warning">🏆 GET READY TO VIEW YOUR RESULTS</div><div class="jenzy-readiness-sub">Your answers are saved. Results and class position open automatically when this countdown reaches zero.</div></div>';document.body.appendChild(overlay);jenzyResultsFlowOverlay=overlay;}
- const left=Math.max(0,Math.ceil((endMs+60000-now.getTime())/1000));const n=document.getElementById('jenzyOfficialResultsNumber');if(n)n.textContent=String(left);
- if(left<=0&&!jenzyResultsFlowOpened){jenzyResultsFlowOpened=true;if(jenzyResultsFlowOverlay)jenzyResultsFlowOverlay.remove();jenzyResultsFlowOverlay=null;try{localStorage.removeItem('jenzy_pending_result_countdown')}catch(e){}openClassResultsPage(pending.schoolClass||getSavedUserSchoolClass());}
+ if(!jenzyResultsFlowOverlay){const overlay=document.createElement('div');overlay.className='jenzy-readiness-overlay';overlay.id='jenzyOfficialResultsCountdown';overlay.innerHTML='<div class="jenzy-readiness-inner"><div class="jenzy-readiness-brand">🏆 JEN<span>ZY</span></div><div class="jenzy-readiness-kicker">OFFICIAL RESULTS & ANSWER REVIEW OPEN IN</div><h1>'+escapeCompetitionText(pending.subject||'Competition')+'</h1><div class="jenzy-readiness-circle" role="timer"><div class="jenzy-readiness-number" id="jenzyOfficialResultsNumber">30</div><div class="jenzy-readiness-caption">SECONDS</div></div><div class="jenzy-readiness-warning">🔔 GET READY — RESULTS, ANSWER REVIEW & POSITION</div><div class="jenzy-readiness-sub">Your answers are saved. When this 30-second countdown ends, your answer review and class position open automatically.</div></div>';document.body.appendChild(overlay);jenzyResultsFlowOverlay=overlay;playJenzyResultsAlarm();}
+ const left=Math.max(0,Math.ceil((endMs+30000-now.getTime())/1000));const n=document.getElementById('jenzyOfficialResultsNumber');if(n)n.textContent=String(left);
+ if(left<=5&&left>0&&n&&n.dataset.lastAlarm!==String(left)){n.dataset.lastAlarm=String(left);playJenzyResultsAlarm(true)}
+ if(left<=0&&!jenzyResultsFlowOpened){playJenzyResultsAlarm();jenzyResultsFlowOpened=true;if(jenzyResultsFlowOverlay)jenzyResultsFlowOverlay.remove();jenzyResultsFlowOverlay=null;try{localStorage.removeItem('jenzy_pending_result_countdown')}catch(e){}openClassResultsPage(pending.schoolClass||getSavedUserSchoolClass());}
 }
 function updateHomepageCountdowns(now=new Date()){
  const box=document.getElementById('homepageCountdownRows'),warning=document.getElementById('homepageRegistrationWarning');
@@ -1318,7 +1320,7 @@ async function loadLastCompetitionAnswerReview(){
  try{
   const {data,error}=await supabaseClient.rpc('jenzy_get_competition_answer_review',{p_result_id:ctx.resultId});
   if(error)throw error;
-  if(!Array.isArray(data)||!data.length){box.innerHTML='<p>Answer review is still locked. It becomes available after the session ends, the one-minute preparation wait, and the 60-second official release countdown.</p>';return;}
+  if(!Array.isArray(data)||!data.length){box.innerHTML='<p>Answer review is not available yet. The 30-second official results countdown must finish first. If it has finished, refresh the results page and try again.</p>';return;}
   const byId=new Map(data.map(q=>[String(q.question_id),q]));
   box.innerHTML=ctx.questions.map((q,i)=>{
    const row=byId.get(String(q.id));if(!row)return '';
@@ -1332,7 +1334,7 @@ async function submitCompetitionAnswers(auto=false){const c=activeCompetition;if
  try{
   document.getElementById('competitionPlayStatus').textContent='Submitting answers for secure server-side scoring…';
    const {data,error}=await supabaseClient.rpc('jenzy_submit_competition',{p_session_slot:c.slot,p_school_class:c.schoolClass,p_subject:c.subject,p_answers:c.answers});if(error)throw error;
-   lastCompetitionReviewContext={resultId:data.result_id,questions:c.questions,answers:{...c.answers},schoolClass:c.schoolClass,subject:c.subject,slot:c.slot};
+   lastCompetitionReviewContext={resultId:data.result_id,questions:c.questions,answers:{...c.answers},schoolClass:c.schoolClass,subject:c.subject,slot:c.slot};try{localStorage.setItem('jenzy_last_competition_review_context',JSON.stringify(lastCompetitionReviewContext))}catch(e){console.warn('Could not preserve answer-review context:',e)}
    const date=String(data.competition_date||competitionDateNairobi()),hm=c.slot==='morning'?[9,30]:c.slot==='afternoon'?[14,15]:[21,10],parts=date.split('-').map(Number),endAt=new Date(Date.UTC(parts[0],parts[1]-1,parts[2],hm[0]-3,hm[1])).getTime();
    jenzyResultsFlowOpened=false;localStorage.setItem('jenzy_pending_result_countdown',JSON.stringify({resultId:data.result_id,competitionDate:date,slot:c.slot,subject:c.subject,schoolClass:c.schoolClass,submittedAt:new Date().toISOString(),endAt:new Date(endAt).toISOString(),releaseAt:new Date(endAt).toISOString()}));
    document.getElementById('competitionQuestionBox').innerHTML='';document.getElementById('competitionPrevBtn').hidden=true;document.getElementById('competitionNextBtn').hidden=true;document.getElementById('competitionSubmitBtn').hidden=true;
@@ -1486,10 +1488,9 @@ function startCompetitionResultsReleaseCountdown(schoolClass){
   else end=kenyaDateAt(mins<9*60?{...p,day:p.day-1}:p,21,10);
   const releaseKey=p.year+'-'+p.month+'-'+p.day+'-'+(mins>=21*60||mins<9*60?'evening':mins>=14*60?'afternoon':'morning');
   if(competitionResultsReleaseReachedKey===releaseKey){el.textContent='The release time has passed, but no official results are available yet.';return;}
-  const ms=now.getTime(),endMs=end.getTime(),waitEnd=endMs+60000,releaseAt=endMs+120000;
+  const ms=now.getTime(),endMs=end.getTime(),releaseAt=endMs+30000;
   if(ms<endMs)el.textContent='Competition session remaining: '+fmtCountdown(endMs-ms);
-  else if(ms<waitEnd)el.textContent='Results preparation wait: '+fmtCountdown(waitEnd-ms);
-  else if(ms<releaseAt)el.textContent='Official results countdown: '+fmtCountdown(releaseAt-ms);
+  else if(ms<releaseAt)el.textContent='🔔 Results, answer review and position open in: '+fmtCountdown(releaseAt-ms);
   else{
    el.textContent='The release countdown has finished. Refreshing official results…';
    competitionResultsReleaseReachedKey=releaseKey;
