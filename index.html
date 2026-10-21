@@ -1735,7 +1735,7 @@ async function openClassResultsPage(schoolClass,pending=null){
  const expectedDate=pending&&pending.competitionDate?String(pending.competitionDate):(mins<9*60?competitionDateNairobi(new Date(Date.UTC(kp.year,kp.month-1,kp.day-1))):competitionDateNairobi());
  let ctx=lastCompetitionReviewContext;
  let matchingReview=!!ctx&&!!ctx.resultId&&String(ctx.schoolClass||'').trim()===String(schoolClass||'').trim()&&String(ctx.slot||'')===expectedSlot&&String(ctx.competitionDate||'')===expectedDate&&(!(pending&&pending.resultId)||String(ctx.resultId)===String(pending.resultId));
- // Recover the student's own result securely when local storage is empty or belongs to an older session.
+ // Recover this student's own result securely on a new device or after local storage was cleared.
  if(!matchingReview&&currentUser){
   try{
    const {data,error}=await supabaseClient.rpc('jenzy_get_my_session_review_context',{p_school_class:schoolClass,p_session_slot:expectedSlot,p_competition_date:expectedDate});
@@ -1750,7 +1750,7 @@ async function openClassResultsPage(schoolClass,pending=null){
    }
   }catch(e){console.warn('Could not recover current-session answer review:',e.message)}
  }
- // Never show a previous session's review after a newer session starts.
+ // Clear stale local review before trying the shared, registration-protected answer key.
  if(!matchingReview){
   lastCompetitionReviewContext=null;
   try{localStorage.removeItem('jenzy_last_competition_review_context')}catch(e){}
@@ -1759,12 +1759,29 @@ async function openClassResultsPage(schoolClass,pending=null){
   resultsBox.innerHTML='<section id="jenzyAnswerReviewPanel" style="margin-top:8px;padding:16px;border-radius:18px;background:#111820;color:#f8fafc;border:1px solid #334155"><h2 style="margin-top:0;color:#f8fafc">📝 '+safeText(competitionSlotLabel(expectedSlot))+' session answer review</h2><p style="color:#cbd5e1">Your submitted answers, correct answers, and explanations for '+safeText(expectedDate)+'.</p><div id="competitionAnswerReviewResult" style="color:#f8fafc"></div><button type="button" class="primary" style="width:100%;margin-top:18px;padding:15px;font-weight:900" onclick="showJenzyClassPosition()">🏆 Show My Position &amp; Class Leaderboard ↓</button></section><div id="classCompetitionLeaderboard" hidden style="margin-top:18px"></div>';
   loadLastCompetitionAnswerReview();
   loadClassCompetitionResults(schoolClass);
- }else{
-  if(resultsBox)resultsBox.innerHTML='<section class="card"><h2>📝 Current session answer review</h2><p>Your previous-session review has been cleared. This account has no saved result for the '+safeText(competitionSlotLabel(expectedSlot).toLowerCase())+' session on '+safeText(expectedDate)+' yet. If you completed the competition, refresh this page in a moment so JENZY can recover your saved result.</p></section>';
+  return;
+ }
+ // A registered student who did not save an attempt still receives the official current-session
+ // answer key and explanations after release. The RPC checks registration and release time.
+ let sharedReviewRows=[];
+ if(currentUser){
+  try{
+   const {data,error}=await supabaseClient.rpc('jenzy_get_registered_session_answer_review',{p_school_class:schoolClass,p_session_slot:expectedSlot,p_competition_date:expectedDate});
+   if(error)throw error;
+   sharedReviewRows=Array.isArray(data)?data:[];
+  }catch(e){console.warn('Could not load registered-session answer review:',e.message)}
+ }
+ if(resultsBox&&sharedReviewRows.length){
+  const grouped={};
+  sharedReviewRows.forEach(row=>{(grouped[row.subject||'Competition']||(grouped[row.subject||'Competition']=[])).push(row)});
+  const reviewHtml=Object.entries(grouped).map(([subject,rows])=>'<section style="margin:12px 0;padding:14px;border:1px solid #334155;border-radius:14px;background:#111820;color:#f8fafc"><h3 style="margin:0 0 12px;color:#fff">'+safeText(subject)+' — official answer review</h3>'+rows.map((row,i)=>{const options=[row.option_a,row.option_b,row.option_c,row.option_d];return '<article style="padding:12px 0;border-top:1px solid #334155"><strong>'+(i+1)+'. '+safeText(row.question_text||'Question')+'</strong><div style="margin:8px 0;color:#86efac;font-weight:800">Correct answer: '+safeText(options[Number(row.correct_option)]||options[Number(row.correct_option)-1]||'See options')+'</div><div style="color:#cbd5e1">'+options.map((option,index)=>'<div style="padding:4px 0;'+(index===Number(row.correct_option)||index+1===Number(row.correct_option)?'color:#86efac;font-weight:700;':'')+'">'+String.fromCharCode(65+index)+'. '+safeText(option||'')+'</div>').join('')+'</div>'+(row.explanation?'<p style="margin:8px 0 0;color:#cbd5e1"><b>Explanation:</b> '+safeText(row.explanation)+'</p>':'')+'</article>'}).join('')+'</section>').join('');
+  resultsBox.innerHTML='<section id="jenzyAnswerReviewPanel" style="margin-top:8px;padding:16px;border-radius:18px;background:#111820;color:#f8fafc;border:1px solid #334155"><h2 style="margin-top:0;color:#fff">📝 '+safeText(competitionSlotLabel(expectedSlot))+' session answer review</h2><p style="color:#cbd5e1">Official questions, correct answers and explanations for the current session on '+safeText(expectedDate)+'. Your previous-session review has been cleared.</p>'+reviewHtml+'<button type="button" class="primary" style="width:100%;margin-top:18px;padding:15px;font-weight:900" onclick="showJenzyClassPosition()">🏆 Show My Position &amp; Class Leaderboard ↓</button></section><div id="classCompetitionLeaderboard" hidden style="margin-top:18px"></div>';
+  loadClassCompetitionResults(schoolClass);
+ }else if(resultsBox){
+  resultsBox.innerHTML='<section class="card"><h2>📝 Current session answer review</h2><p>Your previous-session review has been cleared. The current session review will appear here after JENZY confirms your registration and the official release time has passed. If you completed the competition, refresh this page in a moment so JENZY can recover your saved result.</p></section>';
   loadClassCompetitionResults(schoolClass);
  }
 }
-
 
 
 </script>
