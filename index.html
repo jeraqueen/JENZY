@@ -4,7 +4,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <meta name="theme-color" content="#4f46e5">
-<meta name="jenzy-build" content="jenzy-build-20261021-afternoon-review-catchup-pass-5">
+<meta name="jenzy-build" content="jenzy-build-20261021-whatsapp-message-actions-pass-6">
 <title>JENZY — Learn. Play. Compete.</title>
 <style>
 :root{--bg:#f5f7ff;--card:#fff;--text:#19213b;--muted:#69738c;--primary:#4f46e5;--line:#e7e9f3}
@@ -1873,5 +1873,18 @@ async function openClassResultsPage(schoolClass,pending=null){
 })();
 </script>
 
+<script>
+(function(){
+ const box=document.getElementById('conversationMessages');
+ if(!box)return;
+ let reactionRefreshPending=false;
+ const observer=new MutationObserver(()=>{
+  if(reactionRefreshPending)return;reactionRefreshPending=true;
+  Promise.resolve().then(()=>{reactionRefreshPending=false;if(typeof window.renderJenzyMessageReactions==='function')window.renderJenzyMessageReactions()});
+ });
+ observer.observe(box,{childList:true,subtree:true});
+ if(typeof window.renderJenzyMessageReactions==='function')window.renderJenzyMessageReactions();
+})();
+</script>
 </body>
 </html>
