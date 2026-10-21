@@ -1436,26 +1436,32 @@ setInterval(checkPrivateMathSession,250);
 
 async function checkJenzyAutomaticCompetition(){
  if(!currentUser||jenzyAutoLaunchBusy||activeCompetition||jenzyReadinessOverlay)return;
- const now=new Date(),p=kenyaParts(now),date=competitionDateNairobi(now),schoolClass=selectedCompetitionClass();
- const slots=[{slot:'morning',start:competitionStartAt('morning',date),end:kenyaDateAt(p,9,30)},{slot:'afternoon',start:competitionStartAt('afternoon',date),end:kenyaDateAt(p,14,15)},{slot:'evening',start:competitionStartAt('evening',date),end:kenyaDateAt(p,21,10)}];
- // Begin the 60-second readiness timer during the final minute before a session.
- const session=slots.find(x=>now<x.end&&x.start.getTime()-now.getTime()<=60000);
+ const now=new Date(),date=competitionDateNairobi(now),profileClass=selectedCompetitionClass();
+ const slots=[
+  {slot:'morning',start:competitionStartAt('morning',date),end:kenyaDateAt(kenyaParts(now),9,30)},
+  {slot:'afternoon',start:competitionStartAt('afternoon',date),end:kenyaDateAt(kenyaParts(now),14,15)},
+  {slot:'evening',start:competitionStartAt('evening',date),end:kenyaDateAt(kenyaParts(now),21,10)}
+ ];
+ // Students may join any time while the session is active. Late arrivals get a fresh 30-second countdown.
+ const session=slots.find(x=>now<x.end&&now.getTime()>=x.start.getTime()-60000);
  if(!session)return;
- const startDelta=session.start.getTime()-now.getTime();
- if(startDelta<0&&now>=session.end)return;
- const testKey=[currentUser.id,date,session.slot,schoolClass].join('|');
+ const testKey=[currentUser.id,date,session.slot].join('|');
  if(jenzyAutoLaunchedKeys.has(testKey))return;
  jenzyAutoLaunchBusy=true;
  try{
-  const {data,error}=await supabaseClient.from('jenzy_competition_registrations').select('entry_number,subject,school_class,entry_type').eq('student_id',currentUser.id).eq('competition_date',date).eq('session_slot',session.slot).eq('school_class',schoolClass).in('entry_type',['free','paid']).eq('status','confirmed').limit(10);
+  const {data,error}=await supabaseClient.from('jenzy_competition_registrations')
+   .select('entry_number,subject,school_class,entry_type')
+   .eq('student_id',currentUser.id).eq('competition_date',date).eq('session_slot',session.slot)
+   .in('entry_type',['free','paid']).eq('status','confirmed').limit(20);
   if(error)throw error;
-  const registration=(data||[]).find(row=>row.subject);
-  if(!registration)return;
-  const subject=registration.subject,registeredClass=registration.school_class||schoolClass;
+  const registrations=(data||[]).filter(row=>row.subject&&row.school_class);
+  if(!registrations.length)return;
+  const registration=registrations.find(row=>row.school_class===profileClass)||registrations[0];
+  const subject=registration.subject,registeredClass=registration.school_class;
   const key=[currentUser.id,date,session.slot,registeredClass,subject].join('|');
   if(jenzyAutoLaunchedKeys.has(key))return;
   jenzyAutoLaunchedKeys.add(testKey);jenzyAutoLaunchedKeys.add(key);
-  if(startDelta>0)showJenzyReadiness(session.slot,subject,registeredClass,session.start);
+  if(now<session.start)showJenzyReadiness(session.slot,subject,registeredClass,session.start);
   else showJenzyReadiness(session.slot,subject,registeredClass,Date.now()+30000,false,false,30);
  }catch(e){console.warn('Could not check automatic competition entry:',e.message)}finally{jenzyAutoLaunchBusy=false}
 }
