@@ -901,7 +901,7 @@ async function requireUniqueFullName(){
 initializeApp();
 refreshProgress();
 updateLearningChoices();
-function showPage(id){if(!currentUser)return;if(document.body.classList.contains("class-required")){showClassRequiredGate(true);return}if(id==="progress")refreshProgress();stopConversationSubscription();document.getElementById("chatConversation")?.classList.remove("active");document.querySelectorAll(".page").forEach(p=>p.classList.toggle("active",p.id===id));document.querySelectorAll(".tabs button").forEach(b=>b.classList.toggle("active",b.dataset.page===id));const topProfile=document.getElementById("myProfileTopButton");if(topProfile)topProfile.style.visibility=id==="profile"?"hidden":"visible";if(id==="chats")switchChatSection("chats");if(id==="profile")refreshProfileCompetitionRecord();if(id==="competitions"){updateCompetitionRegistrationSubjects();refreshCompetitionCounts()}if(id==="home"){const card=document.getElementById("homepageCompetitionRegistrationCard");if(card)card.hidden=true;}window.scrollTo({top:0,behavior:"smooth"})}
+function showPage(id){if(!currentUser)return;if(document.body.classList.contains("class-required")){showClassRequiredGate(true);return}if(id==="progress")refreshProgress();stopConversationSubscription();document.getElementById("chatConversation")?.classList.remove("active");document.querySelectorAll(".page").forEach(p=>p.classList.toggle("active",p.id===id));document.querySelectorAll(".tabs button").forEach(b=>b.classList.toggle("active",b.dataset.page===id));const topProfile=document.getElementById("myProfileTopButton");if(topProfile)topProfile.style.visibility=id==="profile"?"hidden":"visible";if(id==="chats")switchChatSection("chats");if(id==="profile")refreshProfileCompetitionRecord();if(id==="competitions"){updateCompetitionRegistrationSubjects();refreshCompetitionCounts()}if(id==="home")refreshHomepageCompetitionRegistration();window.scrollTo({top:0,behavior:"smooth"})}
 function chooseLevel(selected){level=selected;const status=document.getElementById("levelStatus");if(status)status.textContent="Selected level: "+selected+" school. Questions are loaded from the published question bank.";const schoolLevel=document.getElementById("schoolLevel");if(schoolLevel)schoolLevel.value=selected;}
 const PRACTICE_KEY="jenzy_practice_v1";
 function getPractice(){try{return JSON.parse(localStorage.getItem(PRACTICE_KEY)||"[]")}catch{return []}}
@@ -1184,10 +1184,45 @@ let homepageRegistrationCheckStartedAt=0;
 let homepageRegistrationCheckId=0;
 async function refreshHomepageCompetitionRegistration(){
  const card=document.getElementById('homepageCompetitionRegistrationCard');
- if(card)card.hidden=true;
- // Registration is optional and must not be presented as a condition for competition access.
+ const details=document.getElementById('homepageCompetitionRegistrationDetails');
+ if(!card||!details)return;
+ if(homepageRegistrationCheckInProgress)return;
+ card.hidden=false;
+ if(!currentUser){details.className='homepage-registration-status not-registered homepage-registration-status-simple';details.innerHTML='<span class="homepage-registration-status-icon" aria-hidden="true">☐</span><strong>NOT REGISTERED</strong><span class="homepage-registration-entry-number">No Entry Number</span>';return;}
+ homepageRegistrationCheckInProgress=true;
+ homepageRegistrationCheckStartedAt=Date.now();
+ const checkId=++homepageRegistrationCheckId;
+ const isCurrent=()=>checkId===homepageRegistrationCheckId && details.isConnected;
+ const showFailure=()=>{if(!isCurrent())return;homepageRegistrationCheckInProgress=false;details.className='homepage-registration-status not-registered homepage-registration-status-simple';details.innerHTML='<span class="homepage-registration-status-icon" aria-hidden="true">☐</span><strong>NOT REGISTERED</strong>';};
+ details.className='homepage-registration-status not-registered homepage-registration-status-simple';details.innerHTML='<span class="homepage-registration-status-icon" aria-hidden="true">…</span><strong>CHECKING</strong>';
+ const watchdog=setTimeout(()=>{if(details.isConnected&&details.textContent.includes('CHECKING')){homepageRegistrationCheckInProgress=false;details.className='homepage-registration-status not-registered homepage-registration-status-simple';details.innerHTML='<span class="homepage-registration-status-icon" aria-hidden="true">☐</span><strong>NOT REGISTERED</strong>'; }},10000);
+ try{
+  const nextSession=nextRegistrableCompetitionSession(new Date());
+  const lifecycle=await supabaseClient.rpc('jenzy_refresh_registration_lifecycle',{p_competition_date:nextSession.date,p_session_slot:nextSession.slot});
+  if(lifecycle.error)throw lifecycle.error;
+  const request=supabaseClient.from('jenzy_competition_registrations')
+    .select('id,student_id,competition_date,session_slot,entry_type,status,entry_number')
+    .eq('student_id',currentUser.id)
+    .eq('competition_date',nextSession.date)
+    .eq('session_slot',nextSession.slot)
+    .in('entry_type',['free','paid'])
+    .eq('status','confirmed');
+  const timeout=new Promise((_,reject)=>setTimeout(()=>reject(new Error('The database did not respond within 9 seconds.')),9000));
+  const {data,error}=await Promise.race([request,timeout]);
+  if(!isCurrent())return;
+  if(error)throw error;
+  const rows=(data||[]).filter(row=>String(row.status||'').toLowerCase()==='confirmed');
+  if(!rows.length){details.className='homepage-registration-status not-registered homepage-registration-status-simple';details.innerHTML='<span class="homepage-registration-status-icon" aria-hidden="true">☐</span><strong>NOT REGISTERED</strong><span class="homepage-registration-entry-number">No Entry Number</span>';return;}
+  const entryNumber=rows.find(row=>row.entry_number!==null&&row.entry_number!==undefined&&String(row.entry_number).trim()!=='')?.entry_number;
+  details.className='homepage-registration-status registered homepage-registration-status-simple';details.innerHTML='<span class="homepage-registration-status-icon" aria-hidden="true">☑</span><strong>REGISTERED</strong><span class="homepage-registration-entry-number">ENTRY NUMBER: '+String(entryNumber??'Not available').replace(/[&<>"']/g,ch=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[ch]))+'</span>';
+ }catch(e){
+  console.warn('Could not load homepage competition registration status:',e);
+  showFailure();
+ }finally{
+  clearTimeout(watchdog);
+  if(checkId===homepageRegistrationCheckId)homepageRegistrationCheckInProgress=false;
+ }
 }
-
 async function refreshCompetitionCounts(){
  if(!currentUser)return;updateCompetitionRegistrationWindow();
  const slot=document.getElementById('competitionRegistrationSlot')?.value,subject=document.getElementById('competitionRegistrationSubject')?.value,schoolClass=selectedCompetitionClass();if(!slot||!subject)return;
