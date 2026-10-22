@@ -924,11 +924,11 @@ let jenzyJamespesaMorningExceptionDate='';
 function competitionStartAt(slot,dateString){
  const [year,month,day]=String(dateString).split('-').map(Number);
  const p={year,month,day};
- const time=slot==='morning'?[9,16]:slot==='afternoon'?[14,0]:[21,0];
+ const time=slot==='morning'?[9,25]:slot==='afternoon'?[14,0]:[21,0];
  return kenyaDateAt(p,time[0],time[1]);
 }
 function competitionDateNairobi(date=new Date()){const p=kenyaParts(date);return p.year+'-'+String(p.month).padStart(2,'0')+'-'+String(p.day).padStart(2,'0')}
-function competitionDateForSlot(slot,now=new Date()){const p=kenyaParts(now),m=p.hour*60+p.minute,end=slot==='morning'?585:slot==='afternoon'?855:1270;const target=new Date(Date.UTC(p.year,p.month-1,p.day+(m>=end?1:0)));return competitionDateNairobi(target)}
+function competitionDateForSlot(slot,now=new Date()){const p=kenyaParts(now),m=p.hour*60+p.minute,end=slot==='morning'?595:slot==='afternoon'?855:1270;const target=new Date(Date.UTC(p.year,p.month-1,p.day+(m>=end?1:0)));return competitionDateNairobi(target)}
 function nextRegistrableCompetitionSession(now=new Date()){const p=kenyaParts(now),slots=[{slot:'morning'},{slot:'afternoon'},{slot:'evening'}];for(let day=0;day<4;day++){const targetDate=new Date(Date.UTC(p.year,p.month-1,p.day+day)),date=competitionDateNairobi(targetDate);for(const item of slots){const start=competitionStartAt(item.slot,date);if(now<start)return {slot:item.slot,date,start,deadline:start};}}const tomorrow=new Date(Date.UTC(p.year,p.month-1,p.day+1)),date=competitionDateNairobi(tomorrow),start=competitionStartAt('morning',date);return {slot:'morning',date,start,deadline:start};}
 
 function playJenzyResultsAlarm(short=false){try{const C=window.AudioContext||window.webkitAudioContext;if(!C)return;const ctx=window.jenzyResultsAudioContext||(window.jenzyResultsAudioContext=new C());if(ctx.state==='suspended')ctx.resume().catch(()=>{});const tones=short?[880,660]:[880,880,660,880];let t=ctx.currentTime;for(const f of tones){const osc=ctx.createOscillator(),gain=ctx.createGain();osc.type='square';osc.frequency.value=f;gain.gain.setValueAtTime(0.0001,t);gain.gain.exponentialRampToValueAtTime(0.16,t+0.025);gain.gain.setValueAtTime(0.16,t+0.13);gain.gain.exponentialRampToValueAtTime(0.0001,t+0.2);osc.connect(gain);gain.connect(ctx.destination);osc.start(t);osc.stop(t+0.22);t+=0.25;}}catch(e){console.warn('Results alarm unavailable:',e)}}
@@ -971,7 +971,7 @@ function updateHomepageCountdowns(now=new Date()){
  if(!box||!warning)return;
  try{let pending=JSON.parse(localStorage.getItem('jenzy_pending_result_countdown')||'null');if(pending&&pending.competitionDate){const todayForPending=competitionDateNairobi(now);const pendingDate=String(pending.competitionDate);const pendingMinutes=(()=>{const x=kenyaParts(now);return x.hour*60+x.minute;})();const expiredCatchup=!!pending.reviewCatchup&&(pendingDate!==todayForPending||pendingMinutes>17*60+15);const staleSession=pendingDate<todayForPending;if(expiredCatchup||staleSession){localStorage.removeItem('jenzy_pending_result_countdown');pending=null;}}if(pending&&(pending.endAt||pending.releaseAt)){const remaining=new Date(pending.endAt||pending.releaseAt).getTime()-now.getTime();if(remaining>0){box.innerHTML='<div class="homepage-countdown-row" style="border:2px solid #8b5cf6;background:rgba(139,92,246,.12);border-radius:14px;padding:14px"><div class="countdown-label" style="color:#8b5cf6;font-weight:900">💜 Your results will be available in</div><div class="countdown-time" style="color:#8b5cf6;font-size:26px;font-weight:900">'+fmtCountdown(remaining)+'</div><div class="countdown-sub">'+safeText(pending.subject||'Competition')+' · '+safeText(pending.schoolClass||'')+' · Results appear after the official session closes.</div></div>';if(heading)heading.textContent='💜 Results countdown';if(description)description.textContent='Your submission is saved. This is the only countdown shown on Home until results release.';warning.hidden=true;warning.textContent='';return;}runPendingResultsFlow(pending,now);box.innerHTML='<div class="homepage-countdown-row"><div class="countdown-label">🏆 Official results countdown</div><div class="countdown-time">Opening automatically</div><div class="countdown-sub">Keep JENZY open while the full-page 30-second countdown finishes.</div></div>';if(heading)heading.textContent='💜 Official results countdown';if(description)description.textContent='Results and positions stay hidden until the full-page countdown finishes.';warning.hidden=true;warning.textContent='';return;}}catch(e){console.warn('Pending results countdown error',e)}
  const p=kenyaParts(now),slots=[
-  {slot:'morning',label:'Morning Mathematics',startLabel:'9:15 AM timer · 9:16 AM questions'},
+  {slot:'morning',label:'Morning Mathematics',startLabel:'9:25 AM start · 9:55 AM end'},
   {slot:'afternoon',label:'Afternoon English / Kiswahili',startLabel:'2:00 PM'},
   {slot:'evening',label:'Evening class subject',startLabel:'9:00 PM'}
  ];
@@ -1481,11 +1481,10 @@ function kenyaDateAt(p,hh,mm,ss=0){return new Date(Date.UTC(p.year,p.month-1,p.d
 function fmtCountdown(ms){let sec=Math.max(0,Math.floor(ms/1000));const h=Math.floor(sec/3600);sec%=3600;const m=Math.floor(sec/60),s=sec%60;return (h?String(h).padStart(2,'0')+':':'')+String(m).padStart(2,'0')+':'+String(s).padStart(2,'0');}
 function scheduleState(now=new Date()){
  const p=kenyaParts(now),mins=p.hour*60+p.minute;
- const todayStart=kenyaDateAt(p,9,15),mathOpen=kenyaDateAt(p,9,16),mathEnd=kenyaDateAt(p,9,45),aftStart=kenyaDateAt(p,14,0),aftEnd=kenyaDateAt(p,14,15),eveStart=kenyaDateAt(p,21,0),eveEnd=kenyaDateAt(p,21,10);
+ const todayStart=kenyaDateAt(p,9,25),mathOpen=kenyaDateAt(p,9,25),mathEnd=kenyaDateAt(p,9,55),aftStart=kenyaDateAt(p,14,0),aftEnd=kenyaDateAt(p,14,15),eveStart=kenyaDateAt(p,21,0),eveEnd=kenyaDateAt(p,21,10);
  let title='Countdown to next JENZY competition',text='All times follow Kenya time. Everyone with a saved class can join at the scheduled session time.',alarm=false,alarmLabel='',target=null;
- if(now>=todayStart&&now<mathOpen){alarm=true;alarmLabel='Morning Mathematics readiness countdown is active. Questions open at 9:16 AM.';title='Morning Mathematics countdown is active';text='The 60-second red circular timer and alarm run from 9:15 AM; questions open automatically at 9:16 AM.';target=mathOpen;}
- else if(now>=mathOpen&&now<mathEnd){title='Morning Mathematics competition is active';text='Your class-specific Mathematics competition ends at 9:45 AM.';target=mathEnd;}
- else if(mins>=9*60+45&&mins<14*60){title='Countdown to afternoon competition';text='The shared countdown ends at 2:00 PM. Choose English or Kiswahili.';target=aftStart;}
+ if(now>=mathOpen&&now<mathEnd){title='Morning Mathematics competition is active';text='Every signed-in student with a saved class receives a 30-second late-entry countdown; class-specific questions open automatically. Session ends at 9:55 AM.';target=mathEnd;}
+ else if(mins>=9*60+55&&mins<14*60){title='Countdown to afternoon competition';text='The shared countdown ends at 2:00 PM. Choose English or Kiswahili.';target=aftStart;}
  else if(mins>=13*60+55&&mins<14*60){alarm=true;alarmLabel='Afternoon competition starts at 2:00 PM.';title='Afternoon competition starts soon';text='The shared 60-second red circular readiness timer appears at 2:00 PM.';target=aftStart;}
  else if(now>=aftStart&&now<aftEnd){title='Afternoon competition is active';text='Your selected subject questions end at 2:15 PM.';target=aftEnd;}
  else if(mins>=14*60+10&&mins<14*60+30){title='Afternoon competition completed';text='The shared countdown to the evening competition begins at 2:30 PM.';target=kenyaDateAt(p,14,30);}
@@ -1493,8 +1492,8 @@ function scheduleState(now=new Date()){
  else if(now>=eveStart&&now<eveEnd){title='Evening competition is active';text='Your selected evening subject questions end at 9:10 PM.';target=eveEnd;}
  else if(mins>=14*60+30&&mins<21*60){title='Countdown to evening competition';text='The shared countdown ends at 9:00 PM. Your selected evening subject and class determine the questions.';target=eveStart;}
  else if(mins>=21*60+10&&mins<21*60+30){title='Evening competition completed';text='The shared countdown to tomorrow morning begins at 9:30 PM.';target=kenyaDateAt(p,21,30);}
- else if(mins>=21*60+30||mins<9*60+15){title='Countdown to morning Mathematics';text='The 60-second readiness timer begins at 9:15 AM; Mathematics questions open at 9:16 AM and the competition ends at 9:45 AM Kenya time.';target=mins>=21*60+30?kenyaDateAt({year:p.year,month:p.month,day:p.day+1},9,15):todayStart;}
- else {title='Countdown to morning Mathematics';text='The readiness timer begins at 9:15 AM Kenya time.';target=todayStart;}
+ else if(mins>=21*60+30||mins<9*60+15){title='Countdown to morning Mathematics';text='The 60-second readiness timer begins at 9:25 AM; the competition ends at 9:55 AM Kenya time.';target=mins>=21*60+30?kenyaDateAt({year:p.year,month:p.month,day:p.day+1},9,15):todayStart;}
+ else {title='Countdown to morning Mathematics';text='Morning Mathematics begins at 9:25 AM Kenya time.';target=todayStart;}
  return {p,mins,title,text,clock:target?fmtCountdown(target-now):'',alarm,alarmLabel};
 }
 function updateJenzySchedule(){const s=scheduleState(),mins=s.mins;const inTwoHourWindow=(mins>=420&&mins<540)||(mins>=720&&mins<840)||(mins>=1140&&mins<1260);const clockText=inTwoHourWindow?(s.clock||'—'):'Countdown opens 2 hours before the next session';const title=document.getElementById('scheduleStatusTitle'),txt=document.getElementById('scheduleStatusText'),clock=document.getElementById('scheduleClock');if(title)title.textContent=s.title;if(txt)txt.textContent=s.text;if(clock)clock.textContent=clockText;const t2=document.getElementById('scheduleStatusTitleCompetition'),x2=document.getElementById('scheduleStatusTextCompetition'),c2=document.getElementById('scheduleClockCompetition');if(t2)t2.textContent=s.title;if(x2)x2.textContent=s.text;if(c2)c2.textContent=clockText;const alarm=document.getElementById('alarmMessage');if(alarm&&s.alarm){alarm.textContent=s.alarmLabel;const key=s.p.year+'-'+s.p.month+'-'+s.p.day+'-'+s.p.hour+'-'+s.p.minute;if(key!==lastAlarmKey){lastAlarmKey=key;scheduleBeep();}}else if(alarm)alarm.textContent='No alarm right now. Shared competition countdowns end at 9:00 AM, 2:00 PM and 9:00 PM Kenya time.';}
@@ -1563,12 +1562,12 @@ async function checkJenzyAutomaticCompetition(){
  if(!currentUser||jenzyAutoLaunchBusy||activeCompetition||jenzyReadinessOverlay)return;
  const now=new Date(),date=competitionDateNairobi(now);
  const slots=[
-  {slot:'morning',start:competitionStartAt('morning',date),end:kenyaDateAt(kenyaParts(now),9,45)},
+  {slot:'morning',start:competitionStartAt('morning',date),end:kenyaDateAt(kenyaParts(now),9,55)},
   {slot:'afternoon',start:competitionStartAt('afternoon',date),end:kenyaDateAt(kenyaParts(now),14,15)},
   {slot:'evening',start:competitionStartAt('evening',date),end:kenyaDateAt(kenyaParts(now),21,10)}
  ];
  // The shared countdown is independent of registration. Run it for any signed-in student during the session window.
- const session=slots.find(x=>now<x.end&&now.getTime()>=x.start.getTime()-60000);
+ const session=slots.find(x=>now>=x.start&&now<x.end);
  if(!session)return;
  const testKey=[currentUser.id,date,session.slot].join('|');
  if(jenzyAutoLaunchedKeys.has(testKey))return;
@@ -1590,8 +1589,7 @@ async function checkJenzyAutomaticCompetition(){
   const key=[currentUser.id,date,session.slot,registeredClass,subject].join('|');
   if(jenzyAutoLaunchedKeys.has(key))return;
   // Record the launch only when the overlay is actually created, so transient errors can retry.
-  if(now<session.start)showJenzyReadiness(session.slot,subject,registeredClass,session.start);
-  else showJenzyReadiness(session.slot,subject,registeredClass,Date.now()+30000,false,false,30);
+  showJenzyReadiness(session.slot,subject,registeredClass,Date.now()+30000,false,false,30);
   if(jenzyReadinessOverlay){jenzyAutoLaunchedKeys.add(testKey);jenzyAutoLaunchedKeys.add(key);}
  }catch(e){console.warn('Could not check automatic competition entry:',e.message)}finally{jenzyAutoLaunchBusy=false}
 }
@@ -1611,12 +1609,12 @@ function startCompetitionResultsReleaseCountdown(schoolClass){
  const tick=()=>{
   const now=new Date(),p=kenyaParts(now),mins=p.hour*60+p.minute;
   let end;
-  if(mins>=9*60+16&&mins<14*60)end=kenyaDateAt(p,9,45);
+  if(mins>=9*60+25&&mins<14*60)end=kenyaDateAt(p,9,55);
   else if(mins>=14*60&&mins<21*60)end=kenyaDateAt(p,14,15);
   else end=kenyaDateAt(mins<9*60?{...p,day:p.day-1}:p,21,10);
   const releaseKey=p.year+'-'+p.month+'-'+p.day+'-'+(mins>=21*60||mins<9*60?'evening':mins>=14*60?'afternoon':'morning');
   if(competitionResultsReleaseReachedKey===releaseKey){el.textContent='The release time has passed, but no official results are available yet.';return;}
-  const ms=now.getTime(),endMs=end.getTime(),releaseAt=endMs+30000;
+  const ms=now.getTime(),endMs=end.getTime(),releaseAt=endMs+60000;
   if(ms<endMs)el.textContent='Competition session remaining: '+fmtCountdown(endMs-ms);
   else if(ms<releaseAt)el.textContent='🔔 Results, answer review and position open in: '+fmtCountdown(releaseAt-ms);
   else{
