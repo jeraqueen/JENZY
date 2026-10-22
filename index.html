@@ -1564,34 +1564,38 @@ setInterval(checkPrivateMathSession,250);
 
 async function checkJenzyAutomaticCompetition(){
  if(!currentUser||jenzyAutoLaunchBusy||activeCompetition||jenzyReadinessOverlay)return;
- const now=new Date(),date=competitionDateNairobi(now),profileClass=selectedCompetitionClass();
+ const now=new Date(),date=competitionDateNairobi(now);
  const slots=[
   {slot:'morning',start:competitionStartAt('morning',date),end:kenyaDateAt(kenyaParts(now),9,30)},
   {slot:'afternoon',start:competitionStartAt('afternoon',date),end:kenyaDateAt(kenyaParts(now),14,15)},
   {slot:'evening',start:competitionStartAt('evening',date),end:kenyaDateAt(kenyaParts(now),21,10)}
  ];
- // Registration never gates the shared timer or entry. A saved class is required to select the correct questions.
+ // The shared countdown is independent of registration. Run it for any signed-in student during the session window.
  const session=slots.find(x=>now<x.end&&now.getTime()>=x.start.getTime()-60000);
  if(!session)return;
  const testKey=[currentUser.id,date,session.slot].join('|');
  if(jenzyAutoLaunchedKeys.has(testKey))return;
  jenzyAutoLaunchBusy=true;
  try{
-  let registeredClass=profileClass;
+  let registeredClass=selectedCompetitionClass();
   if(!['Grade 6','Grade 7','Grade 8','Grade 10','Form 3'].includes(registeredClass)){
-   const savedProfile=await getJenzySavedProfile();
-   registeredClass=String(savedProfile?.school_class||getSavedUserSchoolClass()||'').trim();
+   try{
+    const {data,error}=await supabaseClient.from('profiles').select('school_class').eq('id',currentUser.id).maybeSingle();
+    if(!error)registeredClass=String(data?.school_class||'').trim();
+   }catch(e){console.warn('Could not load class for automatic competition:',e.message)}
   }
-  if(!['Grade 6','Grade 7','Grade 8','Grade 10','Form 3'].includes(registeredClass))return;
+  if(!['Grade 6','Grade 7','Grade 8','Grade 10','Form 3'].includes(registeredClass)){
+   console.warn('Automatic competition countdown is waiting for a valid saved class.');
+   return;
+  }
   updateCompetitionRegistrationSubjects();
-  const subject=selectedCompetitionSubject(session.slot);
-  if(!subject)return;
+  const subject=selectedCompetitionSubject(session.slot)|| (session.slot==='morning'?'Mathematics':session.slot==='afternoon'?'English':'Science and Technology');
   const key=[currentUser.id,date,session.slot,registeredClass,subject].join('|');
   if(jenzyAutoLaunchedKeys.has(key))return;
-  jenzyAutoLaunchedKeys.add(testKey);jenzyAutoLaunchedKeys.add(key);
-  // If the app was opened late, still show the requested full 60-second alarm before opening questions.
+  // Record the launch only when the overlay is actually created, so transient errors can retry.
   if(now<session.start)showJenzyReadiness(session.slot,subject,registeredClass,session.start);
   else showJenzyReadiness(session.slot,subject,registeredClass,Date.now()+60000,false,false,60);
+  if(jenzyReadinessOverlay){jenzyAutoLaunchedKeys.add(testKey);jenzyAutoLaunchedKeys.add(key);}
  }catch(e){console.warn('Could not check automatic competition entry:',e.message)}finally{jenzyAutoLaunchBusy=false}
 }
 setInterval(checkJenzyAutomaticCompetition,1000);
