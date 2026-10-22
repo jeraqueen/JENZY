@@ -1240,7 +1240,7 @@ async function refreshCompetitionCountsSafely(){if(competitionCountRefreshBusy||
 setInterval(refreshCompetitionCountsSafely,20000);
 document.addEventListener('visibilitychange',()=>{if(!document.hidden)refreshCompetitionCountsSafely()});
 
-function selectedCompetitionClass(){const allowed=["Grade 6","Grade 7","Grade 8","Grade 10","Form 3"];const value=String(document.getElementById('profileClass')?.value||localStorage.getItem(PROFILE_CLASS_KEY)||"").trim();return allowed.includes(value)?value:"";}
+function selectedCompetitionClass(){const allowed=["Grade 6","Grade 7","Grade 8","Grade 10","Form 3"];const value=String(document.getElementById('profileClass')?.value||localStorage.getItem(PROFILE_CLASS_KEY)||document.getElementById('requiredClassSelect')?.value||"").trim();return allowed.includes(value)?value:"";}
 function selectedCompetitionSubject(slot){
  if(slot==='morning') return document.getElementById('morningSubject')?.value||'Mathematics';
  if(slot==='afternoon') return document.getElementById('afternoonSubject').value;
@@ -1567,22 +1567,28 @@ async function checkJenzyAutomaticCompetition(){
   {slot:'afternoon',start:competitionStartAt('afternoon',date),end:kenyaDateAt(kenyaParts(now),14,15)},
   {slot:'evening',start:competitionStartAt('evening',date),end:kenyaDateAt(kenyaParts(now),21,10)}
  ];
- // Students may join any time while the session is active. Late arrivals get a fresh 30-second countdown.
+ // Registration never gates the shared timer or entry. A saved class is required to select the correct questions.
  const session=slots.find(x=>now<x.end&&now.getTime()>=x.start.getTime()-60000);
  if(!session)return;
  const testKey=[currentUser.id,date,session.slot].join('|');
  if(jenzyAutoLaunchedKeys.has(testKey))return;
  jenzyAutoLaunchBusy=true;
  try{
-  if(!['Grade 6','Grade 7','Grade 8','Grade 10','Form 3'].includes(profileClass))return;
+  let registeredClass=profileClass;
+  if(!['Grade 6','Grade 7','Grade 8','Grade 10','Form 3'].includes(registeredClass)){
+   const savedProfile=await getJenzySavedProfile();
+   registeredClass=String(savedProfile?.school_class||getSavedUserSchoolClass()||'').trim();
+  }
+  if(!['Grade 6','Grade 7','Grade 8','Grade 10','Form 3'].includes(registeredClass))return;
   updateCompetitionRegistrationSubjects();
-  const registeredClass=profileClass,subject=selectedCompetitionSubject(session.slot);
+  const subject=selectedCompetitionSubject(session.slot);
   if(!subject)return;
   const key=[currentUser.id,date,session.slot,registeredClass,subject].join('|');
   if(jenzyAutoLaunchedKeys.has(key))return;
   jenzyAutoLaunchedKeys.add(testKey);jenzyAutoLaunchedKeys.add(key);
+  // If the app was opened late, still show the requested full 60-second alarm before opening questions.
   if(now<session.start)showJenzyReadiness(session.slot,subject,registeredClass,session.start);
-  else showJenzyReadiness(session.slot,subject,registeredClass,Date.now()+30000,false,false,30);
+  else showJenzyReadiness(session.slot,subject,registeredClass,Date.now()+60000,false,false,60);
  }catch(e){console.warn('Could not check automatic competition entry:',e.message)}finally{jenzyAutoLaunchBusy=false}
 }
 setInterval(checkJenzyAutomaticCompetition,1000);
