@@ -1001,9 +1001,9 @@ function updateHomepageCountdowns(now=new Date()){
  const countdownStartsAt=new Date(previousStart.getTime()+(previousDuration+60)*60*1000);
  const countdownVisible=now>=countdownStartsAt;
  if(!countdownVisible){
-  box.innerHTML='<div class="homepage-countdown-row"><div class="countdown-label">'+next.label+'</div><div class="countdown-time">'+fmtCountdown(countdownStartsAt-now)+'</div><div class="countdown-sub">The next-session countdown begins one hour after the previous competition session ends.</div></div>';
-  if(heading)heading.textContent='⏳ Next countdown begins in';
-  if(description)description.textContent='All times use Kenya time. The next-session countdown starts one hour after the previous session ends.';
+  box.innerHTML='';
+  if(heading)heading.textContent='⏳ Next session countdown';
+  if(description)description.textContent='The next session countdown will appear one hour after the previous competition session ends.';
   warning.hidden=true;warning.textContent='';return;
  }
   const sessionClass=startMs<=600000?'countdown-danger':startMs<=3600000?'countdown-blue':'countdown-session';
@@ -1582,10 +1582,10 @@ async function checkJenzyAutomaticCompetition(){
   const registeredClass=String(savedProfile?.school_class||selectedCompetitionClass()||'').trim();
   if(!['Grade 6','Grade 7','Grade 8','Grade 10','Form 3'].includes(registeredClass))return;
   updateCompetitionRegistrationSubjects();
-  const subject=selectedCompetitionSubject(session.slot)||(session.slot==='morning'?'Mathematics':session.slot==='afternoon'?'English':'Science and Technology');
-  const {data:registration,error}=await supabaseClient.from('jenzy_competition_registrations').select('id').eq('student_id',currentUser.id).eq('competition_date',date).eq('session_slot',session.slot).eq('school_class',registeredClass).eq('subject',subject).eq('status','confirmed').in('entry_type',['free','paid']).maybeSingle();
+  const {data:registration,error}=await supabaseClient.from('jenzy_competition_registrations').select('id,subject').eq('student_id',currentUser.id).eq('competition_date',date).eq('session_slot',session.slot).eq('school_class',registeredClass).eq('status','confirmed').in('entry_type',['free','paid']).order('created_at',{ascending:false}).limit(1).maybeSingle();
   if(error)throw error;
   if(!registration)return;
+  const subject=String(registration.subject||selectedCompetitionSubject(session.slot)||(session.slot==='morning'?'Mathematics':session.slot==='afternoon'?'English':'Science and Technology'));
   const key=[currentUser.id,date,session.slot,registeredClass,subject].join('|');
   if(jenzyAutoLaunchedKeys.has(key))return;
   const preStart=now<session.start,seconds=preStart?60:10,target=preStart?session.start:Date.now()+10000;
