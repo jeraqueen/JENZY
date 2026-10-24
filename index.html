@@ -1265,7 +1265,7 @@ function currentSlotIsActive(slot){const p=kenyaParts(new Date()),m=p.hour*60+p.
 }
 function startJenzyAdminClassPreview(){if(!isJenzyAdmin()){alert('Admin access only.');return;}if(activeCompetition){alert('Finish or close the current test before opening the preview.');return;}startScheduledCompetition('evening','Science and Technology','Grade 6',true,true);}
 function startJenzyForm3MathPreview(){if(!isJenzyAdmin()){alert('Admin access only.');return;}if(activeCompetition){alert('Finish or close the current test before opening the preview.');return;}startScheduledCompetition('morning','Mathematics','Form 3',true,true);}
-async function getJenzySavedProfile(){if(!currentUser)return null;try{const {data,error}=await supabaseClient.from('profiles').select('username,full_name,school_class,school_name').eq('id',currentUser.id).maybeSingle();if(error)throw error;return data||null;}catch(e){console.warn('Could not load saved JENZY profile:',e.message);return null;}}
+async async function getJenzySavedProfile(){if(!currentUser)return null;try{const {data,error}=await supabaseClient.from('profiles').select('username,full_name,school_class,school_name').eq('id',currentUser.id).maybeSingle();if(error)throw error;return data||null;}catch(e){console.warn('Could not load saved JENZY profile:',e.message);return null;}}
 async function startScheduledCompetition(slot,registeredSubject=null,registeredClass=null,privateOneOff=false,adminScheduleOverride=false){
  if(!currentUser){setStatus('authStatus','Please sign in first.','error');return;}
  const authorizedAdminPreview=!!adminScheduleOverride&&isJenzyAdmin()&&!!privateOneOff;
