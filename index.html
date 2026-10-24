@@ -1059,7 +1059,7 @@ async function loadMyCompetitionRegistration(clearFields=false){
  }
 }
 async function openCompetitionRegistration(type){
- if(!currentUser){setStatus('authStatus','Please sign in before registering for a competition.','error');const auth=document.getElementById('authGate');if(auth)auth.scrollIntoView({behavior:'smooth',block:'start'});return;}
+ // Always open the registration page for FREE and PAY. Sign-in is required only when submitting an entry.
  competitionRegistrationType=type;
  if(type==='free')setFreeRegistrationButtonRegistered(false);
  let savedProfile=null;const savedProfilePromise=getJenzySavedProfile();
@@ -1097,19 +1097,20 @@ async function openCompetitionRegistration(type){
  }
  document.getElementById('competitionRegistrationTitle').textContent=type==='free'?'Free competition registration':'Paid competition registration';
  document.getElementById('competitionRegistrationDescription').textContent=type==='free'?'Check your signed-in profile details, choose the session and subject for your registered class, then confirm your free entry.':'Pay KSh 20 to the JENZY M-Pesa number, then submit the transaction code from your confirmation message. Your paid entry will be approved only after the code and amount are matched to the administrator’s imported M-Pesa records.';if(!savedProfile?.school_class)document.getElementById('competitionRegistrationStatus').textContent='Your class is missing from your saved profile. Go to My Profile, save your class, then return to register.';else if(!savedProfile?.school_name)document.getElementById('competitionRegistrationStatus').textContent='Please add your school name in My Profile before registering.';
- const profileName=document.getElementById('studentName')?.value.trim()||currentUser.user_metadata?.full_name||'';
+ const profileName=document.getElementById('studentName')?.value.trim()||currentUser?.user_metadata?.full_name||'';
  const nameField=document.getElementById('competitionRegistrantName');nameField.value=profileName;nameField.readOnly=true;nameField.setAttribute('aria-readonly','true');nameField.title='Your name comes from your saved JENZY profile. Edit it in Profile if it is incorrect.';
  document.getElementById('competitionRegistrantPhone').value='';document.getElementById('competitionRegistrantPhoneField').hidden=type!=='paid';
  document.getElementById('competitionEntryNumber').textContent=type==='free'?'Checking your saved registration…':'Paid registration is not active';
- document.getElementById('competitionRegistrationStatus').textContent='';
+ document.getElementById('competitionRegistrationStatus').textContent=currentUser?'':'Please sign in to register. You can still view this session and its registration details.';
  document.getElementById('competitionRegisterSubmit').hidden=type!=='free';
- document.getElementById('competitionRegisterSubmit').disabled=type==='free';
+ document.getElementById('competitionRegisterSubmit').disabled=type==='free'&&!currentUser;
  const paidPendingButton=document.getElementById('competitionPaidPendingButton');paidPendingButton.hidden=type!=='paid';paidPendingButton.disabled=!JENZY_MPESA_NUMBER;paidPendingButton.textContent='Submit M-Pesa code for verification';document.getElementById('competitionPaidPendingNote').hidden=type!=='paid';document.getElementById('manualMpesaInstructions').hidden=type!=='paid';document.getElementById('manualMpesaInstructions').style.display=type==='paid'?'':'none';document.getElementById('competitionPaymentCode').value='';document.getElementById('jenzyMpesaPayeeDisplay').textContent=JENZY_MPESA_PAYEE;document.getElementById('jenzyMpesaNumberDisplay').textContent=JENZY_MPESA_NUMBER||'Not configured yet';document.getElementById('copyJenzyMpesaNumberButton').disabled=!JENZY_MPESA_NUMBER;if(type==='paid'){document.getElementById('competitionRegistrationStatus').textContent=JENZY_MPESA_NUMBER?'Enter the M-Pesa transaction code after paying KSh 20.':'The receiving M-Pesa number must be added before students can pay. No payment will be accepted until it is configured.';await loadMyManualPaymentStatus();}
- form.scrollIntoView({behavior:'smooth',block:'start'});
+ form.hidden=false;form.scrollIntoView({behavior:'smooth',block:'start'});
  // Render the registration page before waiting on profile/database requests, so the FREE button never appears dead.
  savedProfile=await Promise.race([savedProfilePromise,new Promise(resolve=>setTimeout(()=>resolve(null),3500))]);
  if(savedProfile){const classInput=document.getElementById('profileClass');if(savedProfile.school_class&&classInput){classInput.value=savedProfile.school_class;try{localStorage.setItem(PROFILE_CLASS_KEY,savedProfile.school_class)}catch(e){}}const schoolInput=document.getElementById('profileSchool');if(savedProfile.school_name&&schoolInput)schoolInput.value=savedProfile.school_name;const rn=document.getElementById('competitionRegistrantName');if(rn)rn.value=String(savedProfile.full_name||'');const rs=document.getElementById('competitionRegistrantSchool');if(rs)rs.value=String(savedProfile.school_name||'Not added to profile yet');const rc=document.getElementById('competitionRegistrantClass');if(rc)rc.value=String(savedProfile.school_class||'Class missing — update your profile first');const rl=document.getElementById('competitionRegistrantLevel');if(rl)rl.value=savedProfile.school_class?educationLevelForClass(savedProfile.school_class,''):'Not available';updateCompetitionRegistrationSubjects();}
- if(type==='free'){updateCompetitionRegistrationWindow();await loadMyCompetitionRegistration(true);const submit=document.getElementById('competitionRegisterSubmit');if(submit&&!submit.classList.contains('registered-confirm-button'))submit.disabled=false;}
+ if(type==='free'&&currentUser){updateCompetitionRegistrationWindow();await loadMyCompetitionRegistration(true);const submit=document.getElementById('competitionRegisterSubmit');if(submit&&!submit.classList.contains('registered-confirm-button'))submit.disabled=false;}
+ if(!currentUser){const submit=document.getElementById('competitionRegisterSubmit');if(submit)submit.disabled=true;const status=document.getElementById('competitionRegistrationStatus');if(status)status.textContent='Please sign in first, then return here to complete your registration. The scheduled session countdown continues even if nobody has registered.';}
 }
 
 async function copyJenzyMpesaNumber(){
