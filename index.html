@@ -1059,16 +1059,17 @@ async function loadMyCompetitionRegistration(clearFields=false){
  }
 }
 async function openCompetitionRegistration(type){
- // Keep the registration form in its original competition hub so the session picker, navigation and profile context remain together.
- // Open it immediately; profile loading must never block the button response.
+ // Show a self-contained registration page immediately; never wait for Supabase/profile loading before responding to a tap.
  const immediateRegistrationForm=document.getElementById('competitionRegistrationForm');
- if(immediateRegistrationForm)immediateRegistrationForm.hidden=false;
+ if(!immediateRegistrationForm){console.error('JENZY registration form is missing from index.html');alert('Registration page could not be opened. Please refresh JENZY and try again.');return;}
+ if(immediateRegistrationForm.parentElement&&immediateRegistrationForm.parentElement.id==='competitionEntryHub')document.body.appendChild(immediateRegistrationForm);
+ immediateRegistrationForm.hidden=false;
+ immediateRegistrationForm.classList.add('full-page-registration');
  // Always open the registration page for FREE and PAY. Sign-in is required only when submitting an entry.
  competitionRegistrationType=type;
  if(type==='free')setFreeRegistrationButtonRegistered(false);
  let savedProfile=null;
- const savedProfilePromise=getJenzySavedProfile();
- try{savedProfile=await Promise.race([savedProfilePromise,new Promise(resolve=>setTimeout(()=>resolve(null),3500))]);}catch(e){console.warn('Could not load saved JENZY profile:',e);}
+ try{savedProfile=await Promise.race([getJenzySavedProfile(),new Promise(resolve=>setTimeout(()=>resolve(null),2500))]);}catch(e){console.warn('Could not load saved JENZY profile:',e);}
  const isJamespesa=false; // No non-admin account receives special testing or late-registration privileges.
  jenzyJamespesaMorningExceptionDate=(type==='free'&&isJamespesa)?competitionDateNairobi(new Date()):'';
  // Normally select the next open session. Jamespesa's exception is limited to this morning session today.
