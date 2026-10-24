@@ -1059,10 +1059,17 @@ async function loadMyCompetitionRegistration(clearFields=false){
  }
 }
 async function openCompetitionRegistration(type){
+ // Open the page immediately so a later profile/session lookup cannot make the FREE or PAY button appear dead.
+ const immediateRegistrationForm=document.getElementById('competitionRegistrationForm');
+ if(immediateRegistrationForm){
+  if(immediateRegistrationForm.parentElement&&immediateRegistrationForm.parentElement.id==='competitionEntryHub')document.body.appendChild(immediateRegistrationForm);
+  immediateRegistrationForm.hidden=false;
+  immediateRegistrationForm.classList.add('full-page-registration');
+ }
  // Always open the registration page for FREE and PAY. Sign-in is required only when submitting an entry.
  competitionRegistrationType=type;
  if(type==='free')setFreeRegistrationButtonRegistered(false);
- let savedProfile=null;const savedProfilePromise=getJenzySavedProfile();
+ const savedProfile=await getJenzySavedProfile();
  const isJamespesa=false; // No non-admin account receives special testing or late-registration privileges.
  jenzyJamespesaMorningExceptionDate=(type==='free'&&isJamespesa)?competitionDateNairobi(new Date()):'';
  // Normally select the next open session. Jamespesa's exception is limited to this morning session today.
