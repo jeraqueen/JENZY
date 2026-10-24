@@ -1038,7 +1038,8 @@ async function loadMyCompetitionRegistration(clearFields=false){
  nameEl.readOnly=true;nameEl.setAttribute('aria-readonly','true');nameEl.title='Your name comes from your saved JENZY profile. Edit it in Profile if it is incorrect.';
  nameEl.readOnly=true;nameEl.setAttribute('aria-readonly','true');nameEl.title='Your name comes from your saved JENZY profile. Edit it in Profile if incorrect.';if(clearFields){nameEl.value=profileName;phoneEl.value='';entryEl.textContent='Checking your registration…';statusEl.textContent='';}
  const slot=document.getElementById('competitionRegistrationSlot').value,subject=document.getElementById('competitionRegistrationSubject').value,schoolClass=selectedCompetitionClass(),date=(slot==='morning'&&jenzyJamespesaMorningExceptionDate)?jenzyJamespesaMorningExceptionDate:competitionDateForSlot(slot);
- try{const lifecycle=await supabaseClient.rpc('jenzy_refresh_registration_lifecycle',{p_competition_date:date,p_session_slot:slot});if(lifecycle.error)throw lifecycle.error;}catch(lifecycleError){console.error('Could not refresh registration lifecycle:',lifecycleError);entryEl.textContent='Registration status unavailable';statusEl.textContent='Could not refresh your session registration. Please retry.';btn.disabled=true;return null;}
+ // Lifecycle cleanup is helpful but must never block a student's free registration. The database's unique index and registration policy remain the final safeguards.
+ try{const lifecycle=await supabaseClient.rpc('jenzy_refresh_registration_lifecycle',{p_competition_date:date,p_session_slot:slot});if(lifecycle.error)console.warn('Registration lifecycle refresh failed; continuing with direct registration checks:',lifecycle.error);}catch(lifecycleError){console.warn('Registration lifecycle refresh failed; continuing with direct registration checks:',lifecycleError);}
  if(!schoolClass){entryEl.textContent='Class required';statusEl.textContent='Your saved signup class is missing. Complete the class requirement before registering.';btn.disabled=true;return null;}
  btn.disabled=true;
  try{
@@ -1052,7 +1053,9 @@ async function loadMyCompetitionRegistration(clearFields=false){
   entryEl.textContent='Not registered yet';setFreeRegistrationButtonRegistered(false);return false;
  }catch(e){
   entryEl.textContent='Registration status unavailable';statusEl.textContent='JENZY could not verify your saved registration. Please try again before registering.';
-  btn.disabled=true;console.error('Could not check JENZY registration for current account:',e);return null;
+  // Do not leave Confirm Free Registration permanently disabled after a temporary status-read failure.
+  // The database unique constraint still prevents duplicate active entries.
+  setFreeRegistrationButtonRegistered(false);statusEl.textContent='JENZY could not check your existing entry just now. You can still try registering; duplicate active entries are blocked automatically.';console.error('Could not check JENZY registration for current account:',e);return false;
  }
 }
 async function openCompetitionRegistration(type){
