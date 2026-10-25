@@ -1062,7 +1062,7 @@ async function openCompetitionRegistration(type){
  // Show a self-contained registration page immediately; never wait for Supabase/profile loading before responding to a tap.
  const immediateRegistrationForm=document.getElementById('competitionRegistrationForm');
  if(!immediateRegistrationForm){console.error('JENZY registration form is missing from index.html');alert('Registration page could not be opened. Please refresh JENZY and try again.');return;}
- if(immediateRegistrationForm.parentElement&&immediateRegistrationForm.parentElement.id==='competitionEntryHub')document.body.appendChild(immediateRegistrationForm);
+ const registrationParent=immediateRegistrationForm.parentElement;const registrationHub=registrationParent?.id==='competitionEntryHub'?registrationParent:registrationParent?.parentElement?.id==='competitionEntryHub'?registrationParent.parentElement:null;if(registrationHub)document.body.appendChild(immediateRegistrationForm);
  immediateRegistrationForm.hidden=false;
  immediateRegistrationForm.classList.add('full-page-registration');
  // Always open the registration page for FREE and PAY. Sign-in is required only when submitting an entry.
