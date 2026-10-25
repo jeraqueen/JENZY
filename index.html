@@ -1074,6 +1074,8 @@ async function openCompetitionRegistration(type){
  jenzyJamespesaMorningExceptionDate=(type==='free'&&isJamespesa)?competitionDateNairobi(new Date()):'';
  // Normally select the next open session. Jamespesa's exception is limited to this morning session today.
  const nextSession=nextRegistrableCompetitionSession(new Date()),sessionSelect=document.getElementById('competitionRegistrationSlot');
+ // Keep the session/subject selector visibly inside the full-page registration form. Detach the form first, then move its former parent picker safely; never try to nest an ancestor inside its descendant.
+ const registrationForm=document.getElementById('competitionRegistrationForm');const sessionPicker=document.querySelector('#competitionEntryHub > .competition-picker');if(registrationForm&&sessionPicker&&sessionPicker!==registrationForm&&!registrationForm.contains(sessionPicker)){if(registrationForm.parentElement===sessionPicker)document.body.appendChild(registrationForm);if(sessionPicker.parentElement!==registrationForm)registrationForm.insertBefore(sessionPicker,registrationForm.querySelector('#competitionRegistrationTitle'));}
  if(sessionSelect)sessionSelect.value=jenzyJamespesaMorningExceptionDate?'morning':nextSession.slot;
  const slotNow=jenzyJamespesaMorningExceptionDate?'morning':nextSession.slot,dateNow=jenzyJamespesaMorningExceptionDate||nextSession.date,windowNow=Boolean(jenzyJamespesaMorningExceptionDate)||(!!nextSession.start&&new Date()<nextSession.start&&new Date()<nextSession.deadline);
  updateCompetitionRegistrationSubjects();
